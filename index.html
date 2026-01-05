@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>Sparrow Farms Portal</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; padding: 20px; background-color: #f4f7f4; color: #2b3d2b; }
+    .container { max-width: 450px; margin: auto; background: white; padding: 25px; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); border-top: 6px solid #2b3d2b; position: relative; }
+    .logo { width: 140px; margin-bottom: 10px; }
+    input, textarea { font-size: 16px; width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #ddd; border-radius: 12px; box-sizing: border-box; }
+    .pin-input { font-size: 32px; text-align: center; letter-spacing: 10px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    button { padding: 18px; cursor: pointer; border: none; border-radius: 10px; color: white; font-weight: bold; text-transform: uppercase; transition: opacity 0.2s; }
+    button:active { opacity: 0.7; }
+    .btn-in { background: #388e3c; grid-column: span 2; } 
+    .btn-out { background: #d32f2f; grid-column: span 2; }
+    .btn-submit { background: #2b3d2b; width: 100%; }
+    .btn-alert { background: #f57c00; } 
+    .btn-maint { background: #b71c1c; } 
+    .btn-history { background: #455a64; grid-column: span 2; }
+    .btn-admin { background: #212121; grid-column: span 2; }
+    .status-box { margin-bottom: 20px; padding: 15px; background: #f9fbf9; border-radius: 12px; border: 1px solid #e0e0e0; }
+    .hidden { display: none; }
+    #toast { position: fixed; top: 10%; left: 50%; transform: translateX(-50%); background: #2b3d2b; color: white; padding: 20px 40px; border-radius: 15px; z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.4); border: 2px solid #ffffff; font-size: 20px; font-weight: bold; width: 80%; max-width: 350px; transition: opacity 0.3s; pointer-events: none; }
+    #lunch-confirm-area { grid-column: span 2; background: #fffcf0; padding: 15px; border-radius: 12px; border: 2px dashed #f57c00; margin-top: 5px; }
+  </style>
+</head>
+<body>
+
+  <div id="toast" class="hidden"><span id="toast-msg"></span></div>
+
+  <div class="container">
+    <img src="https://sparrowfarms.ca/cdn/shop/files/Transparent_-_Web_Sparrow_Farms_Logo_1500_x_1500_px.png?v=1737389483&width=375" class="logo" alt="Sparrow Farms">
+    
+    <div id="screen-main">
+      <h1>Staff Portal</h1>
+      <div class="status-box">
+        <div id="status-text">Enter PIN to Login</div>
+        <div id="msg-text" style="font-size: 0.8em; color: #666; margin-top:10px;"></div>
+      </div>
+
+      <input type="password" id="pin" class="pin-input" placeholder="0000" inputmode="numeric" maxlength="4">
+      <button id="btn-check" class="btn-submit" onclick="checkStatus()">Login / Check Status</button>
+
+      <div id="action-grid" class="grid hidden">
+        <button id="btn-in" class="btn-in" onclick="runClock('clock-in')">Clock In</button>
+        <button id="btn-out" class="btn-out" onclick="showLunchInput()">Clock Out</button>
+
+        <div id="lunch-confirm-area" class="hidden">
+          <label style="display:block; margin-bottom: 8px; font-weight: bold; color:#b71c1c;">Minutes of Lunch/Break:</label>
+          <input type="number" id="lunchMinsInput" value="30" min="0" step="5">
+          <button class="btn-out" style="width: 100%;" onclick="confirmClockOut()">Confirm & Clock Out</button>
+          <button class="btn-history" style="width: 100%; margin-top: 8px; background: #999;" onclick="hideLunchInput()">Cancel</button>
+        </div>
+
+        <button class="btn-history" onclick="openScreen('history')">📅 My History</button>
+        <button class="btn-alert" onclick="openScreen('stock')">⚠️ Low Stock</button>
+        <button class="btn-maint" onclick="openScreen('issue')">🛠️ Maintenance</button>
+        <button id="btn-admin" class="btn-admin hidden" onclick="showAdmin()">🔐 Admin Panel</button>
+        <button class="btn-history" style="background:#666;" onclick="resetApp()">Logout</button>
+      </div>
+    </div>
+
+    <div id="screen-stock" class="hidden">
+      <h3>Low Stock Report</h3>
+      <input type="text" id="stockItem" placeholder="What item is low?">
+      <button class="btn-submit" onclick="submitStock()">Send Alert</button>
+      <button class="btn-history" style="width:100%; margin-top:10px; background:#607d8b" onclick="openScreen('main')">Cancel</button>
+    </div>
+
+    <div id="screen-issue" class="hidden">
+      <h3>Equipment Issue</h3>
+      <input type="text" id="machine" placeholder="Machine Name">
+      <textarea id="issue" rows="3" placeholder="Describe the problem..."></textarea>
+      <button class="btn-submit" onclick="submitMaint()">Submit Issue</button>
+      <button class="btn-history" style="width:100%; margin-top:10px; background:#607d8b" onclick="openScreen('main')">Cancel</button>
+    </div>
+
+    <div id="screen-history" class="hidden">
+      <h3>My Recent History</h3>
+      <div id="history-data" style="text-align:left;"></div>
+      <button class="btn-history" style="width:100%; margin-top:20px; background:#607d8b" onclick="openScreen('main')">Back</button>
+    </div>
+
+    <div id="screen-report" class="hidden">
+      <h3>Shift Summary</h3>
+      <div id="summary-val" style="margin-bottom:15px; color:green; font-weight:bold;"></div>
+      <textarea id="work" rows="5" placeholder="What did you work on today?"></textarea>
+      <button class="btn-submit" onclick="submitReport()">Finish & Submit</button>
+    </div>
+
+    <div id="screen-admin" class="hidden">
+      <h3>Admin Logs</h3>
+      <div id="admin-data" style="text-align:left; font-size:0.8em;"></div>
+      <button class="btn-history" style="width:100%; margin-top:20px; background:#607d8b" onclick="openScreen('main')">Back</button>
+    </div>
+  </div>
+
+  <script>
+    // --- 1. REPLACE THIS URL WITH YOUR GOOGLE WEB APP URL ---
+    const SCRIPT_URL = "PASTE_YOUR_GOOGLE_EXEC_URL_HERE";
+
+    // --- 2. THE JSONP ENGINE ---
+    // This function handles reading data (Status, History, Admin Logs)
+    function callGoogleJSONP(params, callbackFn) {
+      const callbackName = 'cb_' + Math.round(100000 * Math.random());
+      window[callbackName] = function(data) {
+        delete window[callbackName];
+        document.body.removeChild(script);
+        callbackFn(data);
+      };
+
+      const queryString = Object.keys(params).map(key => key + '=' + encodeURIComponent(params[key])).join('&');
+      const script = document.createElement('script');
+      script.src = SCRIPT_URL + "?" + queryString + "&callback=" + callbackName;
+      document.body.appendChild(script);
+    }
+
+    // --- 3. UI UTILITIES ---
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-msg').innerText = msg;
+      toast.classList.remove('hidden');
+      setTimeout(() => { toast.classList.add('hidden'); }, 4000);
+    }
+
+    function openScreen(id) {
+      ['main', 'stock', 'issue', 'history', 'report', 'admin'].forEach(s => {
+        document.getElementById('screen-'+s).classList.add('hidden');
+      });
+      document.getElementById('screen-'+id).classList.remove('hidden');
+    }
+
+    function resetApp() {
+      document.getElementById('pin').value = "";
+      document.getElementById('work').value = "";
+      document.getElementById('stockItem').value = "";
+      document.getElementById('machine').value = "";
+      document.getElementById('issue').value = "";
+      document.getElementById('status-text').innerText = "Enter PIN to Login";
+      document.getElementById('msg-text').innerHTML = "";
+      document.getElementById('action-grid').classList.add('hidden');
+      document.getElementById('btn-check').classList.remove('hidden');
+      document.getElementById('btn-admin').classList.add('hidden');
+      openScreen('main');
+    }
+
+    // --- 4. ACTION FUNCTIONS ---
+    function checkStatus() {
+      const pin = document.getElementById('pin').value;
+      if (pin.length < 4) return showToast("Enter 4-digit PIN");
+      document.getElementById('status-text').innerText = "Verifying...";
+      
+      callGoogleJSONP({ action: "getWeeklyHistory", pin: pin }, function(res) {
+        if (!res || res.error) { document.getElementById('status-text').innerText = "Invalid PIN"; return; }
+        document.getElementById('status-text').innerHTML = "<b>" + res.name + "</b>: " + res.currentStatus;
+        document.getElementById('msg-text').innerHTML = res.pay;
+        document.getElementById('history-data').innerHTML = res.history;
+        document.getElementById('action-grid').classList.remove('hidden');
+        document.getElementById('btn-check').classList.add('hidden');
+        if (res.isAdmin) document.getElementById('btn-admin').classList.remove('hidden');
+        document.getElementById('btn-in').classList.toggle('hidden', res.currentStatus !== "Clocked Out");
+        document.getElementById('btn-out').classList.toggle('hidden', res.currentStatus === "Clocked Out");
+      });
+    }
+
+    function showLunchInput() { 
+      document.getElementById('btn-out').classList.add('hidden'); 
+      document.getElementById('lunch-confirm-area').classList.remove('hidden'); 
+    }
+    
+    function hideLunchInput() { 
+      document.getElementById('btn-out').classList.remove('hidden'); 
+      document.getElementById('lunch-confirm-area').classList.add('hidden'); 
+    }
+
+    function confirmClockOut() {
+      const mins = document.getElementById('lunchMinsInput').value;
+      runClock('clock-out', mins);
+      hideLunchInput();
+    }
+
+    function runClock(type, lunch) {
+      const pin = document.getElementById('pin').value;
+      document.getElementById('status-text').innerText = "Syncing...";
+
+      callGoogleJSONP({ action: "handleClockAction", pin: pin, type: type, lunchMinutes: lunch||0 }, function(res) {
+        if (res.showReport) {
+          document.getElementById('summary-val').innerText = res.summary;
+          openScreen('report');
+        } else {
+          showToast("Status Updated!");
+          checkStatus();
+        }
+      });
+    }
+
+    function submitStock() {
+      const p = document.getElementById('pin').value, i = document.getElementById('stockItem').value;
+      if (!i) return showToast("Enter an item");
+      callGoogleJSONP({ action: "sendLowStockAlert", pin: p, item: i }, function() {
+        showToast("Stock Alert Sent!");
+        openScreen('main');
+      });
+    }
+
+    function submitMaint() {
+      const p = document.getElementById('pin').value, m = document.getElementById('machine').value, i = document.getElementById('issue').value;
+      if (!m || !i) return showToast("Enter details");
+      callGoogleJSONP({ action: "sendEquipmentIssue", pin: p, machine: m, issue: i }, function() {
+        showToast("Maintenance Report Sent!");
+        openScreen('main');
+      });
+    }
+
+    function submitReport() {
+      const p = document.getElementById('pin').value, w = document.getElementById('work').value;
+      callGoogleJSONP({ action: "submitShiftReport", pin: p, work: w }, function() {
+        showToast("Summary Submitted!");
+        setTimeout(resetApp, 1500);
+      });
+    }
+
+    function showAdmin() {
+      const pin = document.getElementById('pin').value;
+      openScreen('admin');
+      callGoogleJSONP({ action: "getAdminLogs", pin: pin }, function(h) {
+        document.getElementById('admin-data').innerHTML = h;
+      });
+    }
+
+    window.onload = function() { document.getElementById('pin').focus(); };
+  </script>
+</body>
+</html>
