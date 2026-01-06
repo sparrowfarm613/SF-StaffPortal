@@ -24,8 +24,6 @@
     .hidden { display: none; }
     #toast { position: fixed; top: 10%; left: 50%; transform: translateX(-50%); background: #2b3d2b; color: white; padding: 20px 40px; border-radius: 15px; z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.4); border: 2px solid #ffffff; font-size: 20px; font-weight: bold; width: 80%; max-width: 350px; transition: opacity 0.3s; pointer-events: none; }
     #lunch-confirm-area { grid-column: span 2; background: #fffcf0; padding: 15px; border-radius: 12px; border: 2px dashed #f57c00; margin-top: 5px; }
-    
-    /* Admin Table Styling */
     #admin-data table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
     #admin-data th, #admin-data td { padding: 8px 4px; border-bottom: 1px solid #eee; text-align: left; }
     #admin-data th { background: #f4f4f4; font-weight: bold; }
@@ -44,21 +42,17 @@
         <div id="status-text">Enter PIN to Login</div>
         <div id="msg-text" style="font-size: 0.8em; color: #666; margin-top:10px;"></div>
       </div>
-
       <input type="password" id="pin" class="pin-input" placeholder="0000" inputmode="numeric" maxlength="4">
       <button id="btn-check" class="btn-submit" onclick="checkStatus()">Login / Check Status</button>
-
       <div id="action-grid" class="grid hidden">
         <button id="btn-in" class="btn-in" onclick="runClock('clock-in')">Clock In</button>
         <button id="btn-out" class="btn-out" onclick="showLunchInput()">Clock Out</button>
-
         <div id="lunch-confirm-area" class="hidden">
           <label for="lunchMinsInput" style="display:block; margin-bottom: 8px; font-weight: bold; color:#b71c1c;">Minutes of Lunch/Break:</label>
           <input type="number" id="lunchMinsInput" value="" min="0" step="5">
           <button class="btn-out" style="width: 100%;" onclick="confirmClockOut()">Confirm & Clock Out</button>
           <button class="btn-history" style="width: 100%; margin-top: 8px; background: #999;" onclick="hideLunchInput()">Cancel</button>
         </div>
-
         <button class="btn-history" onclick="openScreen('history')">📅 My History</button>
         <button class="btn-alert" onclick="openScreen('stock')">⚠️ Low Stock</button>
         <button class="btn-maint" onclick="openScreen('issue')">🛠️ Maintenance</button>
@@ -68,7 +62,9 @@
     </div>
 
     <div id="screen-admin" class="hidden">
-      <h3>Admin Quick View</h3> <div id="admin-data">Loading activity...</div>
+      <h3>Admin Quick View</h3>
+      <div id="admin-data">Loading activity...</div>
+      <button class="btn-submit" style="background:#f57c00; margin-top:15px;" onclick="triggerRecalc()">🔄 Recalculate Payroll Data</button>
       <button class="btn-history" style="width:100%; margin-top:20px; background:#607d8b" onclick="openScreen('main')">Back</button>
     </div>
 
@@ -169,6 +165,16 @@
       document.getElementById('admin-data').innerHTML = "Loading...";
       callGoogleJSONP({ action: "getAdminLogs", pin: pin }, function(h) {
         document.getElementById('admin-data').innerHTML = h;
+      });
+    }
+
+    function triggerRecalc() {
+      if(!confirm("Fix Hours and Earned columns for all staff based on current Time In/Out and Lunch?")) return;
+      const pin = document.getElementById('pin').value;
+      showToast("Processing...");
+      callGoogleJSONP({ action: "recalculate", pin: pin }, function(res) {
+        if(res.success) { showToast("Success!"); showAdmin(); }
+        else { showToast("Error: " + res.error); }
       });
     }
 
