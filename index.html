@@ -102,7 +102,6 @@
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzdBTATZW99S9eu_oZeaEM97Dx-jjVDIovpgQnHYAIRJRB8VtflpzvwJ4SaMOoaKMUQ4A/exec";
 
     // --- 2. THE JSONP ENGINE ---
-    // This function handles reading data (Status, History, Admin Logs)
     function callGoogleJSONP(params, callbackFn) {
       const callbackName = 'cb_' + Math.round(100000 * Math.random());
       window[callbackName] = function(data) {
@@ -113,7 +112,7 @@
       };
 
       // Construct the URL manually to ensure callback is prominent
-      let fullUrl = SCRIPT_URL + "?callback=" + callbackName;
+      let fullUrl = SCRIPT_URL + (SCRIPT_URL.includes('?') ? '&' : '?') + "callback=" + callbackName;
       for (let key in params) {
         fullUrl += "&" + key + "=" + encodeURIComponent(params[key]);
       }
@@ -126,12 +125,6 @@
         document.getElementById('status-text').innerText = "Connection Error";
       };
 
-      document.body.appendChild(script);
-    }
-
-      const queryString = Object.keys(params).map(key => key + '=' + encodeURIComponent(params[key])).join('&');
-      const script = document.createElement('script');
-      script.src = SCRIPT_URL + "?" + queryString + "&callback=" + callbackName;
       document.body.appendChild(script);
     }
 
