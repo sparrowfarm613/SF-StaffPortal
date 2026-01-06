@@ -98,10 +98,10 @@
   </div>
 
   <script>
-    // --- 1. REPLACE THIS URL WITH YOUR GOOGLE WEB APP URL ---
+    // --- 1. CONFIG ---
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzdBTATZW99S9eu_oZeaEM97Dx-jjVDIovpgQnHYAIRJRB8VtflpzvwJ4SaMOoaKMUQ4A/exec";
 
-    // --- 2. THE JSONP ENGINE ---
+    // --- 2. JSONP ENGINE ---
     function callGoogleJSONP(params, callbackFn) {
       const callbackName = 'cb_' + Math.round(100000 * Math.random());
       window[callbackName] = function(data) {
@@ -111,7 +111,6 @@
         callbackFn(data);
       };
 
-      // Construct the URL manually to ensure callback is prominent
       let fullUrl = SCRIPT_URL + (SCRIPT_URL.includes('?') ? '&' : '?') + "callback=" + callbackName;
       for (let key in params) {
         fullUrl += "&" + key + "=" + encodeURIComponent(params[key]);
@@ -120,11 +119,9 @@
       const script = document.createElement('script');
       script.id = callbackName;
       script.src = fullUrl;
-      
       script.onerror = function() {
         document.getElementById('status-text').innerText = "Connection Error";
       };
-
       document.body.appendChild(script);
     }
 
@@ -138,7 +135,8 @@
 
     function openScreen(id) {
       ['main', 'stock', 'issue', 'history', 'report', 'admin'].forEach(s => {
-        document.getElementById('screen-'+s).classList.add('hidden');
+        const el = document.getElementById('screen-'+s);
+        if(el) el.classList.add('hidden');
       });
       document.getElementById('screen-'+id).classList.remove('hidden');
     }
@@ -164,13 +162,18 @@
       document.getElementById('status-text').innerText = "Verifying...";
       
       callGoogleJSONP({ action: "getWeeklyHistory", pin: pin }, function(res) {
-        if (!res || res.error) { document.getElementById('status-text').innerText = "Invalid PIN"; return; }
+        if (!res || res.error) { 
+            document.getElementById('status-text').innerText = res.error || "Invalid PIN"; 
+            return; 
+        }
         document.getElementById('status-text').innerHTML = "<b>" + res.name + "</b>: " + res.currentStatus;
         document.getElementById('msg-text').innerHTML = res.pay;
         document.getElementById('history-data').innerHTML = res.history;
         document.getElementById('action-grid').classList.remove('hidden');
         document.getElementById('btn-check').classList.add('hidden');
+        
         if (res.isAdmin) document.getElementById('btn-admin').classList.remove('hidden');
+        
         document.getElementById('btn-in').classList.toggle('hidden', res.currentStatus !== "Clocked Out");
         document.getElementById('btn-out').classList.toggle('hidden', res.currentStatus === "Clocked Out");
       });
