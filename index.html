@@ -24,6 +24,11 @@
     .hidden { display: none; }
     #toast { position: fixed; top: 10%; left: 50%; transform: translateX(-50%); background: #2b3d2b; color: white; padding: 20px 40px; border-radius: 15px; z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.4); border: 2px solid #ffffff; font-size: 20px; font-weight: bold; width: 80%; max-width: 350px; transition: opacity 0.3s; pointer-events: none; }
     #lunch-confirm-area { grid-column: span 2; background: #fffcf0; padding: 15px; border-radius: 12px; border: 2px dashed #f57c00; margin-top: 5px; }
+    
+    /* Admin Table Styling */
+    #admin-data table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+    #admin-data th, #admin-data td { padding: 8px 4px; border-bottom: 1px solid #eee; text-align: left; }
+    #admin-data th { background: #f4f4f4; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -48,7 +53,7 @@
         <button id="btn-out" class="btn-out" onclick="showLunchInput()">Clock Out</button>
 
         <div id="lunch-confirm-area" class="hidden">
-          <label style="display:block; margin-bottom: 8px; font-weight: bold; color:#b71c1c;">Minutes of Lunch/Break:</label>
+          <label for="lunchMinsInput" style="display:block; margin-bottom: 8px; font-weight: bold; color:#b71c1c;">Minutes of Lunch/Break:</label>
           <input type="number" id="lunchMinsInput" value="30" min="0" step="5">
           <button class="btn-out" style="width: 100%;" onclick="confirmClockOut()">Confirm & Clock Out</button>
           <button class="btn-history" style="width: 100%; margin-top: 8px; background: #999;" onclick="hideLunchInput()">Cancel</button>
@@ -60,6 +65,12 @@
         <button id="btn-admin" class="btn-admin hidden" onclick="showAdmin()">🔐 Admin Panel</button>
         <button class="btn-history" style="background:#666;" onclick="resetApp()">Logout</button>
       </div>
+    </div>
+
+    <div id="screen-admin" class="hidden">
+      <h3>Admin Logs (Last 7 Days)</h3>
+      <div id="admin-data">Loading activity...</div>
+      <button class="btn-history" style="width:100%; margin-top:20px; background:#607d8b" onclick="openScreen('main')">Back</button>
     </div>
 
     <div id="screen-stock" class="hidden">
@@ -89,19 +100,11 @@
       <textarea id="work" rows="5" placeholder="What did you work on today?"></textarea>
       <button class="btn-submit" onclick="submitReport()">Finish & Submit</button>
     </div>
-
-    <div id="screen-admin" class="hidden">
-      <h3>Admin Logs</h3>
-      <div id="admin-data" style="text-align:left; font-size:0.8em;"></div>
-      <button class="btn-history" style="width:100%; margin-top:20px; background:#607d8b" onclick="openScreen('main')">Back</button>
-    </div>
   </div>
 
   <script>
-    // --- 1. CONFIG ---
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzdBTATZW99S9eu_oZeaEM97Dx-jjVDIovpgQnHYAIRJRB8VtflpzvwJ4SaMOoaKMUQ4A/exec";
 
-    // --- 2. JSONP ENGINE ---
     function callGoogleJSONP(params, callbackFn) {
       const callbackName = 'cb_' + Math.round(100000 * Math.random());
       window[callbackName] = function(data) {
@@ -110,22 +113,15 @@
         if (s) s.parentNode.removeChild(s);
         callbackFn(data);
       };
-
       let fullUrl = SCRIPT_URL + (SCRIPT_URL.includes('?') ? '&' : '?') + "callback=" + callbackName;
-      for (let key in params) {
-        fullUrl += "&" + key + "=" + encodeURIComponent(params[key]);
-      }
-
+      for (let key in params) { fullUrl += "&" + key + "=" + encodeURIComponent(params[key]); }
       const script = document.createElement('script');
       script.id = callbackName;
       script.src = fullUrl;
-      script.onerror = function() {
-        document.getElementById('status-text').innerText = "Connection Error";
-      };
+      script.onerror = function() { document.getElementById('status-text').innerText = "Connection Error"; };
       document.body.appendChild(script);
     }
 
-    // --- 3. UI UTILITIES ---
     function showToast(msg) {
       const toast = document.getElementById('toast');
       document.getElementById('toast-msg').innerText = msg;
@@ -143,10 +139,6 @@
 
     function resetApp() {
       document.getElementById('pin').value = "";
-      document.getElementById('work').value = "";
-      document.getElementById('stockItem').value = "";
-      document.getElementById('machine').value = "";
-      document.getElementById('issue').value = "";
       document.getElementById('status-text').innerText = "Enter PIN to Login";
       document.getElementById('msg-text').innerHTML = "";
       document.getElementById('action-grid').classList.add('hidden');
@@ -155,92 +147,60 @@
       openScreen('main');
     }
 
-    // --- 4. ACTION FUNCTIONS ---
     function checkStatus() {
       const pin = document.getElementById('pin').value;
       if (pin.length < 4) return showToast("Enter 4-digit PIN");
       document.getElementById('status-text').innerText = "Verifying...";
-      
       callGoogleJSONP({ action: "getWeeklyHistory", pin: pin }, function(res) {
-        if (!res || res.error) { 
-            document.getElementById('status-text').innerText = res.error || "Invalid PIN"; 
-            return; 
-        }
+        if (!res || res.error) { document.getElementById('status-text').innerText = res.error || "Invalid PIN"; return; }
         document.getElementById('status-text').innerHTML = "<b>" + res.name + "</b>: " + res.currentStatus;
         document.getElementById('msg-text').innerHTML = res.pay;
         document.getElementById('history-data').innerHTML = res.history;
         document.getElementById('action-grid').classList.remove('hidden');
         document.getElementById('btn-check').classList.add('hidden');
-        
         if (res.isAdmin) document.getElementById('btn-admin').classList.remove('hidden');
-        
         document.getElementById('btn-in').classList.toggle('hidden', res.currentStatus !== "Clocked Out");
         document.getElementById('btn-out').classList.toggle('hidden', res.currentStatus === "Clocked Out");
-      });
-    }
-
-    function showLunchInput() { 
-      document.getElementById('btn-out').classList.add('hidden'); 
-      document.getElementById('lunch-confirm-area').classList.remove('hidden'); 
-    }
-    
-    function hideLunchInput() { 
-      document.getElementById('btn-out').classList.remove('hidden'); 
-      document.getElementById('lunch-confirm-area').classList.add('hidden'); 
-    }
-
-    function confirmClockOut() {
-      const mins = document.getElementById('lunchMinsInput').value;
-      runClock('clock-out', mins);
-      hideLunchInput();
-    }
-
-    function runClock(type, lunch) {
-      const pin = document.getElementById('pin').value;
-      document.getElementById('status-text').innerText = "Syncing...";
-
-      callGoogleJSONP({ action: "handleClockAction", pin: pin, type: type, lunchMinutes: lunch||0 }, function(res) {
-        if (res.showReport) {
-          document.getElementById('summary-val').innerText = res.summary;
-          openScreen('report');
-        } else {
-          showToast("Status Updated!");
-          checkStatus();
-        }
-      });
-    }
-
-    function submitStock() {
-      const p = document.getElementById('pin').value, i = document.getElementById('stockItem').value;
-      if (!i) return showToast("Enter an item");
-      callGoogleJSONP({ action: "sendLowStockAlert", pin: p, item: i }, function() {
-        showToast("Stock Alert Sent!");
-        openScreen('main');
-      });
-    }
-
-    function submitMaint() {
-      const p = document.getElementById('pin').value, m = document.getElementById('machine').value, i = document.getElementById('issue').value;
-      if (!m || !i) return showToast("Enter details");
-      callGoogleJSONP({ action: "sendEquipmentIssue", pin: p, machine: m, issue: i }, function() {
-        showToast("Maintenance Report Sent!");
-        openScreen('main');
-      });
-    }
-
-    function submitReport() {
-      const p = document.getElementById('pin').value, w = document.getElementById('work').value;
-      callGoogleJSONP({ action: "submitShiftReport", pin: p, work: w }, function() {
-        showToast("Summary Submitted!");
-        setTimeout(resetApp, 1500);
       });
     }
 
     function showAdmin() {
       const pin = document.getElementById('pin').value;
       openScreen('admin');
+      document.getElementById('admin-data').innerHTML = "Loading...";
       callGoogleJSONP({ action: "getAdminLogs", pin: pin }, function(h) {
         document.getElementById('admin-data').innerHTML = h;
+      });
+    }
+
+    function showLunchInput() { document.getElementById('btn-out').classList.add('hidden'); document.getElementById('lunch-confirm-area').classList.remove('hidden'); }
+    function hideLunchInput() { document.getElementById('btn-out').classList.remove('hidden'); document.getElementById('lunch-confirm-area').classList.add('hidden'); }
+    function confirmClockOut() { runClock('clock-out', document.getElementById('lunchMinsInput').value); hideLunchInput(); }
+
+    function runClock(type, lunch) {
+      const pin = document.getElementById('pin').value;
+      document.getElementById('status-text').innerText = "Syncing...";
+      callGoogleJSONP({ action: "handleClockAction", pin: pin, type: type, lunchMinutes: lunch||0 }, function(res) {
+        if (res.showReport) { document.getElementById('summary-val').innerText = res.summary; openScreen('report'); }
+        else { showToast("Status Updated!"); checkStatus(); }
+      });
+    }
+
+    function submitStock() {
+      callGoogleJSONP({ action: "sendLowStockAlert", pin: document.getElementById('pin').value, item: document.getElementById('stockItem').value }, function() {
+        showToast("Stock Alert Sent!"); openScreen('main');
+      });
+    }
+
+    function submitMaint() {
+      callGoogleJSONP({ action: "sendEquipmentIssue", pin: document.getElementById('pin').value, machine: document.getElementById('machine').value, issue: document.getElementById('issue').value }, function() {
+        showToast("Maintenance Report Sent!"); openScreen('main');
+      });
+    }
+
+    function submitReport() {
+      callGoogleJSONP({ action: "submitShiftReport", pin: document.getElementById('pin').value, work: document.getElementById('work').value }, function() {
+        showToast("Summary Submitted!"); setTimeout(resetApp, 1500);
       });
     }
 
