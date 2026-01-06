@@ -54,7 +54,7 @@
 
         <div id="lunch-confirm-area" class="hidden">
           <label for="lunchMinsInput" style="display:block; margin-bottom: 8px; font-weight: bold; color:#b71c1c;">Minutes of Lunch/Break:</label>
-          <input type="number" id="lunchMinsInput" value="30" min="0" step="5">
+          <input type="number" id="lunchMinsInput" value="" min="0" step="5">
           <button class="btn-out" style="width: 100%;" onclick="confirmClockOut()">Confirm & Clock Out</button>
           <button class="btn-history" style="width: 100%; margin-top: 8px; background: #999;" onclick="hideLunchInput()">Cancel</button>
         </div>
@@ -62,7 +62,7 @@
         <button class="btn-history" onclick="openScreen('history')">📅 My History</button>
         <button class="btn-alert" onclick="openScreen('stock')">⚠️ Low Stock</button>
         <button class="btn-maint" onclick="openScreen('issue')">🛠️ Maintenance</button>
-        <button id="btn-admin" class="btn-admin hidden" onclick="showAdmin()">🔐 Admin Panel</button>
+        <button id="btn-admin" class="btn-admin hidden" onclick="showAdmin()">🔐 Admin Quick View</button>
         <button class="btn-history" style="background:#666;" onclick="resetApp()">Logout</button>
       </div>
     </div>
@@ -81,7 +81,7 @@
 
     <div id="screen-issue" class="hidden">
       <h3>Equipment Issue</h3>
-      <input type="text" id="machine" placeholder="Machine Name">
+      <input type="text" id="machine" placeholder="Equipment Name">
       <textarea id="issue" rows="3" placeholder="Describe the problem..."></textarea>
       <button class="btn-submit" onclick="submitMaint()">Submit Issue</button>
       <button class="btn-history" style="width:100%; margin-top:10px; background:#607d8b" onclick="openScreen('main')">Cancel</button>
