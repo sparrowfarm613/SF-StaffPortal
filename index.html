@@ -3,6 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Sparrow Farms">
+  <meta name="theme-color" content="#2b3d2b">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="https://sparrowfarms.ca/cdn/shop/files/Transparent_-_Web_Sparrow_Farms_Logo_1500_x_1500_px.png?v=1737389483&width=180">
   <title>Sparrow Farms Portal</title>
   <style>
     body { font-family: sans-serif; text-align: center; padding: 20px; background-color: #f4f7f4; color: #2b3d2b; }
@@ -361,7 +367,16 @@
       });
     }
 
-    window.onload = function() { document.getElementById('pin').focus(); };
+    window.onload = function() { 
+      document.getElementById('pin').focus();
+      
+      // Register service worker for PWA functionality
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').catch(function(err) {
+          console.log('ServiceWorker registration failed: ', err);
+        });
+      }
+    };
     
     let currentTaskFilter = 'active';
     
