@@ -8,7 +8,7 @@
     body { font-family: sans-serif; text-align: center; padding: 20px; background-color: #f4f7f4; color: #2b3d2b; }
     .container { max-width: 450px; margin: auto; background: white; padding: 25px; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); border-top: 6px solid #2b3d2b; position: relative; }
     .logo { width: 140px; margin-bottom: 10px; }
-    input, textarea { font-size: 16px; width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #ddd; border-radius: 12px; box-sizing: border-box; }
+    input, textarea, select { font-size: 16px; width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #ddd; border-radius: 12px; box-sizing: border-box; }
     .pin-input { font-size: 32px; text-align: center; letter-spacing: 10px; }
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     button { padding: 18px; cursor: pointer; border: none; border-radius: 10px; color: white; font-weight: bold; text-transform: uppercase; transition: opacity 0.2s; }
@@ -20,13 +20,20 @@
     .btn-maint { background: #b71c1c; } 
     .btn-history { background: #455a64; grid-column: span 2; }
     .btn-admin { background: #212121; grid-column: span 2; }
+    .btn-tasks { background: #6a1b9a; grid-column: span 2; }
     .status-box { margin-bottom: 20px; padding: 15px; background: #f9fbf9; border-radius: 12px; border: 1px solid #e0e0e0; }
+    .tasks-box { margin-bottom: 20px; padding: 15px; background: #fff3e0; border-radius: 12px; border: 2px solid #ff9800; text-align: left; }
+    .tasks-box h4 { margin: 0 0 10px 0; color: #e65100; }
+    .tasks-box ul { margin: 0; padding-left: 20px; }
+    .tasks-box li { margin-bottom: 8px; color: #5d4037; }
     .hidden { display: none; }
     #toast { position: fixed; top: 10%; left: 50%; transform: translateX(-50%); background: #2b3d2b; color: white; padding: 20px 40px; border-radius: 15px; z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.4); border: 2px solid #ffffff; font-size: 20px; font-weight: bold; width: 80%; max-width: 350px; transition: opacity 0.3s; pointer-events: none; }
     #lunch-confirm-area { grid-column: span 2; background: #fffcf0; padding: 15px; border-radius: 12px; border: 2px dashed #f57c00; margin-top: 5px; }
     #admin-data table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
     #admin-data th, #admin-data td { padding: 8px 4px; border-bottom: 1px solid #eee; text-align: left; }
     #admin-data th { background: #f4f4f4; font-weight: bold; }
+    .task-confirm-box { background: #e8eaf6; padding: 15px; margin-bottom: 15px; border-radius: 12px; border: 2px solid #5c6bc0; }
+    .task-confirm-box h4 { margin: 0 0 10px 0; color: #283593; }
   </style>
 </head>
 <body>
@@ -42,6 +49,13 @@
         <div id="status-text">Enter PIN to Login</div>
         <div id="msg-text" style="font-size: 0.8em; color: #666; margin-top:10px;"></div>
       </div>
+      
+      <!-- Tasks display for employees -->
+      <div id="tasks-display" class="tasks-box hidden">
+        <h4>📋 Your Tasks Today:</h4>
+        <ul id="tasks-list"></ul>
+      </div>
+      
       <input type="password" id="pin" class="pin-input" placeholder="0000" inputmode="numeric" maxlength="4">
       <button id="btn-check" class="btn-submit" onclick="checkStatus()">Login / Check Status</button>
       <div id="action-grid" class="grid hidden">
@@ -57,6 +71,7 @@
         <button class="btn-alert" onclick="openScreen('stock')">⚠️ Low Stock</button>
         <button class="btn-maint" onclick="openScreen('issue')">🛠️ Maintenance</button>
         <button id="btn-admin" class="btn-admin hidden" onclick="showAdmin()">🔐 Admin Quick View</button>
+        <button id="btn-assign-tasks" class="btn-tasks hidden" onclick="openScreen('assign')">📋 Assign Tasks</button>
         <button class="btn-history" style="background:#666;" onclick="resetApp()">Logout</button>
       </div>
     </div>
@@ -65,7 +80,30 @@
       <h3>Admin Quick View</h3>
       <div id="admin-data">Loading activity...</div>
       <button class="btn-submit" style="background:#f57c00; margin-top:15px;" onclick="triggerRecalc()">🔄 Recalculate Payroll Data</button>
-      <button class="btn-history" style="width:100%; margin-top:20px; background:#607d8b" onclick="openScreen('main')">Back</button>
+      <button class="btn-submit" style="background:#6a1b9a; margin-top:10px; width:100%;" onclick="openScreen('manage-tasks')">📋 Manage All Tasks</button>
+      <button class="btn-history" style="width:100%; margin-top:10px; background:#607d8b" onclick="openScreen('main')">Back</button>
+    </div>
+
+    <div id="screen-assign" class="hidden">
+      <h3>Assign Tasks</h3>
+      <label for="staffSelect" style="display:block; text-align:left; margin-bottom:5px; font-weight:bold;">Select Staff Member:</label>
+      <select id="staffSelect"></select>
+      <label for="tasksInput" style="display:block; text-align:left; margin-bottom:5px; font-weight:bold;">Tasks (one per line):</label>
+      <textarea id="tasksInput" rows="6" placeholder="Feed chickens&#10;Water greenhouse plants&#10;Clean barn stalls"></textarea>
+      <button class="btn-submit" onclick="submitTasks()">Assign Tasks</button>
+      <button class="btn-history" style="width:100%; margin-top:10px; background:#607d8b" onclick="openScreen('main')">Cancel</button>
+    </div>
+
+    <div id="screen-manage-tasks" class="hidden">
+      <h3>Manage All Tasks</h3>
+      <div style="margin-bottom: 15px;">
+        <button class="btn-submit" style="width:48%; display:inline-block; background:#388e3c; padding:10px;" onclick="filterTasks('active')">Active</button>
+        <button class="btn-submit" style="width:48%; display:inline-block; background:#455a64; padding:10px; margin-left:4%;" onclick="filterTasks('completed')">Completed</button>
+      </div>
+      <div id="tasks-table-container" style="max-height: 400px; overflow-y: auto; text-align: left;">
+        <p style="text-align:center; color:#999;">Loading tasks...</p>
+      </div>
+      <button class="btn-history" style="width:100%; margin-top:15px; background:#607d8b" onclick="openScreen('admin')">Back</button>
     </div>
 
     <div id="screen-stock" class="hidden">
@@ -92,6 +130,14 @@
     <div id="screen-report" class="hidden">
       <h3>Shift Summary</h3>
       <div id="summary-val" style="margin-bottom:15px; color:green; font-weight:bold;"></div>
+      
+      <!-- Task completion confirmation -->
+      <div id="task-completion" class="task-confirm-box hidden">
+        <h4>Did you complete these tasks?</h4>
+        <div id="task-completion-list" style="font-size: 0.9em; margin-bottom: 10px;"></div>
+        <p style="font-size: 0.85em; color: #555; margin: 10px 0;">Update the status in parentheses below (e.g., "DONE", "PARTIAL", "NOT STARTED")</p>
+      </div>
+      
       <textarea id="work" rows="5" placeholder="What did you work on today?"></textarea>
       <button class="btn-submit" onclick="submitReport()">Finish & Submit</button>
     </div>
@@ -125,11 +171,21 @@
     }
 
     function openScreen(id) {
-      ['main', 'stock', 'issue', 'history', 'report', 'admin'].forEach(s => {
+      ['main', 'stock', 'issue', 'history', 'report', 'admin', 'assign', 'manage-tasks'].forEach(s => {
         const el = document.getElementById('screen-'+s);
         if(el) el.classList.add('hidden');
       });
       document.getElementById('screen-'+id).classList.remove('hidden');
+      
+      // Load staff list when opening assign screen
+      if (id === 'assign') {
+        loadStaffList();
+      }
+      
+      // Load all tasks when opening manage screen
+      if (id === 'manage-tasks') {
+        loadAllTasks('active');
+      }
     }
 
     function resetApp() {
@@ -139,6 +195,8 @@
       document.getElementById('action-grid').classList.add('hidden');
       document.getElementById('btn-check').classList.remove('hidden');
       document.getElementById('btn-admin').classList.add('hidden');
+      document.getElementById('btn-assign-tasks').classList.add('hidden');
+      document.getElementById('tasks-display').classList.add('hidden');
       openScreen('main');
     }
 
@@ -153,7 +211,27 @@
         document.getElementById('history-data').innerHTML = res.history;
         document.getElementById('action-grid').classList.remove('hidden');
         document.getElementById('btn-check').classList.add('hidden');
-        if (res.isAdmin) document.getElementById('btn-admin').classList.remove('hidden');
+        
+        // Show admin buttons if admin
+        if (res.isAdmin) {
+          document.getElementById('btn-admin').classList.remove('hidden');
+          document.getElementById('btn-assign-tasks').classList.remove('hidden');
+        }
+        
+        // Show tasks if any exist
+        if (res.tasks && res.tasks.length > 0) {
+          const tasksList = document.getElementById('tasks-list');
+          tasksList.innerHTML = '';
+          res.tasks.forEach(task => {
+            const li = document.createElement('li');
+            li.textContent = task;
+            tasksList.appendChild(li);
+          });
+          document.getElementById('tasks-display').classList.remove('hidden');
+        } else {
+          document.getElementById('tasks-display').classList.add('hidden');
+        }
+        
         document.getElementById('btn-in').classList.toggle('hidden', res.currentStatus !== "Clocked Out");
         document.getElementById('btn-out').classList.toggle('hidden', res.currentStatus === "Clocked Out");
       });
@@ -178,38 +256,237 @@
       });
     }
 
-    function showLunchInput() { document.getElementById('btn-out').classList.add('hidden'); document.getElementById('lunch-confirm-area').classList.remove('hidden'); }
-    function hideLunchInput() { document.getElementById('btn-out').classList.remove('hidden'); document.getElementById('lunch-confirm-area').classList.add('hidden'); }
-    function confirmClockOut() { runClock('clock-out', document.getElementById('lunchMinsInput').value); hideLunchInput(); }
+    function loadStaffList() {
+      const pin = document.getElementById('pin').value;
+      const select = document.getElementById('staffSelect');
+      select.innerHTML = '<option value="">Loading...</option>';
+      
+      callGoogleJSONP({ action: "getStaffList", pin: pin }, function(res) {
+        if (res.staff) {
+          select.innerHTML = '<option value="">-- Select Staff --</option>';
+          res.staff.forEach(s => {
+            const option = document.createElement('option');
+            option.value = s.pin;
+            option.textContent = s.name;
+            select.appendChild(option);
+          });
+        }
+      });
+    }
+
+    function submitTasks() {
+      const pin = document.getElementById('pin').value;
+      const targetPin = document.getElementById('staffSelect').value;
+      const tasks = document.getElementById('tasksInput').value;
+      
+      if (!targetPin) { showToast("Please select a staff member"); return; }
+      if (!tasks.trim()) { showToast("Please enter at least one task"); return; }
+      
+      callGoogleJSONP({ 
+        action: "assignTasks", 
+        pin: pin, 
+        targetPin: targetPin, 
+        tasks: tasks 
+      }, function(res) {
+        if (res.success) {
+          showToast(res.msg);
+          document.getElementById('tasksInput').value = '';
+          document.getElementById('staffSelect').value = '';
+          openScreen('main');
+        } else {
+          showToast("Error: " + (res.error || "Unknown error"));
+        }
+      });
+    }
+
+    function showLunchInput() { 
+      document.getElementById('btn-out').classList.add('hidden'); 
+      document.getElementById('lunch-confirm-area').classList.remove('hidden'); 
+    }
+    
+    function hideLunchInput() { 
+      document.getElementById('btn-out').classList.remove('hidden'); 
+      document.getElementById('lunch-confirm-area').classList.add('hidden'); 
+    }
+    
+    function confirmClockOut() { 
+      runClock('clock-out', document.getElementById('lunchMinsInput').value); 
+      hideLunchInput(); 
+    }
 
     function runClock(type, lunch) {
       const pin = document.getElementById('pin').value;
       document.getElementById('status-text').innerText = "Syncing...";
       callGoogleJSONP({ action: "handleClockAction", pin: pin, type: type, lunchMinutes: lunch||0 }, function(res) {
-        if (res.showReport) { document.getElementById('summary-val').innerText = res.summary; openScreen('report'); }
+        if (res.showReport) { 
+          document.getElementById('summary-val').innerText = res.summary;
+          
+          // Show task completion if there are tasks
+          if (res.hasTasks && res.tasksPrefill) {
+            document.getElementById('task-completion').classList.remove('hidden');
+            document.getElementById('task-completion-list').innerHTML = res.tasksPrefill.replace(/\n/g, '<br>');
+            document.getElementById('work').value = res.tasksPrefill;
+          } else {
+            document.getElementById('task-completion').classList.add('hidden');
+            document.getElementById('work').value = '';
+          }
+          
+          openScreen('report'); 
+        }
         else { showToast("Status Updated!"); checkStatus(); }
       });
     }
 
     function submitStock() {
       callGoogleJSONP({ action: "sendLowStockAlert", pin: document.getElementById('pin').value, item: document.getElementById('stockItem').value }, function() {
-        showToast("Stock Alert Sent!"); openScreen('main');
+        showToast("Stock Alert Sent!"); 
+        document.getElementById('stockItem').value = '';
+        openScreen('main');
       });
     }
 
     function submitMaint() {
       callGoogleJSONP({ action: "sendEquipmentIssue", pin: document.getElementById('pin').value, machine: document.getElementById('machine').value, issue: document.getElementById('issue').value }, function() {
-        showToast("Maintenance Report Sent!"); openScreen('main');
+        showToast("Maintenance Report Sent!"); 
+        document.getElementById('machine').value = '';
+        document.getElementById('issue').value = '';
+        openScreen('main');
       });
     }
 
     function submitReport() {
       callGoogleJSONP({ action: "submitShiftReport", pin: document.getElementById('pin').value, work: document.getElementById('work').value }, function() {
-        showToast("Summary Submitted!"); setTimeout(resetApp, 1500);
+        showToast("Summary Submitted!"); 
+        setTimeout(resetApp, 1500);
       });
     }
 
     window.onload = function() { document.getElementById('pin').focus(); };
+    
+    let currentTaskFilter = 'active';
+    
+    function filterTasks(filter) {
+      currentTaskFilter = filter;
+      loadAllTasks(filter);
+    }
+    
+    function loadAllTasks(filter) {
+      const pin = document.getElementById('pin').value;
+      const container = document.getElementById('tasks-table-container');
+      container.innerHTML = '<p style="text-align:center; color:#999;">Loading tasks...</p>';
+      
+      callGoogleJSONP({ action: "getAllTasks", pin: pin }, function(res) {
+        if (!res.tasks || res.tasks.length === 0) {
+          container.innerHTML = '<p style="text-align:center; color:#999;">No tasks found.</p>';
+          return;
+        }
+        
+        // Filter tasks
+        const filteredTasks = res.tasks.filter(t => {
+          if (filter === 'active') return t.status === 'Active';
+          if (filter === 'completed') return t.status === 'Completed';
+          return true;
+        });
+        
+        if (filteredTasks.length === 0) {
+          container.innerHTML = '<p style="text-align:center; color:#999;">No ' + filter + ' tasks.</p>';
+          return;
+        }
+        
+        let html = '<div style="font-size: 13px;">';
+        
+        filteredTasks.forEach(task => {
+          const statusColor = task.status === 'Active' ? '#388e3c' : '#757575';
+          const statusBg = task.status === 'Active' ? '#e8f5e9' : '#f5f5f5';
+          
+          html += '<div style="background:' + statusBg + '; padding:12px; margin-bottom:10px; border-radius:8px; border-left:4px solid ' + statusColor + ';">';
+          html += '<div style="margin-bottom:8px;"><strong style="color:#2b3d2b;">' + task.name + '</strong> ';
+          html += '<span style="background:' + statusColor + '; color:white; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:bold;">' + task.status + '</span></div>';
+          
+          html += '<div id="task-text-' + task.rowIndex + '" style="color:#424242; margin-bottom:8px;">' + task.task + '</div>';
+          html += '<div id="task-edit-' + task.rowIndex + '" style="display:none; margin-bottom:8px;">';
+          html += '<input type="text" id="task-input-' + task.rowIndex + '" value="' + task.task.replace(/"/g, '&quot;') + '" style="width:100%; padding:8px; border:2px solid #2b3d2b; border-radius:6px; font-size:14px;">';
+          html += '</div>';
+          
+          html += '<div style="font-size:11px; color:#757575; margin-bottom:8px;">Assigned: ' + task.dateAssigned;
+          if (task.dateCompleted) html += ' | Completed: ' + task.dateCompleted;
+          html += '</div>';
+          
+          if (task.status === 'Active') {
+            html += '<button onclick="toggleEditTask(' + task.rowIndex + ')" id="edit-btn-' + task.rowIndex + '" style="background:#1976d2; color:white; border:none; padding:6px 12px; border-radius:6px; margin-right:5px; cursor:pointer; font-size:12px;">✏️ Edit</button>';
+            html += '<button onclick="saveTaskEdit(' + task.rowIndex + ')" id="save-btn-' + task.rowIndex + '" style="display:none; background:#388e3c; color:white; border:none; padding:6px 12px; border-radius:6px; margin-right:5px; cursor:pointer; font-size:12px;">💾 Save</button>';
+            html += '<button onclick="cancelTaskEdit(' + task.rowIndex + ')" id="cancel-btn-' + task.rowIndex + '" style="display:none; background:#757575; color:white; border:none; padding:6px 12px; border-radius:6px; margin-right:5px; cursor:pointer; font-size:12px;">✖️ Cancel</button>';
+          }
+          html += '<button onclick="confirmDeleteTask(' + task.rowIndex + ', \'' + task.name.replace(/'/g, "\\'") + '\', \'' + task.task.replace(/'/g, "\\'") + '\')" style="background:#d32f2f; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px;">🗑️ Delete</button>';
+          
+          html += '</div>';
+        });
+        
+        html += '</div>';
+        container.innerHTML = html;
+      });
+    }
+    
+    function toggleEditTask(rowIndex) {
+      document.getElementById('task-text-' + rowIndex).style.display = 'none';
+      document.getElementById('task-edit-' + rowIndex).style.display = 'block';
+      document.getElementById('edit-btn-' + rowIndex).style.display = 'none';
+      document.getElementById('save-btn-' + rowIndex).style.display = 'inline-block';
+      document.getElementById('cancel-btn-' + rowIndex).style.display = 'inline-block';
+    }
+    
+    function cancelTaskEdit(rowIndex) {
+      document.getElementById('task-text-' + rowIndex).style.display = 'block';
+      document.getElementById('task-edit-' + rowIndex).style.display = 'none';
+      document.getElementById('edit-btn-' + rowIndex).style.display = 'inline-block';
+      document.getElementById('save-btn-' + rowIndex).style.display = 'none';
+      document.getElementById('cancel-btn-' + rowIndex).style.display = 'none';
+    }
+    
+    function saveTaskEdit(rowIndex) {
+      const pin = document.getElementById('pin').value;
+      const newTask = document.getElementById('task-input-' + rowIndex).value.trim();
+      
+      if (!newTask) {
+        showToast("Task cannot be empty");
+        return;
+      }
+      
+      showToast("Saving...");
+      callGoogleJSONP({ 
+        action: "editTask", 
+        pin: pin, 
+        rowIndex: rowIndex, 
+        newTask: newTask 
+      }, function(res) {
+        if (res.success) {
+          showToast("Task updated!");
+          loadAllTasks(currentTaskFilter);
+        } else {
+          showToast("Error: " + (res.error || "Unknown error"));
+        }
+      });
+    }
+    
+    function confirmDeleteTask(rowIndex, staffName, taskText) {
+      if (!confirm('Delete this task?\n\nStaff: ' + staffName + '\nTask: ' + taskText)) return;
+      
+      const pin = document.getElementById('pin').value;
+      showToast("Deleting...");
+      
+      callGoogleJSONP({ 
+        action: "deleteTask", 
+        pin: pin, 
+        rowIndex: rowIndex 
+      }, function(res) {
+        if (res.success) {
+          showToast("Task deleted!");
+          loadAllTasks(currentTaskFilter);
+        } else {
+          showToast("Error: " + (res.error || "Unknown error"));
+        }
+      });
+    }
   </script>
 </body>
 </html>
