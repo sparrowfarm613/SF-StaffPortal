@@ -1,0 +1,22 @@
+{
+  "name": "Sparrow Farms Staff Portal",
+  "short_name": "Sparrow Farms",
+  "description": "Time tracking and task management for Sparrow Farms staff",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4f7f4",
+  "theme_color": "#2b3d2b",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://sparrowfarms.ca/cdn/shop/files/Transparent_-_Web_Sparrow_Farms_Logo_1500_x_1500_px.png?v=1737389483&width=192",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://sparrowfarms.ca/cdn/shop/files/Transparent_-_Web_Sparrow_Farms_Logo_1500_x_1500_px.png?v=1737389483&width=512",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
