@@ -108,9 +108,9 @@
 
     <div id="screen-manage-tasks" class="hidden">
       <h3>Manage All Tasks</h3>
-      <div style="margin-bottom: 15px;">
-        <button class="btn-submit" style="width:48%; display:inline-block; background:#388e3c; padding:10px;" onclick="filterTasks('active')">Active</button>
-        <button class="btn-submit" style="width:48%; display:inline-block; background:#455a64; padding:10px; margin-left:4%;" onclick="filterTasks('completed')">Completed</button>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+        <button class="btn-submit" style="background:#388e3c; padding:12px;" onclick="filterTasks('active')">Active</button>
+        <button class="btn-submit" style="background:#455a64; padding:12px;" onclick="filterTasks('completed')">Completed</button>
       </div>
       <div id="tasks-table-container" style="max-height: 400px; overflow-y: auto; text-align: left;">
         <p style="text-align:center; color:#999;">Loading tasks...</p>
