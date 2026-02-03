@@ -77,7 +77,6 @@
         <button class="btn-alert" onclick="openScreen('stock')">⚠️ Low Stock</button>
         <button class="btn-maint" onclick="openScreen('issue')">🛠️ Maintenance</button>
         <button id="btn-admin" class="btn-admin hidden" onclick="showAdmin()">🔐 Admin Quick View</button>
-        <button id="btn-assign-tasks" class="btn-tasks hidden" onclick="openScreen('assign')">📋 Assign Tasks</button>
         <button class="btn-history" style="background:#666;" onclick="resetApp()">Logout</button>
       </div>
     </div>
@@ -85,10 +84,16 @@
     <div id="screen-admin" class="hidden">
       <h3>Admin Quick View</h3>
       <div id="admin-data">Loading activity...</div>
-      <button class="btn-submit" style="background:#f57c00; margin-top:15px;" onclick="triggerRecalc()">🔄 Recalculate Payroll Data</button>
-      <button class="btn-submit" style="background:#6a1b9a; margin-top:10px; width:100%;" onclick="openScreen('manage-tasks')">📋 Manage All Tasks</button>
+      
+      <h4 style="margin-top: 20px; margin-bottom: 10px; color: #6a1b9a; border-bottom: 2px solid #6a1b9a; padding-bottom: 5px;">📋 Task Management</h4>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+        <button class="btn-submit" style="background:#7b1fa2; padding:12px; font-size:14px;" onclick="openScreen('assign')">Assign New</button>
+        <button class="btn-submit" style="background:#6a1b9a; padding:12px; font-size:14px;" onclick="openScreen('manage-tasks')">Manage Existing</button>
+      </div>
+      
       <button class="btn-submit" style="background:#388e3c; margin-top:10px; width:100%;" onclick="openScreen('add-staff')">➕ Add New Staff Member</button>
-      <button class="btn-history" style="width:100%; margin-top:10px; background:#607d8b" onclick="openScreen('main')">Back</button>
+      <button class="btn-submit" style="background:#f57c00; margin-top:10px; width:100%;" onclick="triggerRecalc()">🔄 Recalculate Payroll Data</button>
+      <button class="btn-history" style="width:100%; margin-top:15px; background:#607d8b" onclick="openScreen('main')">Back</button>
     </div>
 
     <div id="screen-assign" class="hidden">
@@ -175,6 +180,8 @@
 
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzdBTATZW99S9eu_oZeaEM97Dx-jjVDIovpgQnHYAIRJRB8VtflpzvwJ4SaMOoaKMUQ4A/exec";
+    
+    let cachedStaffList = null;
 
     function callGoogleJSONP(params, callbackFn) {
       const callbackName = 'cb_' + Math.round(100000 * Math.random());
@@ -209,7 +216,7 @@
       
       // Load staff list when opening assign screen
       if (id === 'assign') {
-        loadStaffList();
+        loadStaffList(); // Will use cache if available
       }
       
       // Load all tasks when opening manage screen
@@ -230,8 +237,8 @@
       document.getElementById('action-grid').classList.add('hidden');
       document.getElementById('btn-check').classList.remove('hidden');
       document.getElementById('btn-admin').classList.add('hidden');
-      document.getElementById('btn-assign-tasks').classList.add('hidden');
       document.getElementById('tasks-display').classList.add('hidden');
+      cachedStaffList = null; // Clear cache on logout
       openScreen('main');
     }
 
@@ -250,7 +257,9 @@
         // Show admin buttons if admin
         if (res.isAdmin) {
           document.getElementById('btn-admin').classList.remove('hidden');
-          document.getElementById('btn-assign-tasks').classList.remove('hidden');
+          
+          // Pre-load staff list in background for faster access later
+          loadStaffList();
         }
         
         // Show tasks if any exist
@@ -292,20 +301,32 @@
     }
 
     function loadStaffList() {
+      // Use cached list if available
+      if (cachedStaffList) {
+        populateStaffSelect(cachedStaffList);
+        return;
+      }
+      
       const pin = document.getElementById('pin').value;
       const select = document.getElementById('staffSelect');
       select.innerHTML = '<option value="">Loading...</option>';
       
       callGoogleJSONP({ action: "getStaffList", pin: pin }, function(res) {
         if (res.staff) {
-          select.innerHTML = '<option value="">-- Select Staff --</option>';
-          res.staff.forEach(s => {
-            const option = document.createElement('option');
-            option.value = s.pin;
-            option.textContent = s.name;
-            select.appendChild(option);
-          });
+          cachedStaffList = res.staff; // Cache it
+          populateStaffSelect(res.staff);
         }
+      });
+    }
+    
+    function populateStaffSelect(staff) {
+      const select = document.getElementById('staffSelect');
+      select.innerHTML = '<option value="">-- Select Staff --</option>';
+      staff.forEach(s => {
+        const option = document.createElement('option');
+        option.value = s.pin;
+        option.textContent = s.name;
+        select.appendChild(option);
       });
     }
 
@@ -566,6 +587,7 @@
         if (res.success) {
           showToast(res.msg);
           document.getElementById('add-staff-form').reset();
+          cachedStaffList = null; // Clear cache so it refreshes next time
           setTimeout(function() {
             openScreen('admin');
           }, 2000);
