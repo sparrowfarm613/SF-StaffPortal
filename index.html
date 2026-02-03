@@ -87,6 +87,7 @@
       <div id="admin-data">Loading activity...</div>
       <button class="btn-submit" style="background:#f57c00; margin-top:15px;" onclick="triggerRecalc()">🔄 Recalculate Payroll Data</button>
       <button class="btn-submit" style="background:#6a1b9a; margin-top:10px; width:100%;" onclick="openScreen('manage-tasks')">📋 Manage All Tasks</button>
+      <button class="btn-submit" style="background:#388e3c; margin-top:10px; width:100%;" onclick="openScreen('add-staff')">➕ Add New Staff Member</button>
       <button class="btn-history" style="width:100%; margin-top:10px; background:#607d8b" onclick="openScreen('main')">Back</button>
     </div>
 
@@ -110,6 +111,29 @@
         <p style="text-align:center; color:#999;">Loading tasks...</p>
       </div>
       <button class="btn-history" style="width:100%; margin-top:15px; background:#607d8b" onclick="openScreen('admin')">Back</button>
+    </div>
+
+    <div id="screen-add-staff" class="hidden">
+      <h3>Add New Staff Member</h3>
+      <form id="add-staff-form" onsubmit="submitNewStaff(event)">
+        <label for="staffName" style="display:block; text-align:left; margin-bottom:5px; font-weight:bold;">Employee Name *</label>
+        <input type="text" id="staffName" required placeholder="Jane Doe">
+        
+        <label for="staffPhone" style="display:block; text-align:left; margin-bottom:5px; font-weight:bold;">Phone Number</label>
+        <input type="tel" id="staffPhone" placeholder="613-258-1299">
+        
+        <label for="staffEmail" style="display:block; text-align:left; margin-bottom:5px; font-weight:bold;">Email Address</label>
+        <input type="email" id="staffEmail" placeholder="example@email.com">
+        
+        <label for="staffPin" style="display:block; text-align:left; margin-bottom:5px; font-weight:bold;">4-Digit PIN *</label>
+        <input type="password" id="staffPin" required inputmode="numeric" maxlength="4" minlength="4" placeholder="0000">
+        
+        <label for="staffRate" style="display:block; text-align:left; margin-bottom:5px; font-weight:bold;">Hourly Rate ($) *</label>
+        <input type="number" id="staffRate" required step="0.01" min="0" placeholder="18.00">
+        
+        <button type="submit" class="btn-submit" style="margin-top:10px;">Add Staff Member</button>
+      </form>
+      <button class="btn-history" style="width:100%; margin-top:10px; background:#607d8b" onclick="openScreen('admin')">Cancel</button>
     </div>
 
     <div id="screen-stock" class="hidden">
@@ -177,7 +201,7 @@
     }
 
     function openScreen(id) {
-      ['main', 'stock', 'issue', 'history', 'report', 'admin', 'assign', 'manage-tasks'].forEach(s => {
+      ['main', 'stock', 'issue', 'history', 'report', 'admin', 'assign', 'manage-tasks', 'add-staff'].forEach(s => {
         const el = document.getElementById('screen-'+s);
         if(el) el.classList.add('hidden');
       });
@@ -191,6 +215,11 @@
       // Load all tasks when opening manage screen
       if (id === 'manage-tasks') {
         loadAllTasks('active');
+      }
+      
+      // Clear form when opening add staff screen
+      if (id === 'add-staff') {
+        document.getElementById('add-staff-form').reset();
       }
     }
 
@@ -497,6 +526,49 @@
         if (res.success) {
           showToast("Task deleted!");
           loadAllTasks(currentTaskFilter);
+        } else {
+          showToast("Error: " + (res.error || "Unknown error"));
+        }
+      });
+    }
+    
+    function submitNewStaff(event) {
+      event.preventDefault();
+      
+      const pin = document.getElementById('pin').value;
+      const name = document.getElementById('staffName').value.trim();
+      const phone = document.getElementById('staffPhone').value.trim();
+      const email = document.getElementById('staffEmail').value.trim();
+      const newPin = document.getElementById('staffPin').value.trim();
+      const rate = document.getElementById('staffRate').value.trim();
+      
+      if (!name || !newPin || !rate) {
+        showToast("Please fill in all required fields");
+        return;
+      }
+      
+      if (newPin.length !== 4 || isNaN(newPin)) {
+        showToast("PIN must be exactly 4 digits");
+        return;
+      }
+      
+      showToast("Adding staff member...");
+      
+      callGoogleJSONP({ 
+        action: "addStaffMember", 
+        pin: pin,
+        name: name,
+        phone: phone,
+        email: email,
+        pin: newPin,
+        rate: rate
+      }, function(res) {
+        if (res.success) {
+          showToast(res.msg);
+          document.getElementById('add-staff-form').reset();
+          setTimeout(function() {
+            openScreen('admin');
+          }, 2000);
         } else {
           showToast("Error: " + (res.error || "Unknown error"));
         }
