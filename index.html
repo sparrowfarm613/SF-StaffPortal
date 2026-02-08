@@ -610,6 +610,93 @@
         }
       });
     }
+    function showReassignDropdown(rowIndex) {
+      console.log("showReassignDropdown called for row:", rowIndex);
+      console.log("cachedStaffList:", cachedStaffList);
+      
+      const reassignBtn = document.getElementById('reassign-btn-' + rowIndex);
+      const reassignArea = document.getElementById('reassign-area-' + rowIndex);
+      
+      if (!reassignBtn || !reassignArea) {
+        console.error("Could not find reassign elements for row", rowIndex);
+        return;
+      }
+      
+      reassignBtn.style.display = 'none';
+      reassignArea.style.display = 'block';
+      
+      // Populate the dropdown with cached staff list
+      const select = document.getElementById('reassign-select-' + rowIndex);
+      if (!select) {
+        console.error("Could not find select element for row", rowIndex);
+        return;
+      }
+      
+      if (cachedStaffList && cachedStaffList.length > 0) {
+        select.innerHTML = '<option value="">-- Select New Staff Member --</option>';
+        cachedStaffList.forEach(s => {
+          const option = document.createElement('option');
+          option.value = s.pin;
+          option.textContent = s.name;
+          select.appendChild(option);
+        });
+      } else {
+        // Staff list not cached, load it now
+        select.innerHTML = '<option value="">Loading staff...</option>';
+        loadStaffListForReassign(rowIndex);
+      }
+    }
+    
+    function loadStaffListForReassign(rowIndex) {
+      const pin = document.getElementById('pin').value;
+      
+      callGoogleJSONP({ action: "getStaffList", pin: pin }, function(res) {
+        if (res.staff) {
+          cachedStaffList = res.staff;
+          const select = document.getElementById('reassign-select-' + rowIndex);
+          if (select) {
+            select.innerHTML = '<option value="">-- Select New Staff Member --</option>';
+            res.staff.forEach(s => {
+              const option = document.createElement('option');
+              option.value = s.pin;
+              option.textContent = s.name;
+              select.appendChild(option);
+            });
+          }
+        }
+      });
+    }
+    
+    function cancelReassign(rowIndex) {
+      document.getElementById('reassign-btn-' + rowIndex).style.display = 'inline-block';
+      document.getElementById('reassign-area-' + rowIndex).style.display = 'none';
+    }
+    
+    function confirmReassign(rowIndex) {
+      const pin = document.getElementById('pin').value;
+      const newPin = document.getElementById('reassign-select-' + rowIndex).value;
+      
+      if (!newPin) {
+        showToast("Please select a staff member");
+        return;
+      }
+      
+      showToast("Reassigning task...");
+      
+      callGoogleJSONP({ 
+        action: "reassignTask", 
+        pin: pin, 
+        rowIndex: rowIndex,
+        newPin: newPin
+      }, function(res) {
+        if (res.success) {
+          showToast(res.msg);
+          loadAllTasks(currentTaskFilter);
+        } else {
+          showToast("Error: " + (res.error || "Unknown error"));
+        }
+      });
+    }
   </script>
 </body>
 </html>
