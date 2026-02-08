@@ -14,12 +14,16 @@ self.addEventListener('install', function(event) {
   );
 });
 
-// Serve cached content when offline
+// Serve cached content when offline - but NEVER cache API calls
 self.addEventListener('fetch', function(event) {
+  // Don't cache Google Apps Script API calls
+  if (event.request.url.includes('script.google.com')) {
+    return; // Let it fetch normally, don't cache
+  }
+  
   event.respondWith(
     caches.match(event.request)
       .then(function(response) {
-        // Return cached version or fetch from network
         return response || fetch(event.request);
       }
     )
