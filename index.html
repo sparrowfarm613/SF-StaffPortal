@@ -514,6 +514,12 @@
       document.getElementById('edit-btn-' + rowIndex).style.display = 'inline-block';
       document.getElementById('save-btn-' + rowIndex).style.display = 'none';
       document.getElementById('cancel-btn-' + rowIndex).style.display = 'none';
+      
+      // Also hide reassign area if it was open
+      const reassignArea = document.getElementById('reassign-area-' + rowIndex);
+      const reassignBtn = document.getElementById('reassign-btn-' + rowIndex);
+      if (reassignArea) reassignArea.style.display = 'none';
+      if (reassignBtn) reassignBtn.style.display = 'inline-block';
     }
     
     function saveTaskEdit(rowIndex) {
