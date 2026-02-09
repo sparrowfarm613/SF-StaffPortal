@@ -410,8 +410,6 @@
       });
     }
 
-    let isSubmittingReport = false;
-
     function submitReport() {
       if (isSubmittingReport) {
         return; // Prevent duplicate submissions
@@ -438,6 +436,7 @@
     };
     
     let currentTaskFilter = 'active';
+    let isSubmittingReport = false;
     
     function filterTasks(filter) {
       currentTaskFilter = filter;
