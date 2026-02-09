@@ -1,7 +1,7 @@
 /** * SPARROW FARMS - SECURE BACKEND WITH TASK MANAGEMENT */
 
 const SECRETS = {
-  NOTIFY_EMAILS: "sparrowfarms@gmail.com,tina@sparrowfarms.ca, dave@sparrowfarms.ca" 
+  NOTIFY_EMAILS: "sparrowfarmhay@gmail.com,tina@sparrowfarms.ca,dave@sparrowfarms.ca" 
 };
 
 function doGet(e) {
