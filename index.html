@@ -410,8 +410,17 @@
       });
     }
 
+    let isSubmittingReport = false;
+
     function submitReport() {
+      if (isSubmittingReport) {
+        return; // Prevent duplicate submissions
+      }
+      
+      isSubmittingReport = true;
+      
       callGoogleJSONP({ action: "submitShiftReport", pin: document.getElementById('pin').value, work: document.getElementById('work').value }, function() {
+        isSubmittingReport = false;
         showToast("Summary Submitted!"); 
         setTimeout(resetApp, 1500);
       });
