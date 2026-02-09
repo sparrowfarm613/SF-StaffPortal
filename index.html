@@ -184,21 +184,21 @@
     let cachedStaffList = null;
 
     function callGoogleJSONP(params, callbackFn) {
-      const callbackName = 'cb_' + Math.round(100000 * Math.random());
-      window[callbackName] = function(data) {
-        delete window[callbackName];
-        const s = document.getElementById(callbackName);
-        if (s) s.parentNode.removeChild(s);
-        callbackFn(data);
-      };
-      let fullUrl = SCRIPT_URL + (SCRIPT_URL.includes('?') ? '&' : '?') + "callback=" + callbackName;
-      for (let key in params) { fullUrl += "&" + key + "=" + encodeURIComponent(params[key]); }
-      const script = document.createElement('script');
-      script.id = callbackName;
-      script.src = fullUrl;
-      script.onerror = function() { document.getElementById('status-text').innerText = "Connection Error"; };
-      document.body.appendChild(script);
-    }
+  const callbackName = 'cb_' + Math.round(100000 * Math.random());
+  window[callbackName] = function(data) {
+    delete window[callbackName];
+    const s = document.getElementById(callbackName);
+    if (s) s.parentNode.removeChild(s);
+    callbackFn(data);
+  };
+  let fullUrl = SCRIPT_URL + (SCRIPT_URL.includes('?') ? '&' : '?') + "callback=" + callbackName;
+  for (let key in params) { fullUrl += "&" + key + "=" + encodeURIComponent(params[key]); }
+  const script = document.createElement('script');
+  script.id = callbackName;
+  script.src = fullUrl;
+  script.onerror = function() { document.getElementById('status-text').innerText = "Connection Error"; };
+  document.body.appendChild(script);
+}
 
     function showToast(msg) {
       const toast = document.getElementById('toast');
