@@ -381,11 +381,13 @@
           if (res.hasTasks && res.tasksPrefill) {
             document.getElementById('task-completion').classList.remove('hidden');
             document.getElementById('task-completion-list').innerHTML = res.tasksPrefill.replace(/\n/g, '<br>');
-            document.getElementById('work').value = res.tasksPrefill;
+            // Don't pre-fill the textarea - let them type their own work summary
           } else {
             document.getElementById('task-completion').classList.add('hidden');
-            document.getElementById('work').value = '';
           }
+          
+          // Always leave textarea empty for them to fill in
+          document.getElementById('work').value = '';
           
           openScreen('report'); 
         }
