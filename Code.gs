@@ -119,7 +119,7 @@ function getWeeklyHistory(pin) {
   const data = userSheet.getLastRow() < 7 ? [] : userSheet.getRange(7, 1, userSheet.getLastRow() - 6, 11).getValues();
 
   let html = "<table style='width:100%; font-size: 13px; border-collapse: collapse;'>";
-  html += "<tr style='background:#eee; font-size:11px;'><th style='padding:5px; text-align:left;'>Date</th><th style='padding:5px; text-align:right;'>Hrs</th><th style='padding:5px; text-align:right;'>Pay</th><th style='padding:5px; text-align:center;'>Status</th></tr>";
+  html += "<tr style='background:#eee; font-size:11px;'><th style='padding:5px; text-align:left;'>Date</th><th style='padding:5px; text-align:right;'>Hrs</th><th style='padding:5px; text-align:right;'>Pay</th><th style='padding:5px; text-align:center;'>Date Paid</th></tr>";
 
   data.slice(-10).reverse().forEach(row => {
     const dateStr = row[0] ? new Date(row[0]).toLocaleDateString() : '';
