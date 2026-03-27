@@ -55,6 +55,10 @@ function handleRequest(params) {
         result = isAdmin ? reassignTask(params.rowIndex, params.newPin) : { error: "Unauthorized" };
       } else if (action === "addStaffMember") {
         result = isAdmin ? addStaffMember(params.name, params.phone, params.email, params.newPin, params.rate) : { error: "Unauthorized" };
+      } else if (action === "getPaySummary") {
+        result = isAdmin ? getPaySummary() : { error: "Unauthorized" };
+      } else if (action === "correctTimeEntry") {
+        result = isAdmin ? correctTimeEntry(params.targetPin, params.timeInKey, params.newDate, params.newTimeIn, params.newTimeOut, params.newLunch, params.newWork) : { error: "Unauthorized" };
       }
     }
   } catch (err) {
@@ -73,7 +77,7 @@ function doGet(e) {
   return ContentService.createTextOutput(output).setMimeType(ContentService.MimeType.JAVASCRIPT);
 }
 
-// ===== doPost — new fetch() support =====
+// ===== doPost — fetch() support =====
 
 function doPost(e) {
   let params = {};
@@ -234,10 +238,13 @@ function getAdminLogs() {
 
   html += "</div></div>";
 
-  // 2. PULL STAFF ACTIVITY (Last 7 Days)
+  // 2. PULL STAFF ACTIVITY (Last 30 days, for edit access)
+  // Returns structured data so the frontend can render edit buttons.
+  // We return JSON-serialisable rows rather than pre-built HTML,
+  // so the frontend can build the edit UI client-side.
   let allLogs = [];
-  const oneWeekAgo = new Date();
-  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
   sheets.forEach(sheet => {
     const pin = sheet.getRange("D3").getValue();
@@ -249,35 +256,166 @@ function getAdminLogs() {
 
     const data = sheet.getRange(7, 1, lastRow - 6, 9).getValues();
     data.forEach(row => {
-      const dateVal = new Date(row[0]);
-      if (row[0] instanceof Date && row[5] instanceof Date && dateVal >= oneWeekAgo) {
-        allLogs.push({
-          name: name,
-          work: row[1] || "---",
-          date: dateVal.toLocaleDateString(),
-          in: row[5].toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          out: row[8] instanceof Date ? row[8].toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Working..."
-        });
-      }
+      const dateVal = row[0];
+      if (!(dateVal instanceof Date) || !(row[5] instanceof Date)) return;
+      if (dateVal < thirtyDaysAgo) return;
+
+      // Use the Time In timestamp (col F) as the unique row key
+      const timeInKey = row[5].getTime(); // milliseconds — unique per shift
+
+      allLogs.push({
+        pin: String(pin),
+        name: name,
+        date: dateVal.toLocaleDateString(),
+        dateRaw: dateVal.getTime(),
+        timeInKey: timeInKey,
+        timeIn: row[5].toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        timeInFull: row[5].toLocaleString(),
+        timeOut: row[8] instanceof Date ? row[8].toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Working...",
+        timeOutFull: row[8] instanceof Date ? row[8].toLocaleString() : "",
+        lunch: String(row[6] || "0 mins"),
+        work: row[1] || "---"
+      });
     });
   });
 
-  allLogs.sort((a, b) => new Date(b.date) - new Date(a.date));
+  allLogs.sort((a, b) => b.dateRaw - a.dateRaw || b.timeInKey - a.timeInKey);
 
-  html += "<div style='text-align:left;'><b>Staff Activity:</b></div>";
-  html += "<table style='width:100%; font-size:10px; border-collapse:collapse; margin-top:10px;'>";
-  html += "<tr style='background:#eee;'><th>Staff</th><th>Date</th><th>In/Out</th><th>Work Done</th></tr>";
+  return { alerts: html, logs: allLogs };
+}
 
-  allLogs.slice(0, 20).forEach(log => {
-    html += `<tr style='border-bottom:1px solid #ddd; vertical-align:top;'>`;
-    html += `<td style='padding:5px;'><b>${log.name}</b></td>`;
-    html += `<td style='padding:5px;'>${log.date}</td>`;
-    html += `<td style='padding:5px;'>${log.in}<br>${log.out}</td>`;
-    html += `<td style='padding:5px; font-style:italic; color:#444;'>${log.work}</td>`;
-    html += `</tr>`;
+// ===== PAY SUMMARY (Admin) =====
+// Returns all staff with their pending shifts.
+
+function getPaySummary() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheets = ss.getSheets();
+  const staffSummaries = [];
+
+  sheets.forEach(sheet => {
+    const pin = sheet.getRange("D3").getValue();
+    if (!pin || sheet.getName().includes("Log") || sheet.getName().includes("Tasks")) return;
+
+    const h3Value = String(sheet.getRange("H3").getValue() || "").trim().toUpperCase();
+    if (h3Value === "ADMIN") return; // Skip admin accounts
+
+    const name = sheet.getRange("A3").getValue();
+    const lastRow = sheet.getLastRow();
+    if (lastRow < 7) return;
+
+    const data = sheet.getRange(7, 1, lastRow - 6, 11).getValues();
+
+    // Pending rows = col K (index 10) === "pending"
+    const pendingRows = data.filter(row =>
+      row[0] instanceof Date &&
+      (parseFloat(row[3]) || 0) > 0 &&
+      String(row[10]).toLowerCase() === "pending"
+    );
+
+    const pendingHours = pendingRows.reduce((sum, row) => sum + (parseFloat(row[3]) || 0), 0);
+    const pendingPay = pendingRows.reduce((sum, row) => sum + (parseFloat(row[4]) || 0), 0);
+
+    // Last paid date
+    const lastPayDate = data
+      .map(row => row[10])
+      .filter(val => val instanceof Date)
+      .sort((a, b) => b - a)[0] || null;
+
+    staffSummaries.push({
+      name: name,
+      pin: String(pin),
+      pendingHours: pendingHours.toFixed(2),
+      pendingPay: pendingPay.toFixed(2),
+      lastPaid: lastPayDate ? lastPayDate.toLocaleDateString() : "Never",
+      shifts: pendingRows.map(row => ({
+        date: row[0] ? new Date(row[0]).toLocaleDateString() : '',
+        hours: parseFloat(row[3] || 0).toFixed(2),
+        pay: parseFloat(row[4] || 0).toFixed(2),
+        work: row[1] || "No description"
+      }))
+    });
   });
 
-  return html + "</table>";
+  // Sort by pending pay descending so highest balance appears first
+  staffSummaries.sort((a, b) => parseFloat(b.pendingPay) - parseFloat(a.pendingPay));
+
+  return { staff: staffSummaries };
+}
+
+// ===== CORRECT TIME ENTRY (Admin) =====
+// Finds a shift row by PIN + Time In timestamp (ms), updates the editable fields,
+// then recalculates hours and pay.
+
+function correctTimeEntry(targetPin, timeInKey, newDate, newTimeIn, newTimeOut, newLunch, newWork) {
+  const sheet = findSheetByPin(targetPin);
+  if (!sheet) return { error: "Staff member not found" };
+
+  const rate = parseFloat(sheet.getRange("E3").getValue()) || 0;
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 7) return { error: "No entries found for this staff member" };
+
+  const data = sheet.getRange(7, 1, lastRow - 6, 9).getValues();
+  const timeInKeyNum = parseInt(timeInKey);
+
+  // Find the row whose col F timestamp matches the key
+  let targetRowIndex = -1;
+  for (let i = 0; i < data.length; i++) {
+    if (data[i][5] instanceof Date && data[i][5].getTime() === timeInKeyNum) {
+      targetRowIndex = i + 7; // Convert to 1-based sheet row
+      break;
+    }
+  }
+
+  if (targetRowIndex === -1) return { error: "Could not find that shift entry. It may have been edited already." };
+
+  // Parse the new values
+  // newDate format expected: "YYYY-MM-DD" (from date input)
+  // newTimeIn / newTimeOut format expected: "HH:MM" (from time inputs)
+  // We combine date + time to create full datetime values
+
+  const dateParts = newDate.split("-");
+  const year = parseInt(dateParts[0]);
+  const month = parseInt(dateParts[1]) - 1; // JS months are 0-based
+  const day = parseInt(dateParts[2]);
+
+  const inParts = newTimeIn.split(":");
+  const outParts = newTimeOut.split(":");
+
+  const newTimeInDate = new Date(year, month, day, parseInt(inParts[0]), parseInt(inParts[1]), 0);
+  const newTimeOutDate = newTimeOut ? new Date(year, month, day, parseInt(outParts[0]), parseInt(outParts[1]), 0) : null;
+
+  // If clock-out is earlier than clock-in, assume it crossed midnight
+  if (newTimeOutDate && newTimeOutDate <= newTimeInDate) {
+    newTimeOutDate.setDate(newTimeOutDate.getDate() + 1);
+  }
+
+  // Recalculate hours and pay
+  let hours = 0;
+  let earned = 0;
+  const lunchMins = parseInt(String(newLunch).replace(/[^0-9]/g, "")) || 0;
+
+  if (newTimeOutDate) {
+    const totalMs = newTimeOutDate - newTimeInDate - (lunchMins * 60 * 1000);
+    hours = Math.max(0, totalMs / (1000 * 60 * 60));
+    earned = hours * rate;
+  }
+
+  // Write all fields back to the sheet
+  const rowDate = new Date(year, month, day);
+  sheet.getRange(targetRowIndex, 1).setValue(rowDate);                         // Col A: Date
+  sheet.getRange(targetRowIndex, 2).setValue(newWork || "");                   // Col B: Work Summary
+  sheet.getRange(targetRowIndex, 4).setValue(hours.toFixed(2));                // Col D: Duration
+  sheet.getRange(targetRowIndex, 5).setValue(earned.toFixed(2));               // Col E: Pay
+  sheet.getRange(targetRowIndex, 6).setValue(newTimeInDate);                   // Col F: Time In
+  sheet.getRange(targetRowIndex, 7).setValue(lunchMins + " mins");             // Col G: Lunch
+  if (newTimeOutDate) {
+    sheet.getRange(targetRowIndex, 9).setValue(newTimeOutDate);                // Col I: Time Out
+  }
+
+  return {
+    success: true,
+    msg: `Entry updated. Recalculated: ${hours.toFixed(2)} hrs / $${earned.toFixed(2)}`
+  };
 }
 
 function findSheetByPin(pin) {
@@ -397,10 +535,8 @@ function sendWeeklySummary() {
     const lastRow = sheet.getLastRow();
     if (lastRow < 7) return;
 
-    // Fetch cols A-K (11 columns) to check Pay (col E) and Pay Date (col K)
     const data = sheet.getRange(7, 1, lastRow - 6, 11).getValues();
 
-    // Pending rows = col K (index 10) contains the string "pending"
     const pendingRows = data.filter(row =>
       row[0] instanceof Date &&
       (parseFloat(row[3]) || 0) > 0 &&
@@ -412,18 +548,13 @@ function sendWeeklySummary() {
     const pendingHours = pendingRows.reduce((sum, row) => sum + (parseFloat(row[3]) || 0), 0);
     const pendingEarned = pendingRows.reduce((sum, row) => sum + (parseFloat(row[4]) || 0), 0);
 
-    // Find the most recent actual pay date (a real Date value, not "pending", not blank)
     const lastPayDate = data
       .map(row => row[10])
       .filter(val => val instanceof Date)
       .sort((a, b) => b - a)[0] || null;
 
-    // Force include if: hours < 3.0 AND there is a prior pay date AND it was > 13 days ago
     const forceInclude = pendingHours < 3.0 && lastPayDate && lastPayDate < thirteenDaysAgo;
-
-    // Skip if: hours < 3.0 AND we are NOT in the force-include situation
     const skip = pendingHours < 3.0 && !forceInclude;
-
     if (skip) return;
 
     hasData = true;

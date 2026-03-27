@@ -27,7 +27,6 @@
     .btn-maint { background: #b71c1c; }
     .btn-history { background: #455a64; grid-column: span 2; }
     .btn-admin { background: #212121; grid-column: span 2; }
-    .btn-tasks { background: #6a1b9a; grid-column: span 2; }
     .status-box { margin-bottom: 20px; padding: 15px; background: #f9fbf9; border-radius: 12px; border: 1px solid #e0e0e0; }
     .tasks-box { margin-bottom: 20px; padding: 15px; background: #fff3e0; border-radius: 12px; border: 2px solid #ff9800; text-align: left; }
     .tasks-box h4 { margin: 0 0 10px 0; color: #e65100; }
@@ -36,11 +35,18 @@
     .hidden { display: none; }
     #toast { position: fixed; top: 10%; left: 50%; transform: translateX(-50%); background: #2b3d2b; color: white; padding: 20px 40px; border-radius: 15px; z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.4); border: 2px solid #ffffff; font-size: 20px; font-weight: bold; width: 80%; max-width: 350px; transition: opacity 0.3s; pointer-events: none; }
     #lunch-confirm-area { grid-column: span 2; background: #fffcf0; padding: 15px; border-radius: 12px; border: 2px dashed #f57c00; margin-top: 5px; }
-    #admin-data table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
-    #admin-data th, #admin-data td { padding: 8px 4px; border-bottom: 1px solid #eee; text-align: left; }
-    #admin-data th { background: #f4f4f4; font-weight: bold; }
     .task-confirm-box { background: #e8eaf6; padding: 15px; margin-bottom: 15px; border-radius: 12px; border: 2px solid #5c6bc0; }
     .task-confirm-box h4 { margin: 0 0 10px 0; color: #283593; }
+
+    /* Toggle buttons for Activity / Pay Summary */
+    .toggle-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
+    .toggle-btn { padding: 10px; font-size: 13px; border-radius: 8px; border: 2px solid #2b3d2b; background: white; color: #2b3d2b; cursor: pointer; font-weight: bold; text-transform: uppercase; }
+    .toggle-btn.active { background: #2b3d2b; color: white; }
+
+    /* Edit form inside activity rows */
+    .edit-entry-form { background: #f0f4ff; border: 2px solid #5c6bc0; border-radius: 10px; padding: 12px; margin-top: 8px; text-align: left; }
+    .edit-entry-form label { font-size: 12px; font-weight: bold; color: #37474f; display: block; margin-bottom: 3px; }
+    .edit-entry-form input, .edit-entry-form textarea { font-size: 14px; padding: 8px; margin-bottom: 10px; border: 1px solid #c5cae9; border-radius: 6px; }
 
     /* Spinner for buttons in loading state */
     .btn-loading { position: relative; color: transparent !important; }
@@ -72,7 +78,6 @@
       <div id="msg-text" style="font-size: 0.8em; color: #666; margin-top:10px;"></div>
     </div>
 
-    <!-- Tasks display for employees -->
     <div id="tasks-display" class="tasks-box hidden">
       <h4>📋 Your Tasks Today:</h4>
       <ul id="tasks-list"></ul>
@@ -100,9 +105,34 @@
     </div>
   </div>
 
+  <!-- ===== ADMIN QUICK VIEW ===== -->
   <div id="screen-admin" class="hidden">
     <h3>Admin Quick View</h3>
-    <div id="admin-data">Loading activity...</div>
+
+    <!-- Alerts section — always visible -->
+    <div id="admin-alerts"></div>
+
+    <!-- Toggle bar -->
+    <div class="toggle-bar" style="margin-top:15px;">
+      <button class="toggle-btn active" id="tab-activity" onclick="switchAdminTab('activity')">📋 Activity</button>
+      <button class="toggle-btn" id="tab-pay" onclick="switchAdminTab('pay')">💰 Pay Summary</button>
+    </div>
+
+    <!-- Activity tab -->
+    <div id="admin-activity-panel">
+      <div id="admin-activity-content">Loading...</div>
+    </div>
+
+    <!-- Pay Summary tab -->
+    <div id="admin-pay-panel" class="hidden">
+      <div style="margin-bottom:12px;">
+        <select id="pay-staff-select" onchange="renderPaySummaryForSelected()" style="margin-bottom:0;">
+          <option value="">-- Select Staff Member --</option>
+        </select>
+      </div>
+      <div id="pay-summary-content"></div>
+    </div>
+
     <h4 style="margin-top: 20px; margin-bottom: 10px; color: #6a1b9a; border-bottom: 2px solid #6a1b9a; padding-bottom: 5px;">📋 Task Management</h4>
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
       <button style="background:white; color:#2b3d2b; border:2px solid #6a1b9a; padding:12px; font-size:14px; border-radius:10px; font-weight:bold; cursor:pointer; text-transform:uppercase;" onclick="openScreen('assign')">➕ Assign New</button>
@@ -113,6 +143,7 @@
     <button class="btn-history" style="width:100%; margin-top:15px; background:#607d8b" onclick="openScreen('main')">Back</button>
   </div>
 
+  <!-- ===== TASK SCREENS ===== -->
   <div id="screen-assign" class="hidden">
     <h3>Assign Tasks</h3>
     <label for="staffSelect" style="display:block; text-align:left; margin-bottom:5px; font-weight:bold;">Select Staff Member:</label>
@@ -120,7 +151,7 @@
     <label for="tasksInput" style="display:block; text-align:left; margin-bottom:5px; font-weight:bold;">Tasks (one per line):</label>
     <textarea id="tasksInput" rows="6" placeholder="Feed chickens&#10;Water greenhouse plants&#10;Clean barn stalls"></textarea>
     <button class="btn-submit" onclick="submitTasks()">Assign Tasks</button>
-    <button class="btn-history" style="width:100%; margin-top:10px; background:#607d8b" onclick="openScreen('main')">Cancel</button>
+    <button class="btn-history" style="width:100%; margin-top:10px; background:#607d8b" onclick="openScreen('admin')">Cancel</button>
   </div>
 
   <div id="screen-manage-tasks" class="hidden">
@@ -153,6 +184,7 @@
     <button class="btn-history" style="width:100%; margin-top:10px; background:#607d8b" onclick="openScreen('admin')">Cancel</button>
   </div>
 
+  <!-- ===== STOCK / ISSUE / HISTORY / REPORT ===== -->
   <div id="screen-stock" class="hidden">
     <h3>Low Stock Report</h3>
     <input type="text" id="stockItem" placeholder="What item is low?">
@@ -182,9 +214,12 @@
 
   <div id="screen-report" class="hidden">
     <h3>Shift Summary</h3>
-    <div id="summary-val" style="margin-bottom:15px; color:green; font-weight:bold;"></div>
+    <div id="summary-val" style="margin-bottom:10px; color:green; font-weight:bold;"></div>
+    <!-- Running pending balance shown at clock-out -->
+    <div id="pending-balance-box" class="hidden" style="margin-bottom:15px; padding:12px; background:#fff8e1; border-radius:10px; border:2px solid #ffb300; font-size:14px; text-align:left;">
+      <strong>💰 Total pending (incl. this shift):</strong> <span id="pending-balance-val"></span>
+    </div>
 
-    <!-- Task completion confirmation -->
     <div id="task-completion" class="task-confirm-box hidden">
       <h4>Did you complete these tasks?</h4>
       <div id="task-completion-list" style="font-size: 0.9em; margin-bottom: 10px;"></div>
@@ -201,38 +236,32 @@
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwsYDpyw-dA8nFHbtiamxOFM_M30xH57Vj7HAt_o2AKn22jaB0gA6ZVqj9_IKLObm-LJw/exec";
 
   let cachedStaffList = null;
+  let cachedAdminLogs = null;   // { alerts, logs } from getAdminLogs
+  let cachedPaySummary = null;  // array of staff pay objects from getPaySummary
   let currentTaskFilter = 'active';
   let isSubmittingReport = false;
+  let currentUnpaidSummary = null; // Stored at login for use on shift report screen
 
   // ===== SESSION TIMEOUT =====
-  // Silent auto-logout after 15 minutes of inactivity.
   const SESSION_TIMEOUT_MS = 15 * 60 * 1000;
   let sessionTimer = null;
 
   function resetSessionTimer() {
     clearTimeout(sessionTimer);
-    // Only run the timer if someone is actually logged in
     const loggedIn = !document.getElementById('action-grid').classList.contains('hidden');
     if (loggedIn) {
-      sessionTimer = setTimeout(() => {
-        resetApp();
-      }, SESSION_TIMEOUT_MS);
+      sessionTimer = setTimeout(() => { resetApp(); }, SESSION_TIMEOUT_MS);
     }
   }
 
-  // Reset the timer on any user interaction
   ['touchstart', 'click', 'keydown'].forEach(evt => {
     document.addEventListener(evt, resetSessionTimer, { passive: true });
   });
 
   // ===== FETCH WITH RETRY =====
-  // Replaces JSONP. Sends a POST request with JSON body.
-  // Retries up to MAX_RETRIES times on network failure before giving up.
-
   const MAX_RETRIES = 2;
 
   async function callAPI(params, { buttonEl = null } = {}) {
-    // Show spinner on button if provided
     if (buttonEl) {
       buttonEl.disabled = true;
       buttonEl.classList.add('btn-loading');
@@ -244,17 +273,14 @@
       try {
         const response = await fetch(SCRIPT_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'text/plain' }, // text/plain avoids CORS preflight on Apps Script
+          headers: { 'Content-Type': 'text/plain' },
           body: JSON.stringify(params)
         });
 
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
         const data = await response.json();
 
-        // Success — restore button and return data
         if (buttonEl) {
           buttonEl.disabled = false;
           buttonEl.classList.remove('btn-loading');
@@ -264,13 +290,11 @@
       } catch (err) {
         lastError = err;
         if (attempt < MAX_RETRIES) {
-          // Brief pause before retry (500ms, then 1000ms)
           await new Promise(res => setTimeout(res, 500 * (attempt + 1)));
         }
       }
     }
 
-    // All retries exhausted
     if (buttonEl) {
       buttonEl.disabled = false;
       buttonEl.classList.remove('btn-loading');
@@ -298,7 +322,6 @@
     if (id === 'manage-tasks') loadAllTasks('active');
     if (id === 'add-staff') document.getElementById('add-staff-form').reset();
 
-    // Restart inactivity timer whenever a screen changes
     resetSessionTimer();
   }
 
@@ -312,10 +335,13 @@
     document.getElementById('btn-admin').classList.add('hidden');
     document.getElementById('tasks-display').classList.add('hidden');
     cachedStaffList = null;
+    cachedAdminLogs = null;
+    cachedPaySummary = null;
+    currentUnpaidSummary = null;
     openScreen('main');
   }
 
-  // ===== CORE APP FUNCTIONS =====
+  // ===== CORE APP =====
 
   async function checkStatus() {
     const pin = document.getElementById('pin').value;
@@ -335,7 +361,9 @@
       document.getElementById('status-text').innerHTML = "<b>" + res.name + "</b>: " + res.currentStatus;
       document.getElementById('msg-text').innerHTML = res.pay;
 
-      // Build history content with unpaid balance summary appended
+      // Store unpaid summary for use on the shift report screen
+      currentUnpaidSummary = res.unpaidSummary || null;
+
       let historyContent = res.history;
       if (res.unpaidSummary) {
         historyContent += `<div style='margin-top:12px; padding:12px; background:#fff8e1; border-radius:10px; border:2px solid #ffb300; font-size:14px; text-align:left;'>
@@ -368,7 +396,6 @@
       document.getElementById('btn-in').classList.toggle('hidden', res.currentStatus !== "Clocked Out");
       document.getElementById('btn-out').classList.toggle('hidden', res.currentStatus === "Clocked Out");
 
-      // Start inactivity timer now that user is logged in
       resetSessionTimer();
 
     } catch (err) {
@@ -377,17 +404,250 @@
     }
   }
 
+  // ===== ADMIN QUICK VIEW =====
+
   async function showAdmin() {
-    const pin = document.getElementById('pin').value;
     openScreen('admin');
-    document.getElementById('admin-data').innerHTML = "Loading...";
+    document.getElementById('admin-alerts').innerHTML = "Loading...";
+    document.getElementById('admin-activity-content').innerHTML = "Loading...";
+
+    // Reset to Activity tab
+    switchAdminTab('activity', /* skipRender= */ true);
+
+    const pin = document.getElementById('pin').value;
     try {
-      const h = await callAPI({ action: "getAdminLogs", pin: pin });
-      document.getElementById('admin-data').innerHTML = h;
+      const res = await callAPI({ action: "getAdminLogs", pin: pin });
+      cachedAdminLogs = res;
+      document.getElementById('admin-alerts').innerHTML = res.alerts || "";
+      renderActivityLog(res.logs || []);
     } catch (err) {
-      document.getElementById('admin-data').innerHTML = "<p style='color:red;'>Failed to load. Please try again.</p>";
+      document.getElementById('admin-activity-content').innerHTML = "<p style='color:red;'>Failed to load. Please try again.</p>";
     }
   }
+
+  function switchAdminTab(tab, skipRender) {
+    const isActivity = tab === 'activity';
+    document.getElementById('tab-activity').classList.toggle('active', isActivity);
+    document.getElementById('tab-pay').classList.toggle('active', !isActivity);
+    document.getElementById('admin-activity-panel').classList.toggle('hidden', !isActivity);
+    document.getElementById('admin-pay-panel').classList.toggle('hidden', isActivity);
+
+    if (!skipRender && !isActivity) {
+      loadPaySummary();
+    }
+  }
+
+  // ===== ACTIVITY LOG with Edit buttons =====
+
+  function renderActivityLog(logs) {
+    const container = document.getElementById('admin-activity-content');
+
+    if (!logs || logs.length === 0) {
+      container.innerHTML = "<p style='color:#999; text-align:center;'>No activity in the last 30 days.</p>";
+      return;
+    }
+
+    let html = "<div style='text-align:left;'><b>Staff Activity (last 30 days):</b></div>";
+    html += "<table style='width:100%; font-size:10px; border-collapse:collapse; margin-top:10px;'>";
+    html += "<tr style='background:#eee;'><th style='padding:5px;'>Staff</th><th style='padding:5px;'>Date</th><th style='padding:5px;'>In/Out</th><th style='padding:5px;'>Work</th><th style='padding:5px;'></th></tr>";
+
+    logs.slice(0, 40).forEach((log, i) => {
+      const safeKey = log.timeInKey; // ms timestamp — unique per shift
+      html += `<tr style='border-bottom:1px solid #ddd; vertical-align:top;' id='log-row-${i}'>`;
+      html += `<td style='padding:5px;'><b>${log.name}</b></td>`;
+      html += `<td style='padding:5px;'>${log.date}</td>`;
+      html += `<td style='padding:5px;'>${log.timeIn}<br>${log.timeOut}</td>`;
+      html += `<td style='padding:5px; font-style:italic; color:#444; max-width:80px; overflow:hidden;'>${log.work}</td>`;
+      html += `<td style='padding:5px;'>
+        <button onclick="toggleEditEntry(${i})" id='edit-toggle-${i}'
+          style='background:#1976d2; color:white; border:none; padding:4px 8px; border-radius:5px; cursor:pointer; font-size:11px; font-weight:bold;'>
+          ✏️
+        </button>
+      </td>`;
+      html += `</tr>`;
+
+      // Edit form row — hidden by default
+      html += `<tr id='edit-row-${i}' class='hidden'>`;
+      html += `<td colspan='5' style='padding:5px;'>`;
+      html += `<div class='edit-entry-form'>`;
+      html += `<label>Date</label>`;
+      html += `<input type='date' id='edit-date-${i}' value='${toDateInputValue(log.date)}'>`;
+      html += `<label>Clock In</label>`;
+      html += `<input type='time' id='edit-in-${i}' value='${toTimeInputValue(log.timeInFull)}'>`;
+      html += `<label>Clock Out</label>`;
+      html += `<input type='time' id='edit-out-${i}' value='${toTimeInputValue(log.timeOutFull)}'>`;
+      html += `<label>Lunch (minutes)</label>`;
+      html += `<input type='number' id='edit-lunch-${i}' value='${parseLunchMins(log.lunch)}' min='0' step='5'>`;
+      html += `<label>Work Summary</label>`;
+      html += `<textarea id='edit-work-${i}' rows='2' style='font-size:13px;'>${log.work === '---' ? '' : log.work}</textarea>`;
+      html += `<div style='display:grid; grid-template-columns:1fr 1fr; gap:8px;'>`;
+      html += `<button onclick="saveEntryEdit(${i}, '${log.pin}', ${safeKey})"
+        style='background:#388e3c; color:white; border:none; padding:10px; border-radius:8px; cursor:pointer; font-size:12px; font-weight:bold;'>
+        💾 Save &amp; Recalc
+      </button>`;
+      html += `<button onclick="toggleEditEntry(${i})"
+        style='background:#757575; color:white; border:none; padding:10px; border-radius:8px; cursor:pointer; font-size:12px; font-weight:bold;'>
+        ✖ Cancel
+      </button>`;
+      html += `</div></div></td></tr>`;
+    });
+
+    html += "</table>";
+    container.innerHTML = html;
+  }
+
+  function toggleEditEntry(i) {
+    const row = document.getElementById('edit-row-' + i);
+    row.classList.toggle('hidden');
+  }
+
+  // Convert a locale date string like "3/25/2026" to "2026-03-25" for <input type="date">
+  function toDateInputValue(localeDateStr) {
+    if (!localeDateStr) return '';
+    const d = new Date(localeDateStr);
+    if (isNaN(d)) return '';
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  // Convert a full locale datetime string to "HH:MM" for <input type="time">
+  function toTimeInputValue(fullStr) {
+    if (!fullStr) return '';
+    const d = new Date(fullStr);
+    if (isNaN(d)) return '';
+    return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  }
+
+  // Parse "30 mins" -> 30
+  function parseLunchMins(lunchStr) {
+    if (!lunchStr) return 0;
+    const match = String(lunchStr).match(/\d+/);
+    return match ? parseInt(match[0]) : 0;
+  }
+
+  async function saveEntryEdit(i, targetPin, timeInKey) {
+    const newDate  = document.getElementById('edit-date-' + i).value;
+    const newIn    = document.getElementById('edit-in-' + i).value;
+    const newOut   = document.getElementById('edit-out-' + i).value;
+    const newLunch = document.getElementById('edit-lunch-' + i).value;
+    const newWork  = document.getElementById('edit-work-' + i).value;
+
+    if (!newDate || !newIn) {
+      showToast("Date and Clock In time are required.");
+      return;
+    }
+
+    const adminPin = document.getElementById('pin').value;
+    showToast("Saving...");
+
+    try {
+      const res = await callAPI({
+        action: "correctTimeEntry",
+        pin: adminPin,
+        targetPin: targetPin,
+        timeInKey: timeInKey,
+        newDate: newDate,
+        newTimeIn: newIn,
+        newTimeOut: newOut,
+        newLunch: newLunch,
+        newWork: newWork
+      });
+
+      if (res.success) {
+        showToast(res.msg);
+        // Reload the activity log so the updated values show
+        cachedAdminLogs = null;
+        showAdmin();
+      } else {
+        showToast("Error: " + (res.error || "Unknown error"));
+      }
+    } catch (err) {
+      showToast("Connection error. Please try again.");
+    }
+  }
+
+  // ===== PAY SUMMARY =====
+
+  async function loadPaySummary() {
+    const pin = document.getElementById('pin').value;
+    const content = document.getElementById('pay-summary-content');
+    const select = document.getElementById('pay-staff-select');
+
+    if (cachedPaySummary) {
+      populatePaySelect(cachedPaySummary);
+      return;
+    }
+
+    content.innerHTML = "<p style='color:#999; text-align:center;'>Loading...</p>";
+    select.innerHTML = '<option value="">Loading...</option>';
+
+    try {
+      const res = await callAPI({ action: "getPaySummary", pin: pin });
+      cachedPaySummary = res.staff || [];
+      populatePaySelect(cachedPaySummary);
+    } catch (err) {
+      content.innerHTML = "<p style='color:red; text-align:center;'>Failed to load. Please try again.</p>";
+    }
+  }
+
+  function populatePaySelect(staff) {
+    const select = document.getElementById('pay-staff-select');
+    select.innerHTML = '<option value="">-- Select Staff Member --</option>';
+    staff.forEach((s, i) => {
+      const option = document.createElement('option');
+      option.value = i;
+      // Show pending amount in the dropdown for quick scanning
+      option.textContent = `${s.name}  —  $${s.pendingPay} pending`;
+      select.appendChild(option);
+    });
+    document.getElementById('pay-summary-content').innerHTML = '';
+  }
+
+  function renderPaySummaryForSelected() {
+    const select = document.getElementById('pay-staff-select');
+    const idx = select.value;
+    const content = document.getElementById('pay-summary-content');
+
+    if (idx === '' || !cachedPaySummary) {
+      content.innerHTML = '';
+      return;
+    }
+
+    const s = cachedPaySummary[parseInt(idx)];
+
+    let html = `<div style='text-align:left;'>`;
+
+    // Summary card
+    html += `<div style='background:#f9fbf9; border-left:4px solid #388e3c; border-radius:8px; padding:12px; margin-bottom:12px;'>`;
+    html += `<div style='font-size:15px; font-weight:bold; color:#2b3d2b; margin-bottom:6px;'>${s.name}</div>`;
+    html += `<div style='font-size:13px; color:#555;'>Last paid: <strong>${s.lastPaid}</strong></div>`;
+    html += `<div style='font-size:13px; color:#555;'>Pending: <strong>${s.pendingHours} hrs</strong> / <strong style='color:#388e3c; font-size:15px;'>$${s.pendingPay}</strong></div>`;
+    html += `</div>`;
+
+    // Pending shifts table
+    if (s.shifts.length === 0) {
+      html += `<p style='color:#999; text-align:center; font-size:13px;'>No pending shifts.</p>`;
+    } else {
+      html += `<table style='width:100%; font-size:12px; border-collapse:collapse;'>`;
+      html += `<tr style='background:#eee;'><th style='padding:6px; text-align:left;'>Date</th><th style='padding:6px; text-align:right;'>Hrs</th><th style='padding:6px; text-align:right;'>Pay</th><th style='padding:6px; text-align:left;'>Work</th></tr>`;
+      s.shifts.forEach(shift => {
+        html += `<tr style='border-bottom:1px solid #eee;'>`;
+        html += `<td style='padding:6px;'>${shift.date}</td>`;
+        html += `<td style='padding:6px; text-align:right;'>${shift.hours}</td>`;
+        html += `<td style='padding:6px; text-align:right;'>$${shift.pay}</td>`;
+        html += `<td style='padding:6px; color:#666; font-style:italic;'>${shift.work}</td>`;
+        html += `</tr>`;
+      });
+      html += `</table>`;
+    }
+
+    html += `</div>`;
+    content.innerHTML = html;
+  }
+
+  // ===== CLOCK IN/OUT =====
 
   async function triggerRecalc() {
     if (!confirm("Fix Hours and Earned columns for all staff based on current Time In/Out and Lunch?")) return;
@@ -403,19 +663,13 @@
   }
 
   async function loadStaffList() {
-    if (cachedStaffList) {
-      populateStaffSelect(cachedStaffList);
-      return;
-    }
+    if (cachedStaffList) { populateStaffSelect(cachedStaffList); return; }
     const pin = document.getElementById('pin').value;
     const select = document.getElementById('staffSelect');
     select.innerHTML = '<option value="">Loading...</option>';
     try {
       const res = await callAPI({ action: "getStaffList", pin: pin });
-      if (res.staff) {
-        cachedStaffList = res.staff;
-        populateStaffSelect(res.staff);
-      }
+      if (res.staff) { cachedStaffList = res.staff; populateStaffSelect(res.staff); }
     } catch (err) {
       select.innerHTML = '<option value="">Failed to load</option>';
     }
@@ -436,10 +690,8 @@
     const pin = document.getElementById('pin').value;
     const targetPin = document.getElementById('staffSelect').value;
     const tasks = document.getElementById('tasksInput').value;
-
     if (!targetPin) { showToast("Please select a staff member"); return; }
     if (!tasks.trim()) { showToast("Please enter at least one task"); return; }
-
     try {
       const res = await callAPI({ action: "assignTasks", pin: pin, targetPin: targetPin, tasks: tasks });
       if (res.success) {
@@ -447,12 +699,8 @@
         document.getElementById('tasksInput').value = '';
         document.getElementById('staffSelect').value = '';
         openScreen('main');
-      } else {
-        showToast("Error: " + (res.error || "Unknown error"));
-      }
-    } catch (err) {
-      showToast("Connection error. Please try again.");
-    }
+      } else { showToast("Error: " + (res.error || "Unknown error")); }
+    } catch (err) { showToast("Connection error. Please try again."); }
   }
 
   function showLunchInput() {
@@ -472,11 +720,8 @@
 
   async function runClock(type, lunch) {
     const pin = document.getElementById('pin').value;
-
-    // Grab the relevant button to show spinner and prevent double-tap
     const btnId = type === 'clock-in' ? 'btn-in' : 'btn-out';
     const btn = document.getElementById(btnId);
-
     document.getElementById('status-text').innerText = type === 'clock-in' ? "Clocking in..." : "Clocking out...";
 
     try {
@@ -493,6 +738,19 @@
 
       if (res.showReport) {
         document.getElementById('summary-val').innerText = res.summary;
+
+        // Show running pending balance (from login data + this shift's earnings)
+        if (currentUnpaidSummary) {
+          // Parse this shift's earned amount from the summary string
+          const earnedMatch = res.summary.match(/Earned:\s*\$([0-9.]+)/);
+          const thisShiftEarned = earnedMatch ? parseFloat(earnedMatch[1]) : 0;
+          const newTotal = (parseFloat(currentUnpaidSummary.pay) + thisShiftEarned).toFixed(2);
+          const newHours = (parseFloat(currentUnpaidSummary.hours) + parseFloat(res.summary.match(/Total:\s*([0-9.]+)/)?.[1] || 0)).toFixed(2);
+          document.getElementById('pending-balance-val').textContent = `${newHours} hrs  |  $${newTotal}`;
+          document.getElementById('pending-balance-box').classList.remove('hidden');
+        } else {
+          document.getElementById('pending-balance-box').classList.add('hidden');
+        }
 
         if (res.hasTasks && res.tasksPrefill) {
           document.getElementById('task-completion').classList.remove('hidden');
@@ -519,9 +777,7 @@
       showToast("Stock Alert Sent!");
       document.getElementById('stockItem').value = '';
       openScreen('main');
-    } catch (err) {
-      showToast("Connection error. Please try again.");
-    }
+    } catch (err) { showToast("Connection error. Please try again."); }
   }
 
   async function submitMaint() {
@@ -531,9 +787,7 @@
       document.getElementById('machine').value = '';
       document.getElementById('issue').value = '';
       openScreen('main');
-    } catch (err) {
-      showToast("Connection error. Please try again.");
-    }
+    } catch (err) { showToast("Connection error. Please try again."); }
   }
 
   async function submitReport() {
@@ -541,7 +795,6 @@
     isSubmittingReport = true;
     const btn = document.querySelector('#screen-report .btn-submit');
     if (btn) { btn.disabled = true; btn.classList.add('btn-loading'); }
-
     try {
       await callAPI({ action: "submitShiftReport", pin: document.getElementById('pin').value, work: document.getElementById('work').value });
       showToast("Summary Submitted!");
@@ -557,7 +810,7 @@
   window.onload = function() {
     document.getElementById('pin').focus();
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').catch(function(err) {
+      navigator.serviceWorker.register('sw.js').catch(err => {
         console.log('ServiceWorker registration failed: ', err);
       });
     }
@@ -577,7 +830,6 @@
 
     try {
       const res = await callAPI({ action: "getAllTasks", pin: pin });
-
       if (!res.tasks || res.tasks.length === 0) {
         container.innerHTML = '<p style="text-align:center; color:#999;">No tasks found.</p>';
         return;
@@ -607,14 +859,13 @@
         html += '<div id="task-edit-' + task.rowIndex + '" style="display:none; margin-bottom:8px;">';
         html += '<input type="text" id="task-input-' + task.rowIndex + '" value="' + task.task.replace(/"/g, '&quot;') + '" style="width:100%; padding:8px; border:2px solid #2b3d2b; border-radius:6px; font-size:14px; margin-bottom:8px;">';
         html += '<div style="background:#f0f4ff; padding:10px; border-radius:6px; margin-bottom:8px;">';
-        html += '<div id="task-assigned-' + task.rowIndex + '" style="font-size:13px; color:#1565c0; margin-bottom:8px;"><strong>Assigned to:</strong> ' + task.name + '</div>';
+        html += '<div style="font-size:13px; color:#1565c0; margin-bottom:8px;"><strong>Assigned to:</strong> ' + task.name + '</div>';
         html += '<button onclick="showReassignDropdown(' + task.rowIndex + ')" id="reassign-btn-' + task.rowIndex + '" style="background:#1976d2; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px;">🔄 Reassign Task</button>';
         html += '<div id="reassign-area-' + task.rowIndex + '" style="display:none; margin-top:10px;">';
         html += '<select id="reassign-select-' + task.rowIndex + '" style="width:100%; padding:8px; border:2px solid #1976d2; border-radius:6px; font-size:13px; margin-bottom:8px;"><option value="">Loading staff...</option></select>';
         html += '<button onclick="confirmReassign(' + task.rowIndex + ')" style="background:#388e3c; color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer; font-size:12px; margin-right:5px;">✓ Confirm Reassign</button>';
         html += '<button onclick="cancelReassign(' + task.rowIndex + ')" style="background:#757575; color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer; font-size:12px;">✖ Cancel</button>';
-        html += '</div></div>';
-        html += '</div>';
+        html += '</div></div></div>';
 
         html += '<div style="font-size:11px; color:#757575; margin-bottom:8px;">Assigned: ' + task.dateAssigned;
         if (task.dateCompleted) html += ' | Completed: ' + task.dateCompleted;
@@ -625,7 +876,6 @@
           html += '<button onclick="saveTaskEdit(' + task.rowIndex + ')" id="save-btn-' + task.rowIndex + '" style="display:none; background:#388e3c; color:white; border:none; padding:6px 12px; border-radius:6px; margin-right:5px; cursor:pointer; font-size:12px;">💾 Save</button>';
           html += '<button onclick="cancelTaskEdit(' + task.rowIndex + ')" id="cancel-btn-' + task.rowIndex + '" style="display:none; background:#757575; color:white; border:none; padding:6px 12px; border-radius:6px; margin-right:5px; cursor:pointer; font-size:12px;">✖️ Cancel</button>';
         }
-
         html += '<button onclick="confirmDeleteTask(' + task.rowIndex + ', \'' + task.name.replace(/'/g, "\\'") + '\', \'' + task.task.replace(/'/g, "\\'") + '\')" style="background:#d32f2f; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px;">🗑️ Delete</button>';
         html += '</div>';
       });
@@ -652,7 +902,6 @@
     document.getElementById('edit-btn-' + rowIndex).style.display = 'inline-block';
     document.getElementById('save-btn-' + rowIndex).style.display = 'none';
     document.getElementById('cancel-btn-' + rowIndex).style.display = 'none';
-
     const reassignArea = document.getElementById('reassign-area-' + rowIndex);
     const reassignBtn = document.getElementById('reassign-btn-' + rowIndex);
     if (reassignArea) reassignArea.style.display = 'none';
@@ -662,21 +911,13 @@
   async function saveTaskEdit(rowIndex) {
     const pin = document.getElementById('pin').value;
     const newTask = document.getElementById('task-input-' + rowIndex).value.trim();
-
     if (!newTask) { showToast("Task cannot be empty"); return; }
-
     showToast("Saving...");
     try {
       const res = await callAPI({ action: "editTask", pin: pin, rowIndex: rowIndex, newTask: newTask });
-      if (res.success) {
-        showToast("Task updated!");
-        loadAllTasks(currentTaskFilter);
-      } else {
-        showToast("Error: " + (res.error || "Unknown error"));
-      }
-    } catch (err) {
-      showToast("Connection error. Please try again.");
-    }
+      if (res.success) { showToast("Task updated!"); loadAllTasks(currentTaskFilter); }
+      else { showToast("Error: " + (res.error || "Unknown error")); }
+    } catch (err) { showToast("Connection error. Please try again."); }
   }
 
   async function confirmDeleteTask(rowIndex, staffName, taskText) {
@@ -685,15 +926,9 @@
     showToast("Deleting...");
     try {
       const res = await callAPI({ action: "deleteTask", pin: pin, rowIndex: rowIndex });
-      if (res.success) {
-        showToast("Task deleted!");
-        loadAllTasks(currentTaskFilter);
-      } else {
-        showToast("Error: " + (res.error || "Unknown error"));
-      }
-    } catch (err) {
-      showToast("Connection error. Please try again.");
-    }
+      if (res.success) { showToast("Task deleted!"); loadAllTasks(currentTaskFilter); }
+      else { showToast("Error: " + (res.error || "Unknown error")); }
+    } catch (err) { showToast("Connection error. Please try again."); }
   }
 
   async function submitNewStaff(event) {
@@ -704,10 +939,8 @@
     const email = document.getElementById('staffEmail').value.trim();
     const newPin = document.getElementById('staffPin').value.trim();
     const rate = document.getElementById('staffRate').value.trim();
-
     if (!name || !newPin || !rate) { showToast("Please fill in all required fields"); return; }
     if (newPin.length !== 4 || isNaN(newPin)) { showToast("PIN must be exactly 4 digits"); return; }
-
     showToast("Adding staff member...");
     try {
       const res = await callAPI({ action: "addStaffMember", pin: pin, name: name, phone: phone, email: email, newPin: newPin, rate: rate });
@@ -715,26 +948,19 @@
         showToast(res.msg);
         document.getElementById('add-staff-form').reset();
         cachedStaffList = null;
-        setTimeout(function() { openScreen('admin'); }, 2000);
-      } else {
-        showToast("Error: " + (res.error || "Unknown error"));
-      }
-    } catch (err) {
-      showToast("Connection error. Please try again.");
-    }
+        setTimeout(() => { openScreen('admin'); }, 2000);
+      } else { showToast("Error: " + (res.error || "Unknown error")); }
+    } catch (err) { showToast("Connection error. Please try again."); }
   }
 
   function showReassignDropdown(rowIndex) {
     const reassignBtn = document.getElementById('reassign-btn-' + rowIndex);
     const reassignArea = document.getElementById('reassign-area-' + rowIndex);
     if (!reassignBtn || !reassignArea) return;
-
     reassignBtn.style.display = 'none';
     reassignArea.style.display = 'block';
-
     const select = document.getElementById('reassign-select-' + rowIndex);
     if (!select) return;
-
     if (cachedStaffList && cachedStaffList.length > 0) {
       select.innerHTML = '<option value="">-- Select New Staff Member --</option>';
       cachedStaffList.forEach(s => {
@@ -766,9 +992,7 @@
           });
         }
       }
-    } catch (err) {
-      showToast("Could not load staff list.");
-    }
+    } catch (err) { showToast("Could not load staff list."); }
   }
 
   function cancelReassign(rowIndex) {
@@ -780,19 +1004,12 @@
     const pin = document.getElementById('pin').value;
     const newPin = document.getElementById('reassign-select-' + rowIndex).value;
     if (!newPin) { showToast("Please select a staff member"); return; }
-
     showToast("Reassigning task...");
     try {
       const res = await callAPI({ action: "reassignTask", pin: pin, rowIndex: rowIndex, newPin: newPin });
-      if (res.success) {
-        showToast(res.msg);
-        loadAllTasks(currentTaskFilter);
-      } else {
-        showToast("Error: " + (res.error || "Unknown error"));
-      }
-    } catch (err) {
-      showToast("Connection error. Please try again.");
-    }
+      if (res.success) { showToast(res.msg); loadAllTasks(currentTaskFilter); }
+      else { showToast("Error: " + (res.error || "Unknown error")); }
+    } catch (err) { showToast("Connection error. Please try again."); }
   }
 </script>
 </body>
