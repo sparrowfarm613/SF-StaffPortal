@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sparrow-farms-v6';
+const CACHE_NAME = 'sparrow-farms-v7';
 const urlsToCache = [
   '/',
   '/index.html'
