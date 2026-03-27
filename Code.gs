@@ -1,18 +1,20 @@
-/** 
- * SPARROW FARMS - SECURE BACKEND WITH TASK MANAGEMENT 
+/**
+ * SPARROW FARMS - SECURE BACKEND WITH TASK MANAGEMENT
  */
 
 const SECRETS = {
   NOTIFY_EMAILS: "sparrowfarmhay@gmail.com,tina@sparrowfarms.ca,dave@sparrowfarms.ca"
 };
 
-function doGet(e) {
-  const callback = (e.parameter && e.parameter.callback) ? e.parameter.callback : "callback";
+// ===== SHARED REQUEST HANDLER =====
+// Both doGet (legacy JSONP) and doPost (new fetch) route through here.
+
+function handleRequest(params) {
   let result = { error: "Initial State" };
 
   try {
-    const pin = String(e.parameter.pin || "").trim();
-    const action = e.parameter.action;
+    const pin = String(params.pin || "").trim();
+    const action = params.action;
     const userSheet = findSheetByPin(pin);
 
     if (!userSheet) {
@@ -23,22 +25,22 @@ function doGet(e) {
       if (action === "getWeeklyHistory") {
         result = getWeeklyHistory(pin);
       } else if (action === "handleClockAction") {
-        result = handleClockAction(pin, e.parameter.type, e.parameter.lunchMinutes);
+        result = handleClockAction(pin, params.type, params.lunchMinutes);
       } else if (action === "getAdminLogs") {
         result = isAdmin ? getAdminLogs() : { error: "Unauthorized" };
       } else if (action === "recalculate") {
         result = isAdmin ? recalculateAllSheets() : { error: "Unauthorized" };
       } else if (action === "sendLowStockAlert") {
-        sendLowStockAlert(pin, e.parameter.item);
+        sendLowStockAlert(pin, params.item);
         result = { success: true };
       } else if (action === "sendEquipmentIssue") {
-        sendEquipmentIssue(pin, e.parameter.machine, e.parameter.issue);
+        sendEquipmentIssue(pin, params.machine, params.issue);
         result = { success: true };
       } else if (action === "submitShiftReport") {
-        submitShiftReport(pin, e.parameter.work);
+        submitShiftReport(pin, params.work);
         result = { success: true };
       } else if (action === "assignTasks") {
-        result = isAdmin ? assignTasks(e.parameter.targetPin, e.parameter.tasks) : { error: "Unauthorized" };
+        result = isAdmin ? assignTasks(params.targetPin, params.tasks) : { error: "Unauthorized" };
       } else if (action === "getTasks") {
         result = getTasks(pin);
       } else if (action === "getStaffList") {
@@ -46,22 +48,52 @@ function doGet(e) {
       } else if (action === "getAllTasks") {
         result = isAdmin ? getAllTasks() : { error: "Unauthorized" };
       } else if (action === "deleteTask") {
-        result = isAdmin ? deleteTask(e.parameter.rowIndex) : { error: "Unauthorized" };
+        result = isAdmin ? deleteTask(params.rowIndex) : { error: "Unauthorized" };
       } else if (action === "editTask") {
-        result = isAdmin ? editTask(e.parameter.rowIndex, e.parameter.newTask) : { error: "Unauthorized" };
+        result = isAdmin ? editTask(params.rowIndex, params.newTask) : { error: "Unauthorized" };
       } else if (action === "reassignTask") {
-        result = isAdmin ? reassignTask(e.parameter.rowIndex, e.parameter.newPin) : { error: "Unauthorized" };
+        result = isAdmin ? reassignTask(params.rowIndex, params.newPin) : { error: "Unauthorized" };
       } else if (action === "addStaffMember") {
-        result = isAdmin ? addStaffMember(e.parameter.name, e.parameter.phone, e.parameter.email, e.parameter.newPin, e.parameter.rate) : { error: "Unauthorized" };
+        result = isAdmin ? addStaffMember(params.name, params.phone, params.email, params.newPin, params.rate) : { error: "Unauthorized" };
       }
     }
   } catch (err) {
     result = { error: "Server Error: " + err.toString() };
   }
 
+  return result;
+}
+
+// ===== doGet — legacy JSONP support (kept for transition) =====
+
+function doGet(e) {
+  const callback = (e.parameter && e.parameter.callback) ? e.parameter.callback : "callback";
+  const result = handleRequest(e.parameter || {});
   const output = callback + "(" + JSON.stringify(result) + ")";
   return ContentService.createTextOutput(output).setMimeType(ContentService.MimeType.JAVASCRIPT);
 }
+
+// ===== doPost — new fetch() support =====
+
+function doPost(e) {
+  let params = {};
+  try {
+    if (e.postData && e.postData.contents) {
+      params = JSON.parse(e.postData.contents);
+    }
+  } catch (err) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ error: "Invalid JSON in request body" }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  const result = handleRequest(params);
+  return ContentService
+    .createTextOutput(JSON.stringify(result))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ===== CORE FUNCTIONS =====
 
 function recalculateAllSheets() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -79,9 +111,9 @@ function recalculateAllSheets() {
 
     data.forEach((row, index) => {
       const rowIndex = index + 7;
-      const timeIn = row[5];   // Col F
-      const lunchStr = String(row[6] || "0");  // Col G
-      const timeOut = row[8];  // Col I
+      const timeIn = row[5];  // Col F
+      const lunchStr = String(row[6] || "0"); // Col G
+      const timeOut = row[8]; // Col I
 
       if (timeIn instanceof Date && timeOut instanceof Date) {
         const lunchMins = parseInt(lunchStr.replace(/[^0-9]/g, "")) || 0;
@@ -89,8 +121,8 @@ function recalculateAllSheets() {
         let netMs = diffMs - (lunchMins * 60 * 1000);
         const hours = Math.max(0, netMs / (1000 * 60 * 60));
         const earned = hours * rate;
-        sheet.getRange(rowIndex, 4).setValue(hours.toFixed(2));   // Col D
-        sheet.getRange(rowIndex, 5).setValue(earned.toFixed(2));  // Col E
+        sheet.getRange(rowIndex, 4).setValue(hours.toFixed(2));  // Col D
+        sheet.getRange(rowIndex, 5).setValue(earned.toFixed(2)); // Col E
       }
     });
   });
@@ -115,7 +147,7 @@ function getWeeklyHistory(pin) {
 
   const rate = userSheet.getRange("E3").getValue();
 
-  // Fetch cols A–K (11 columns) to include Pay (col E, index 4) and Pay Date (col K, index 10)
+  // Fetch cols A-K (11 columns) to include Pay (col E, index 4) and Pay Date (col K, index 10)
   const data = userSheet.getLastRow() < 7 ? [] : userSheet.getRange(7, 1, userSheet.getLastRow() - 6, 11).getValues();
 
   let html = "<table style='width:100%; font-size: 13px; border-collapse: collapse;'>";
@@ -132,7 +164,7 @@ function getWeeklyHistory(pin) {
       ? `<span style='color:#388e3c; font-size:11px;'>✓ ${new Date(payDateVal).toLocaleDateString()}</span>`
       : isPending
         ? `<span style='color:#f57c00; font-size:11px;'>Pending</span>`
-        : `<span style='color:#bbb; font-size:11px;'>—</span>`;
+        : `<span style='color:#bbb; font-size:11px;'>-</span>`;
 
     html += `<tr style='border-bottom: 1px solid #eee;'>
       <td style='padding:5px;'>${dateStr}</td>
@@ -166,11 +198,10 @@ function getAdminLogs() {
   const sheets = ss.getSheets();
   let html = "";
 
-  // 1. PULL RECENT ALERTS (Last 3 Stock & Maint) - Left Aligned
+  // 1. PULL RECENT ALERTS (Last 3 Stock & Maint)
   html += "<div style='text-align:left;'><b>Recent Alerts:</b>";
   html += "<div style='background:#fffcf0; padding:10px; border-radius:8px; margin:10px 0; border:1px solid #ffd54f; font-size:12px;'>";
 
-  // Stock Alerts - Skip Header Row 1 & 2
   const sLog = ss.getSheetByName("Low Stock Log");
   if (sLog && sLog.getLastRow() >= 3) {
     const sStart = Math.max(3, sLog.getLastRow() - 2);
@@ -187,7 +218,6 @@ function getAdminLogs() {
 
   html += "<hr style='border:0; border-top:1px solid #ffe082; margin:5px 0;'>";
 
-  // Maintenance Alerts - Skip Header Row 1 & 2
   const mLog = ss.getSheetByName("Maintenance Log");
   if (mLog && mLog.getLastRow() >= 3) {
     const mStart = Math.max(3, mLog.getLastRow() - 2);
@@ -225,8 +255,8 @@ function getAdminLogs() {
           name: name,
           work: row[1] || "---",
           date: dateVal.toLocaleDateString(),
-          in: row[5].toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-          out: row[8] instanceof Date ? row[8].toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "Working..."
+          in: row[5].toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          out: row[8] instanceof Date ? row[8].toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Working..."
         });
       }
     });
@@ -298,7 +328,6 @@ function handleClockAction(pin, type, lunchMinutes) {
     userSheet.getRange(targetRow, 4).setValue(hours);
     userSheet.getRange(targetRow, 5).setValue(earned);
 
-    // Get tasks for pre-filling
     const tasks = getTasks(pin);
     let tasksPrefill = "";
     if (tasks.tasks && tasks.tasks.length > 0) {
@@ -340,8 +369,6 @@ function submitShiftReport(pin, work) {
     userSheet.getRange(userSheet.getLastRow(), 2).setValue(work);
     userSheet.getRange(userSheet.getLastRow(), 10).setValue(new Date());
     MailApp.sendEmail(SECRETS.NOTIFY_EMAILS, `Shift Report: ${name}`, `Staff: ${name}\nWork:\n${work}`);
-
-    // Clear completed tasks for this employee
     clearCompletedTasks(pin);
   }
 }
@@ -370,7 +397,7 @@ function sendWeeklySummary() {
     const lastRow = sheet.getLastRow();
     if (lastRow < 7) return;
 
-    // Fetch cols A–K (11 columns) to check Pay (col E) and Pay Date (col K)
+    // Fetch cols A-K (11 columns) to check Pay (col E) and Pay Date (col K)
     const data = sheet.getRange(7, 1, lastRow - 6, 11).getValues();
 
     // Pending rows = col K (index 10) contains the string "pending"
@@ -392,7 +419,6 @@ function sendWeeklySummary() {
       .sort((a, b) => b - a)[0] || null;
 
     // Force include if: hours < 3.0 AND there is a prior pay date AND it was > 13 days ago
-    // (meaning we already skipped once — can't skip again)
     const forceInclude = pendingHours < 3.0 && lastPayDate && lastPayDate < thirteenDaysAgo;
 
     // Skip if: hours < 3.0 AND we are NOT in the force-include situation
@@ -407,7 +433,7 @@ function sendWeeklySummary() {
     emailBody += `<h3 style='margin-top: 0; color: #2b3d2b;'>${name}`;
 
     if (forceInclude) {
-      emailBody += ` <span style='background:#e65100; color:white; font-size:12px; padding:3px 8px; border-radius:10px; font-weight:bold; vertical-align:middle;'>⚠️ ROLLOVER — 2 weeks combined</span>`;
+      emailBody += ` <span style='background:#e65100; color:white; font-size:12px; padding:3px 8px; border-radius:10px; font-weight:bold; vertical-align:middle;'>⚠️ ROLLOVER - 2 weeks combined</span>`;
     }
 
     emailBody += `</h3>`;
@@ -418,7 +444,7 @@ function sendWeeklySummary() {
 
     if (forceInclude) {
       emailBody += `<p style='background:#fff3e0; padding:8px 12px; border-radius:6px; font-size:13px; color:#e65100; margin-bottom:12px;'>
-        ℹ️ Last payment was on ${lastPayDate.toLocaleDateString()} — more than 13 days ago.
+        Last payment was on ${lastPayDate.toLocaleDateString()} - more than 13 days ago.
         This payout covers all pending shifts regardless of total hours.
       </p>`;
     }
@@ -439,7 +465,7 @@ function sendWeeklySummary() {
   });
 
   if (!hasData) {
-    emailBody += "<p><em>No payments to process this week — all staff either have no pending shifts, or have under 3 unpaid hours and are within their first eligible skip.</em></p>";
+    emailBody += "<p><em>No payments to process this week - all staff either have no pending shifts, or have under 3 unpaid hours and are within their first eligible skip.</em></p>";
   } else {
     emailBody += `<div style='background: #2b3d2b; color: white; padding: 20px; margin: 20px 0; border-radius: 5px; text-align: center;'>`;
     emailBody += `<h3 style='margin: 0;'>Total to Send This Week</h3>`;
@@ -472,7 +498,7 @@ function getStaffList() {
     const h3Value = String(sheet.getRange("H3").getValue() || "").trim().toUpperCase();
     const isAdmin = (h3Value === "ADMIN");
 
-    if (!isAdmin) { // Don't include admins in task assignment list
+    if (!isAdmin) {
       staff.push({ name: name, pin: String(pin) });
     }
   });
@@ -484,7 +510,6 @@ function assignTasks(targetPin, tasksText) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let tasksSheet = ss.getSheetByName("Tasks");
 
-  // Create Tasks sheet if it doesn't exist
   if (!tasksSheet) {
     tasksSheet = ss.insertSheet("Tasks");
     tasksSheet.appendRow(["PIN", "Task", "Date Assigned", "Status"]);
@@ -518,7 +543,7 @@ function getTasks(pin) {
 
   data.forEach(row => {
     if (String(row[0]).trim() === String(pin).trim() && row[3] === "Active") {
-      activeTasks.push(row[1]); // Task text
+      activeTasks.push(row[1]);
     }
   });
 
@@ -532,13 +557,12 @@ function clearCompletedTasks(pin) {
 
   const lastRow = tasksSheet.getLastRow();
 
-  // Work backwards to avoid row index shifting
   for (let i = lastRow; i >= 2; i--) {
     const taskPin = String(tasksSheet.getRange(i, 1).getValue()).trim();
     const status = tasksSheet.getRange(i, 4).getValue();
     if (taskPin === String(pin).trim() && status === "Active") {
       tasksSheet.getRange(i, 4).setValue("Completed");
-      tasksSheet.getRange(i, 5).setValue(new Date()); // Add completion date in column E
+      tasksSheet.getRange(i, 5).setValue(new Date());
     }
   }
 }
@@ -558,7 +582,7 @@ function getAllTasks() {
     const userSheet = findSheetByPin(String(row[0]));
     const name = userSheet ? userSheet.getRange("A3").getValue() : "Unknown";
     allTasks.push({
-      rowIndex: index + 2, // Actual row in sheet (accounting for header)
+      rowIndex: index + 2,
       pin: String(row[0]),
       name: name,
       task: row[1],
@@ -568,7 +592,6 @@ function getAllTasks() {
     });
   });
 
-  // Sort: Active tasks first, then by date
   allTasks.sort((a, b) => {
     if (a.status === "Active" && b.status !== "Active") return -1;
     if (a.status !== "Active" && b.status === "Active") return 1;
@@ -610,22 +633,18 @@ function reassignTask(rowIndex, newPin) {
     return { error: "Invalid parameters" };
   }
 
-  // Get the original task data
   const row = parseInt(rowIndex);
-  const originalTask = tasksSheet.getRange(row, 2).getValue();         // Task text
-  const originalDateAssigned = tasksSheet.getRange(row, 3).getValue(); // Original date
+  const originalTask = tasksSheet.getRange(row, 2).getValue();
 
-  // Mark the original as "Reassigned"
   tasksSheet.getRange(row, 4).setValue("Reassigned");
-  tasksSheet.getRange(row, 5).setValue(new Date()); // Reassignment date in column E
+  tasksSheet.getRange(row, 5).setValue(new Date());
 
-  // Create new active task for the new person
   tasksSheet.appendRow([
-    String(newPin),    // New staff PIN
-    originalTask,      // Same task text
-    new Date(),        // New assignment date (today)
-    "Active",          // Status
-    ""                 // No completion date yet
+    String(newPin),
+    originalTask,
+    new Date(),
+    "Active",
+    ""
   ]);
 
   return { success: true, msg: "Task reassigned successfully" };
@@ -634,37 +653,31 @@ function reassignTask(rowIndex, newPin) {
 function addStaffMember(name, phone, email, pin, rate) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
 
-  // Validate inputs
   if (!name || !pin || !rate) {
     return { error: "Name, PIN, and Rate are required" };
   }
 
-  // Check if PIN already exists
   const existingSheet = findSheetByPin(String(pin).trim());
   if (existingSheet) {
     return { error: "PIN already exists. Please choose a different PIN." };
   }
 
-  // Find the TEMPLATE sheet
   const templateSheet = ss.getSheetByName("TEMPLATE");
   if (!templateSheet) {
     return { error: "TEMPLATE sheet not found. Please create a template sheet first." };
   }
 
-  // Duplicate the template
   const newSheet = templateSheet.copyTo(ss);
   newSheet.setName(name);
 
-  // Populate Row 3 with the staff info (Row 1 is heading, Row 2 is column labels, Row 3 is data)
-  newSheet.getRange("A3").setValue(name);              // Employee Name
-  newSheet.getRange("B3").setValue(phone || "");       // Phone Number
-  newSheet.getRange("C3").setValue(email || "");       // Email Address
-  newSheet.getRange("D3").setValue(String(pin));       // PIN
-  newSheet.getRange("E3").setValue(parseFloat(rate));  // Current Hourly Rate
-  newSheet.getRange("F3").setValue(new Date());        // Last Increase Date (today)
-  newSheet.getRange("G3").setValue("");                // Previous Rate (empty for new hire)
+  newSheet.getRange("A3").setValue(name);
+  newSheet.getRange("B3").setValue(phone || "");
+  newSheet.getRange("C3").setValue(email || "");
+  newSheet.getRange("D3").setValue(String(pin));
+  newSheet.getRange("E3").setValue(parseFloat(rate));
+  newSheet.getRange("F3").setValue(new Date());
+  newSheet.getRange("G3").setValue("");
 
-  // Move the new sheet to the first position
   newSheet.activate();
   ss.moveActiveSheet(1);
 
