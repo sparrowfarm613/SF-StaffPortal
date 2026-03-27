@@ -417,6 +417,7 @@
     const pin = document.getElementById('pin').value;
     try {
       const res = await callAPI({ action: "getAdminLogs", pin: pin });
+      console.log("getAdminLogs response:", JSON.stringify(res));
       cachedAdminLogs = res;
       document.getElementById('admin-alerts').innerHTML = res.alerts || "";
       renderActivityLog(res.logs || []);
