@@ -19,11 +19,11 @@
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     button { padding: 18px; cursor: pointer; border: none; border-radius: 10px; color: white; font-weight: bold; text-transform: uppercase; transition: opacity 0.2s; }
     button:active { opacity: 0.7; }
-    .btn-in { background: #388e3c; grid-column: span 2; } 
+    .btn-in { background: #388e3c; grid-column: span 2; }
     .btn-out { background: #d32f2f; grid-column: span 2; }
     .btn-submit { background: #2b3d2b; width: 100%; }
-    .btn-alert { background: #f57c00; } 
-    .btn-maint { background: #b71c1c; } 
+    .btn-alert { background: #f57c00; }
+    .btn-maint { background: #b71c1c; }
     .btn-history { background: #455a64; grid-column: span 2; }
     .btn-admin { background: #212121; grid-column: span 2; }
     .btn-tasks { background: #6a1b9a; grid-column: span 2; }
@@ -44,669 +44,669 @@
 </head>
 <body>
 
-  <div id="toast" class="hidden"><span id="toast-msg"></span></div>
+<div id="toast" class="hidden"><span id="toast-msg"></span></div>
 
-  <div class="container">
-    <img src="https://sparrowfarms.ca/cdn/shop/files/Transparent_-_Web_Sparrow_Farms_Logo_1500_x_1500_px.png?v=1737389483&width=375" class="logo" alt="Sparrow Farms">
-    
-    <div id="screen-main">
-      <h1>Staff Portal</h1>
-      <div class="status-box">
-        <div id="status-text">Enter PIN to Login</div>
-        <div id="msg-text" style="font-size: 0.8em; color: #666; margin-top:10px;"></div>
+<div class="container">
+  <img src="https://sparrowfarms.ca/cdn/shop/files/Transparent_-_Web_Sparrow_Farms_Logo_1500_x_1500_px.png?v=1737389483&width=375" class="logo" alt="Sparrow Farms">
+
+  <div id="screen-main">
+    <h1>Staff Portal</h1>
+    <div class="status-box">
+      <div id="status-text">Enter PIN to Login</div>
+      <div id="msg-text" style="font-size: 0.8em; color: #666; margin-top:10px;"></div>
+    </div>
+
+    <!-- Tasks display for employees -->
+    <div id="tasks-display" class="tasks-box hidden">
+      <h4>📋 Your Tasks Today:</h4>
+      <ul id="tasks-list"></ul>
+    </div>
+
+    <input type="password" id="pin" class="pin-input" placeholder="0000" inputmode="numeric" maxlength="4">
+    <button id="btn-check" class="btn-submit" onclick="checkStatus()">Login / Check Status</button>
+
+    <div id="action-grid" class="grid hidden">
+      <button id="btn-in" class="btn-in" onclick="runClock('clock-in')">Clock In</button>
+      <button id="btn-out" class="btn-out" onclick="showLunchInput()">Clock Out</button>
+
+      <div id="lunch-confirm-area" class="hidden">
+        <label for="lunchMinsInput" style="display:block; margin-bottom: 8px; font-weight: bold; color:#b71c1c;">Minutes of Lunch/Break:</label>
+        <input type="number" id="lunchMinsInput" value="" min="0" step="5">
+        <button class="btn-out" style="width: 100%;" onclick="confirmClockOut()">Confirm &amp; Clock Out</button>
+        <button class="btn-history" style="width: 100%; margin-top: 8px; background: #999;" onclick="hideLunchInput()">Cancel</button>
       </div>
-      
-      <!-- Tasks display for employees -->
-      <div id="tasks-display" class="tasks-box hidden">
-        <h4>📋 Your Tasks Today:</h4>
-        <ul id="tasks-list"></ul>
-      </div>
-      
-      <input type="password" id="pin" class="pin-input" placeholder="0000" inputmode="numeric" maxlength="4">
-      <button id="btn-check" class="btn-submit" onclick="checkStatus()">Login / Check Status</button>
-      <div id="action-grid" class="grid hidden">
-        <button id="btn-in" class="btn-in" onclick="runClock('clock-in')">Clock In</button>
-        <button id="btn-out" class="btn-out" onclick="showLunchInput()">Clock Out</button>
-        <div id="lunch-confirm-area" class="hidden">
-          <label for="lunchMinsInput" style="display:block; margin-bottom: 8px; font-weight: bold; color:#b71c1c;">Minutes of Lunch/Break:</label>
-          <input type="number" id="lunchMinsInput" value="" min="0" step="5">
-          <button class="btn-out" style="width: 100%;" onclick="confirmClockOut()">Confirm & Clock Out</button>
-          <button class="btn-history" style="width: 100%; margin-top: 8px; background: #999;" onclick="hideLunchInput()">Cancel</button>
-        </div>
-        <button class="btn-history" onclick="openScreen('history')">📅 My History</button>
-        <button class="btn-alert" onclick="openScreen('stock')">⚠️ Low Stock</button>
-        <button class="btn-maint" onclick="openScreen('issue')">🛠️ Maintenance</button>
-        <button id="btn-admin" class="btn-admin hidden" onclick="showAdmin()">🔐 Admin Quick View</button>
-        <button class="btn-history" style="background:#666;" onclick="resetApp()">Logout</button>
-      </div>
-    </div>
 
-    <div id="screen-admin" class="hidden">
-      <h3>Admin Quick View</h3>
-      <div id="admin-data">Loading activity...</div>
-      
-      <h4 style="margin-top: 20px; margin-bottom: 10px; color: #6a1b9a; border-bottom: 2px solid #6a1b9a; padding-bottom: 5px;">📋 Task Management</h4>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
-        <button style="background:white; color:#2b3d2b; border:2px solid #6a1b9a; padding:12px; font-size:14px; border-radius:10px; font-weight:bold; cursor:pointer; text-transform:uppercase;" onclick="openScreen('assign')">➕ Assign New</button>
-        <button style="background:white; color:#2b3d2b; border:2px solid #6a1b9a; padding:12px; font-size:14px; border-radius:10px; font-weight:bold; cursor:pointer; text-transform:uppercase;" onclick="openScreen('manage-tasks')">📝 Manage Existing</button>
-      </div>
-      
-      <button class="btn-submit" style="background:#388e3c; margin-top:10px; width:100%;" onclick="openScreen('add-staff')">🧑‍🌾 Add New Staff Member</button>
-      <button class="btn-submit" style="background:#f57c00; margin-top:10px; width:100%;" onclick="triggerRecalc()">🔄 Recalculate Payroll Data</button>
-      <button class="btn-history" style="width:100%; margin-top:15px; background:#607d8b" onclick="openScreen('main')">Back</button>
-    </div>
-
-    <div id="screen-assign" class="hidden">
-      <h3>Assign Tasks</h3>
-      <label for="staffSelect" style="display:block; text-align:left; margin-bottom:5px; font-weight:bold;">Select Staff Member:</label>
-      <select id="staffSelect"></select>
-      <label for="tasksInput" style="display:block; text-align:left; margin-bottom:5px; font-weight:bold;">Tasks (one per line):</label>
-      <textarea id="tasksInput" rows="6" placeholder="Feed chickens&#10;Water greenhouse plants&#10;Clean barn stalls"></textarea>
-      <button class="btn-submit" onclick="submitTasks()">Assign Tasks</button>
-      <button class="btn-history" style="width:100%; margin-top:10px; background:#607d8b" onclick="openScreen('main')">Cancel</button>
-    </div>
-
-    <div id="screen-manage-tasks" class="hidden">
-      <h3>Manage All Tasks</h3>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
-        <button class="btn-submit" style="background:#388e3c; padding:12px;" onclick="filterTasks('active')">Active</button>
-        <button class="btn-submit" style="background:#455a64; padding:12px;" onclick="filterTasks('completed')">Completed</button>
-      </div>
-      <div id="tasks-table-container" style="max-height: 400px; overflow-y: auto; text-align: left;">
-        <p style="text-align:center; color:#999;">Loading tasks...</p>
-      </div>
-      <button class="btn-history" style="width:100%; margin-top:15px; background:#607d8b" onclick="openScreen('admin')">Back</button>
-    </div>
-
-    <div id="screen-add-staff" class="hidden">
-      <h3>Add New Staff Member</h3>
-      <form id="add-staff-form" onsubmit="submitNewStaff(event)">
-        <label for="staffName" style="display:block; text-align:left; margin-bottom:5px; font-weight:bold;">Employee Name *</label>
-        <input type="text" id="staffName" required placeholder="Jane Doe">
-        
-        <label for="staffPhone" style="display:block; text-align:left; margin-bottom:5px; font-weight:bold;">Phone Number</label>
-        <input type="tel" id="staffPhone" placeholder="613-258-1299">
-        
-        <label for="staffEmail" style="display:block; text-align:left; margin-bottom:5px; font-weight:bold;">Email Address</label>
-        <input type="email" id="staffEmail" placeholder="example@email.com">
-        
-        <label for="staffPin" style="display:block; text-align:left; margin-bottom:5px; font-weight:bold;">4-Digit PIN *</label>
-        <input type="password" id="staffPin" required inputmode="numeric" maxlength="4" minlength="4" placeholder="0000">
-        
-        <label for="staffRate" style="display:block; text-align:left; margin-bottom:5px; font-weight:bold;">Hourly Rate ($) *</label>
-        <input type="number" id="staffRate" required step="0.01" min="0" placeholder="18.00">
-        
-        <button type="submit" class="btn-submit" style="margin-top:10px;">Add Staff Member</button>
-      </form>
-      <button class="btn-history" style="width:100%; margin-top:10px; background:#607d8b" onclick="openScreen('admin')">Cancel</button>
-    </div>
-
-    <div id="screen-stock" class="hidden">
-      <h3>Low Stock Report</h3>
-      <input type="text" id="stockItem" placeholder="What item is low?">
-      <button class="btn-submit" onclick="submitStock()">Send Alert</button>
-      <button class="btn-history" style="width:100%; margin-top:10px; background:#607d8b" onclick="openScreen('main')">Cancel</button>
-    </div>
-
-    <div id="screen-issue" class="hidden">
-      <h3>Equipment Issue</h3>
-      <input type="text" id="machine" placeholder="Equipment Name">
-      <textarea id="issue" rows="3" placeholder="Describe the problem..."></textarea>
-      <button class="btn-submit" onclick="submitMaint()">Submit Issue</button>
-      <button class="btn-history" style="width:100%; margin-top:10px; background:#607d8b" onclick="openScreen('main')">Cancel</button>
-    </div>
-
-    <div id="screen-history" class="hidden">
-      <h3>My Recent History</h3>
-      <div id="history-data" style="text-align:left;"></div>
-      <button class="btn-history" style="width:100%; margin-top:20px; background:#607d8b" onclick="openScreen('main')">Back</button>
-    </div>
-
-    <div id="screen-report" class="hidden">
-      <h3>Shift Summary</h3>
-      <div id="summary-val" style="margin-bottom:15px; color:green; font-weight:bold;"></div>
-      
-      <!-- Task completion confirmation -->
-      <div id="task-completion" class="task-confirm-box hidden">
-        <h4>Did you complete these tasks?</h4>
-        <div id="task-completion-list" style="font-size: 0.9em; margin-bottom: 10px;"></div>
-        <p style="font-size: 0.85em; color: #555; margin: 10px 0;">Update the status in parentheses below (e.g., "DONE", "PARTIAL", "NOT STARTED")</p>
-      </div>
-      
-      <textarea id="work" rows="5" placeholder="What did you work on today?"></textarea>
-      <button class="btn-submit" onclick="submitReport()">Finish & Submit</button>
+      <button class="btn-history" onclick="openScreen('history')">📅 My History</button>
+      <button class="btn-alert" onclick="openScreen('stock')">⚠️ Low Stock</button>
+      <button class="btn-maint" onclick="openScreen('issue')">🛠️ Maintenance</button>
+      <button id="btn-admin" class="btn-admin hidden" onclick="showAdmin()">🔐 Admin Quick View</button>
+      <button class="btn-history" style="background:#666;" onclick="resetApp()">Logout</button>
     </div>
   </div>
 
-  <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwsYDpyw-dA8nFHbtiamxOFM_M30xH57Vj7HAt_o2AKn22jaB0gA6ZVqj9_IKLObm-LJw/exec";
-    
-    let cachedStaffList = null;
+  <div id="screen-admin" class="hidden">
+    <h3>Admin Quick View</h3>
+    <div id="admin-data">Loading activity...</div>
+    <h4 style="margin-top: 20px; margin-bottom: 10px; color: #6a1b9a; border-bottom: 2px solid #6a1b9a; padding-bottom: 5px;">📋 Task Management</h4>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+      <button style="background:white; color:#2b3d2b; border:2px solid #6a1b9a; padding:12px; font-size:14px; border-radius:10px; font-weight:bold; cursor:pointer; text-transform:uppercase;" onclick="openScreen('assign')">➕ Assign New</button>
+      <button style="background:white; color:#2b3d2b; border:2px solid #6a1b9a; padding:12px; font-size:14px; border-radius:10px; font-weight:bold; cursor:pointer; text-transform:uppercase;" onclick="openScreen('manage-tasks')">📝 Manage Existing</button>
+    </div>
+    <button class="btn-submit" style="background:#388e3c; margin-top:10px; width:100%;" onclick="openScreen('add-staff')">🧑‍🌾 Add New Staff Member</button>
+    <button class="btn-submit" style="background:#f57c00; margin-top:10px; width:100%;" onclick="triggerRecalc()">🔄 Recalculate Payroll Data</button>
+    <button class="btn-history" style="width:100%; margin-top:15px; background:#607d8b" onclick="openScreen('main')">Back</button>
+  </div>
 
-    function callGoogleJSONP(params, callbackFn) {
-  const callbackName = 'cb_' + Math.round(100000 * Math.random());
-  window[callbackName] = function(data) {
-    delete window[callbackName];
-    const s = document.getElementById(callbackName);
-    if (s) s.parentNode.removeChild(s);
-    callbackFn(data);
-  };
-  let fullUrl = SCRIPT_URL + (SCRIPT_URL.includes('?') ? '&' : '?') + "callback=" + callbackName;
-  for (let key in params) { fullUrl += "&" + key + "=" + encodeURIComponent(params[key]); }
-  const script = document.createElement('script');
-  script.id = callbackName;
-  script.src = fullUrl;
-  script.onerror = function() { document.getElementById('status-text').innerText = "Connection Error"; };
-  document.body.appendChild(script);
-}
+  <div id="screen-assign" class="hidden">
+    <h3>Assign Tasks</h3>
+    <label for="staffSelect" style="display:block; text-align:left; margin-bottom:5px; font-weight:bold;">Select Staff Member:</label>
+    <select id="staffSelect"></select>
+    <label for="tasksInput" style="display:block; text-align:left; margin-bottom:5px; font-weight:bold;">Tasks (one per line):</label>
+    <textarea id="tasksInput" rows="6" placeholder="Feed chickens&#10;Water greenhouse plants&#10;Clean barn stalls"></textarea>
+    <button class="btn-submit" onclick="submitTasks()">Assign Tasks</button>
+    <button class="btn-history" style="width:100%; margin-top:10px; background:#607d8b" onclick="openScreen('main')">Cancel</button>
+  </div>
 
-    function showToast(msg) {
-      const toast = document.getElementById('toast');
-      document.getElementById('toast-msg').innerText = msg;
-      toast.classList.remove('hidden');
-      setTimeout(() => { toast.classList.add('hidden'); }, 4000);
+  <div id="screen-manage-tasks" class="hidden">
+    <h3>Manage All Tasks</h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+      <button class="btn-submit" style="background:#388e3c; padding:12px;" onclick="filterTasks('active')">Active</button>
+      <button class="btn-submit" style="background:#455a64; padding:12px;" onclick="filterTasks('completed')">Completed</button>
+    </div>
+    <div id="tasks-table-container" style="max-height: 400px; overflow-y: auto; text-align: left;">
+      <p style="text-align:center; color:#999;">Loading tasks...</p>
+    </div>
+    <button class="btn-history" style="width:100%; margin-top:15px; background:#607d8b" onclick="openScreen('admin')">Back</button>
+  </div>
+
+  <div id="screen-add-staff" class="hidden">
+    <h3>Add New Staff Member</h3>
+    <form id="add-staff-form" onsubmit="submitNewStaff(event)">
+      <label for="staffName" style="display:block; text-align:left; margin-bottom:5px; font-weight:bold;">Employee Name *</label>
+      <input type="text" id="staffName" required placeholder="Jane Doe">
+      <label for="staffPhone" style="display:block; text-align:left; margin-bottom:5px; font-weight:bold;">Phone Number</label>
+      <input type="tel" id="staffPhone" placeholder="613-258-1299">
+      <label for="staffEmail" style="display:block; text-align:left; margin-bottom:5px; font-weight:bold;">Email Address</label>
+      <input type="email" id="staffEmail" placeholder="example@email.com">
+      <label for="staffPin" style="display:block; text-align:left; margin-bottom:5px; font-weight:bold;">4-Digit PIN *</label>
+      <input type="password" id="staffPin" required inputmode="numeric" maxlength="4" minlength="4" placeholder="0000">
+      <label for="staffRate" style="display:block; text-align:left; margin-bottom:5px; font-weight:bold;">Hourly Rate ($) *</label>
+      <input type="number" id="staffRate" required step="0.01" min="0" placeholder="18.00">
+      <button type="submit" class="btn-submit" style="margin-top:10px;">Add Staff Member</button>
+    </form>
+    <button class="btn-history" style="width:100%; margin-top:10px; background:#607d8b" onclick="openScreen('admin')">Cancel</button>
+  </div>
+
+  <div id="screen-stock" class="hidden">
+    <h3>Low Stock Report</h3>
+    <input type="text" id="stockItem" placeholder="What item is low?">
+    <button class="btn-submit" onclick="submitStock()">Send Alert</button>
+    <button class="btn-history" style="width:100%; margin-top:10px; background:#607d8b" onclick="openScreen('main')">Cancel</button>
+  </div>
+
+  <div id="screen-issue" class="hidden">
+    <h3>Equipment Issue</h3>
+    <input type="text" id="machine" placeholder="Equipment Name">
+    <textarea id="issue" rows="3" placeholder="Describe the problem..."></textarea>
+    <button class="btn-submit" onclick="submitMaint()">Submit Issue</button>
+    <button class="btn-history" style="width:100%; margin-top:10px; background:#607d8b" onclick="openScreen('main')">Cancel</button>
+  </div>
+
+  <div id="screen-history" class="hidden">
+    <h3>My Recent History</h3>
+    <div style="background:#f0f4ff; border-radius:10px; border:1px solid #c5cae9; padding:12px; margin-bottom:15px; font-size:13px; text-align:left; color:#37474f; line-height:1.5;">
+      <strong>💳 About your pay:</strong> E-transfers are processed every Monday.
+      If your total hours for the week are under 3 hours, payment may hold until the
+      following Monday — so you'd receive both weeks together.
+      The <em>Status</em> column shows <em>Pending</em> until your e-transfer is sent.
+    </div>
+    <div id="history-data" style="text-align:left;"></div>
+    <button class="btn-history" style="width:100%; margin-top:20px; background:#607d8b" onclick="openScreen('main')">Back</button>
+  </div>
+
+  <div id="screen-report" class="hidden">
+    <h3>Shift Summary</h3>
+    <div id="summary-val" style="margin-bottom:15px; color:green; font-weight:bold;"></div>
+
+    <!-- Task completion confirmation -->
+    <div id="task-completion" class="task-confirm-box hidden">
+      <h4>Did you complete these tasks?</h4>
+      <div id="task-completion-list" style="font-size: 0.9em; margin-bottom: 10px;"></div>
+      <p style="font-size: 0.85em; color: #555; margin: 10px 0;">Update the status in parentheses below (e.g., "DONE", "PARTIAL", "NOT STARTED")</p>
+    </div>
+
+    <textarea id="work" rows="5" placeholder="What did you work on today?"></textarea>
+    <button class="btn-submit" onclick="submitReport()">Finish &amp; Submit</button>
+  </div>
+
+</div>
+
+<script>
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwsYDpyw-dA8nFHbtiamxOFM_M30xH57Vj7HAt_o2AKn22jaB0gA6ZVqj9_IKLObm-LJw/exec";
+  let cachedStaffList = null;
+
+  function callGoogleJSONP(params, callbackFn) {
+    const callbackName = 'cb_' + Math.round(100000 * Math.random());
+    window[callbackName] = function(data) {
+      delete window[callbackName];
+      const s = document.getElementById(callbackName);
+      if (s) s.parentNode.removeChild(s);
+      callbackFn(data);
+    };
+
+    let fullUrl = SCRIPT_URL + (SCRIPT_URL.includes('?') ? '&' : '?') + "callback=" + callbackName;
+    for (let key in params) { fullUrl += "&" + key + "=" + encodeURIComponent(params[key]); }
+
+    const script = document.createElement('script');
+    script.id = callbackName;
+    script.src = fullUrl;
+    script.onerror = function() { document.getElementById('status-text').innerText = "Connection Error"; };
+    document.body.appendChild(script);
+  }
+
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    document.getElementById('toast-msg').innerText = msg;
+    toast.classList.remove('hidden');
+    setTimeout(() => { toast.classList.add('hidden'); }, 4000);
+  }
+
+  function openScreen(id) {
+    ['main', 'stock', 'issue', 'history', 'report', 'admin', 'assign', 'manage-tasks', 'add-staff'].forEach(s => {
+      const el = document.getElementById('screen-'+s);
+      if(el) el.classList.add('hidden');
+    });
+    document.getElementById('screen-'+id).classList.remove('hidden');
+
+    // Load staff list when opening assign screen
+    if (id === 'assign') {
+      loadStaffList(); // Will use cache if available
     }
 
-    function openScreen(id) {
-      ['main', 'stock', 'issue', 'history', 'report', 'admin', 'assign', 'manage-tasks', 'add-staff'].forEach(s => {
-        const el = document.getElementById('screen-'+s);
-        if(el) el.classList.add('hidden');
-      });
-      document.getElementById('screen-'+id).classList.remove('hidden');
-      
-      // Load staff list when opening assign screen
-      if (id === 'assign') {
-        loadStaffList(); // Will use cache if available
-      }
-      
-      // Load all tasks when opening manage screen
-      if (id === 'manage-tasks') {
-        loadAllTasks('active');
-      }
-      
-      // Clear form when opening add staff screen
-      if (id === 'add-staff') {
-        document.getElementById('add-staff-form').reset();
-      }
+    // Load all tasks when opening manage screen
+    if (id === 'manage-tasks') {
+      loadAllTasks('active');
     }
 
-    function resetApp() {
-      document.getElementById('pin').value = "";
-      document.getElementById('status-text').innerText = "Enter PIN to Login";
-      document.getElementById('msg-text').innerHTML = "";
-      document.getElementById('action-grid').classList.add('hidden');
-      document.getElementById('btn-check').classList.remove('hidden');
-      document.getElementById('btn-admin').classList.add('hidden');
-      document.getElementById('tasks-display').classList.add('hidden');
-      cachedStaffList = null; // Clear cache on logout
-      openScreen('main');
+    // Clear form when opening add staff screen
+    if (id === 'add-staff') {
+      document.getElementById('add-staff-form').reset();
     }
+  }
 
-    function checkStatus() {
-      const pin = document.getElementById('pin').value;
-      if (pin.length < 4) return showToast("Enter 4-digit PIN");
-      document.getElementById('status-text').innerText = "Verifying...";
-      callGoogleJSONP({ action: "getWeeklyHistory", pin: pin }, function(res) {
-        if (!res || res.error) { document.getElementById('status-text').innerText = res.error || "Invalid PIN"; return; }
-        document.getElementById('status-text').innerHTML = "<b>" + res.name + "</b>: " + res.currentStatus;
-        document.getElementById('msg-text').innerHTML = res.pay;
-        document.getElementById('history-data').innerHTML = res.history;
-        document.getElementById('action-grid').classList.remove('hidden');
-        document.getElementById('btn-check').classList.add('hidden');
-        
-        // Show admin buttons if admin
-        if (res.isAdmin) {
-          document.getElementById('btn-admin').classList.remove('hidden');
-          
-          // Pre-load staff list in background for faster access later
-          loadStaffList();
-        }
-        
-        // Show tasks if any exist
-        if (res.tasks && res.tasks.length > 0) {
-          const tasksList = document.getElementById('tasks-list');
-          tasksList.innerHTML = '';
-          res.tasks.forEach(task => {
-            const li = document.createElement('li');
-            li.textContent = task;
-            tasksList.appendChild(li);
-          });
-          document.getElementById('tasks-display').classList.remove('hidden');
+  function resetApp() {
+    document.getElementById('pin').value = "";
+    document.getElementById('status-text').innerText = "Enter PIN to Login";
+    document.getElementById('msg-text').innerHTML = "";
+    document.getElementById('action-grid').classList.add('hidden');
+    document.getElementById('btn-check').classList.remove('hidden');
+    document.getElementById('btn-admin').classList.add('hidden');
+    document.getElementById('tasks-display').classList.add('hidden');
+    cachedStaffList = null; // Clear cache on logout
+    openScreen('main');
+  }
+
+  function checkStatus() {
+    const pin = document.getElementById('pin').value;
+    if (pin.length < 4) return showToast("Enter 4-digit PIN");
+    document.getElementById('status-text').innerText = "Verifying...";
+
+    callGoogleJSONP({ action: "getWeeklyHistory", pin: pin }, function(res) {
+      if (!res || res.error) { document.getElementById('status-text').innerText = res.error || "Invalid PIN"; return; }
+
+      document.getElementById('status-text').innerHTML = "<b>" + res.name + "</b>: " + res.currentStatus;
+      document.getElementById('msg-text').innerHTML = res.pay;
+
+      // Build history content with unpaid balance summary appended
+      let historyContent = res.history;
+      if (res.unpaidSummary) {
+        historyContent += `<div style='margin-top:12px; padding:12px; background:#fff8e1; border-radius:10px; border:2px solid #ffb300; font-size:14px; text-align:left;'>
+          <strong>💰 Pending balance:</strong> ${res.unpaidSummary.hours} hrs &nbsp;|&nbsp; <strong>$${res.unpaidSummary.pay}</strong>
+        </div>`;
+      }
+      document.getElementById('history-data').innerHTML = historyContent;
+
+      document.getElementById('action-grid').classList.remove('hidden');
+      document.getElementById('btn-check').classList.add('hidden');
+
+      // Show admin buttons if admin
+      if (res.isAdmin) {
+        document.getElementById('btn-admin').classList.remove('hidden');
+        // Pre-load staff list in background for faster access later
+        loadStaffList();
+      }
+
+      // Show tasks if any exist
+      if (res.tasks && res.tasks.length > 0) {
+        const tasksList = document.getElementById('tasks-list');
+        tasksList.innerHTML = '';
+        res.tasks.forEach(task => {
+          const li = document.createElement('li');
+          li.textContent = task;
+          tasksList.appendChild(li);
+        });
+        document.getElementById('tasks-display').classList.remove('hidden');
+      } else {
+        document.getElementById('tasks-display').classList.add('hidden');
+      }
+
+      document.getElementById('btn-in').classList.toggle('hidden', res.currentStatus !== "Clocked Out");
+      document.getElementById('btn-out').classList.toggle('hidden', res.currentStatus === "Clocked Out");
+    });
+  }
+
+  function showAdmin() {
+    const pin = document.getElementById('pin').value;
+    openScreen('admin');
+    document.getElementById('admin-data').innerHTML = "Loading...";
+    callGoogleJSONP({ action: "getAdminLogs", pin: pin }, function(h) {
+      document.getElementById('admin-data').innerHTML = h;
+    });
+  }
+
+  function triggerRecalc() {
+    if(!confirm("Fix Hours and Earned columns for all staff based on current Time In/Out and Lunch?")) return;
+    const pin = document.getElementById('pin').value;
+    showToast("Processing...");
+    callGoogleJSONP({ action: "recalculate", pin: pin }, function(res) {
+      if(res.success) { showToast("Success!"); showAdmin(); }
+      else { showToast("Error: " + res.error); }
+    });
+  }
+
+  function loadStaffList() {
+    // Use cached list if available
+    if (cachedStaffList) {
+      populateStaffSelect(cachedStaffList);
+      return;
+    }
+    const pin = document.getElementById('pin').value;
+    const select = document.getElementById('staffSelect');
+    select.innerHTML = '<option value="">Loading...</option>';
+    callGoogleJSONP({ action: "getStaffList", pin: pin }, function(res) {
+      if (res.staff) {
+        cachedStaffList = res.staff; // Cache it
+        populateStaffSelect(res.staff);
+      }
+    });
+  }
+
+  function populateStaffSelect(staff) {
+    const select = document.getElementById('staffSelect');
+    select.innerHTML = '<option value="">-- Select Staff --</option>';
+    staff.forEach(s => {
+      const option = document.createElement('option');
+      option.value = s.pin;
+      option.textContent = s.name;
+      select.appendChild(option);
+    });
+  }
+
+  function submitTasks() {
+    const pin = document.getElementById('pin').value;
+    const targetPin = document.getElementById('staffSelect').value;
+    const tasks = document.getElementById('tasksInput').value;
+
+    if (!targetPin) { showToast("Please select a staff member"); return; }
+    if (!tasks.trim()) { showToast("Please enter at least one task"); return; }
+
+    callGoogleJSONP({
+      action: "assignTasks",
+      pin: pin,
+      targetPin: targetPin,
+      tasks: tasks
+    }, function(res) {
+      if (res.success) {
+        showToast(res.msg);
+        document.getElementById('tasksInput').value = '';
+        document.getElementById('staffSelect').value = '';
+        openScreen('main');
+      } else {
+        showToast("Error: " + (res.error || "Unknown error"));
+      }
+    });
+  }
+
+  function showLunchInput() {
+    document.getElementById('btn-out').classList.add('hidden');
+    document.getElementById('lunch-confirm-area').classList.remove('hidden');
+  }
+
+  function hideLunchInput() {
+    document.getElementById('btn-out').classList.remove('hidden');
+    document.getElementById('lunch-confirm-area').classList.add('hidden');
+  }
+
+  function confirmClockOut() {
+    runClock('clock-out', document.getElementById('lunchMinsInput').value);
+    hideLunchInput();
+  }
+
+  function runClock(type, lunch) {
+    const pin = document.getElementById('pin').value;
+    document.getElementById('status-text').innerText = "Syncing...";
+    callGoogleJSONP({ action: "handleClockAction", pin: pin, type: type, lunchMinutes: lunch||0 }, function(res) {
+      if (res.showReport) {
+        document.getElementById('summary-val').innerText = res.summary;
+
+        // Show task completion if there are tasks
+        if (res.hasTasks && res.tasksPrefill) {
+          document.getElementById('task-completion').classList.remove('hidden');
+          document.getElementById('task-completion-list').innerHTML = res.tasksPrefill.replace(/\n/g, '<br>');
         } else {
-          document.getElementById('tasks-display').classList.add('hidden');
+          document.getElementById('task-completion').classList.add('hidden');
         }
-        
-        document.getElementById('btn-in').classList.toggle('hidden', res.currentStatus !== "Clocked Out");
-        document.getElementById('btn-out').classList.toggle('hidden', res.currentStatus === "Clocked Out");
+
+        // Always leave textarea empty for them to fill in
+        document.getElementById('work').value = '';
+        openScreen('report');
+      }
+      else { showToast("Status Updated!"); checkStatus(); }
+    });
+  }
+
+  function submitStock() {
+    callGoogleJSONP({ action: "sendLowStockAlert", pin: document.getElementById('pin').value, item: document.getElementById('stockItem').value }, function() {
+      showToast("Stock Alert Sent!");
+      document.getElementById('stockItem').value = '';
+      openScreen('main');
+    });
+  }
+
+  function submitMaint() {
+    callGoogleJSONP({ action: "sendEquipmentIssue", pin: document.getElementById('pin').value, machine: document.getElementById('machine').value, issue: document.getElementById('issue').value }, function() {
+      showToast("Maintenance Report Sent!");
+      document.getElementById('machine').value = '';
+      document.getElementById('issue').value = '';
+      openScreen('main');
+    });
+  }
+
+  function submitReport() {
+    if (isSubmittingReport) {
+      return; // Prevent duplicate submissions
+    }
+    isSubmittingReport = true;
+    callGoogleJSONP({ action: "submitShiftReport", pin: document.getElementById('pin').value, work: document.getElementById('work').value }, function() {
+      isSubmittingReport = false;
+      showToast("Summary Submitted!");
+      setTimeout(resetApp, 1500);
+    });
+  }
+
+  window.onload = function() {
+    document.getElementById('pin').focus();
+    // Register service worker for PWA functionality
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(function(err) {
+        console.log('ServiceWorker registration failed: ', err);
       });
     }
+  };
 
-    function showAdmin() {
-      const pin = document.getElementById('pin').value;
-      openScreen('admin');
-      document.getElementById('admin-data').innerHTML = "Loading...";
-      callGoogleJSONP({ action: "getAdminLogs", pin: pin }, function(h) {
-        document.getElementById('admin-data').innerHTML = h;
-      });
-    }
+  let currentTaskFilter = 'active';
+  let isSubmittingReport = false;
 
-    function triggerRecalc() {
-      if(!confirm("Fix Hours and Earned columns for all staff based on current Time In/Out and Lunch?")) return;
-      const pin = document.getElementById('pin').value;
-      showToast("Processing...");
-      callGoogleJSONP({ action: "recalculate", pin: pin }, function(res) {
-        if(res.success) { showToast("Success!"); showAdmin(); }
-        else { showToast("Error: " + res.error); }
-      });
-    }
+  function filterTasks(filter) {
+    currentTaskFilter = filter;
+    loadAllTasks(filter);
+  }
 
-    function loadStaffList() {
-      // Use cached list if available
-      if (cachedStaffList) {
-        populateStaffSelect(cachedStaffList);
+  function loadAllTasks(filter) {
+    const pin = document.getElementById('pin').value;
+    const container = document.getElementById('tasks-table-container');
+    container.innerHTML = '<p style="text-align:center; color:#999;">Loading tasks...</p>';
+
+    callGoogleJSONP({ action: "getAllTasks", pin: pin }, function(res) {
+      if (!res.tasks || res.tasks.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#999;">No tasks found.</p>';
         return;
       }
-      
-      const pin = document.getElementById('pin').value;
-      const select = document.getElementById('staffSelect');
-      select.innerHTML = '<option value="">Loading...</option>';
-      
-      callGoogleJSONP({ action: "getStaffList", pin: pin }, function(res) {
-        if (res.staff) {
-          cachedStaffList = res.staff; // Cache it
-          populateStaffSelect(res.staff);
-        }
+
+      // Filter tasks
+      const filteredTasks = res.tasks.filter(t => {
+        if (filter === 'active') return t.status === 'Active';
+        if (filter === 'completed') return t.status === 'Completed';
+        return true;
       });
+
+      if (filteredTasks.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#999;">No ' + filter + ' tasks.</p>';
+        return;
+      }
+
+      let html = '<div style="font-size: 13px;">';
+      filteredTasks.forEach(task => {
+        const statusColor = task.status === 'Active' ? '#388e3c' : '#757575';
+        const statusBg = task.status === 'Active' ? '#e8f5e9' : '#f5f5f5';
+
+        html += '<div style="background:' + statusBg + '; padding:12px; margin-bottom:10px; border-radius:8px; border-left:4px solid ' + statusColor + ';">';
+        html += '<div style="margin-bottom:8px;"><strong style="color:#2b3d2b;">' + task.name + '</strong> ';
+        html += '<span style="background:' + statusColor + '; color:white; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:bold;">' + task.status + '</span></div>';
+        html += '<div id="task-text-' + task.rowIndex + '" style="color:#424242; margin-bottom:8px;">' + task.task + '</div>';
+
+        html += '<div id="task-edit-' + task.rowIndex + '" style="display:none; margin-bottom:8px;">';
+        html += '<input type="text" id="task-input-' + task.rowIndex + '" value="' + task.task.replace(/"/g, '&quot;') + '" style="width:100%; padding:8px; border:2px solid #2b3d2b; border-radius:6px; font-size:14px; margin-bottom:8px;">';
+        html += '<div style="background:#f0f4ff; padding:10px; border-radius:6px; margin-bottom:8px;">';
+        html += '<div id="task-assigned-' + task.rowIndex + '" style="font-size:13px; color:#1565c0; margin-bottom:8px;"><strong>Assigned to:</strong> ' + task.name + '</div>';
+        html += '<button onclick="showReassignDropdown(' + task.rowIndex + ')" id="reassign-btn-' + task.rowIndex + '" style="background:#1976d2; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px;">🔄 Reassign Task</button>';
+        html += '<div id="reassign-area-' + task.rowIndex + '" style="display:none; margin-top:10px;">';
+        html += '<select id="reassign-select-' + task.rowIndex + '" style="width:100%; padding:8px; border:2px solid #1976d2; border-radius:6px; font-size:13px; margin-bottom:8px;"><option value="">Loading staff...</option></select>';
+        html += '<button onclick="confirmReassign(' + task.rowIndex + ')" style="background:#388e3c; color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer; font-size:12px; margin-right:5px;">✓ Confirm Reassign</button>';
+        html += '<button onclick="cancelReassign(' + task.rowIndex + ')" style="background:#757575; color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer; font-size:12px;">✖ Cancel</button>';
+        html += '</div></div>';
+        html += '</div>';
+
+        html += '<div style="font-size:11px; color:#757575; margin-bottom:8px;">Assigned: ' + task.dateAssigned;
+        if (task.dateCompleted) html += ' | Completed: ' + task.dateCompleted;
+        html += '</div>';
+
+        if (task.status === 'Active') {
+          html += '<button onclick="toggleEditTask(' + task.rowIndex + ')" id="edit-btn-' + task.rowIndex + '" style="background:#1976d2; color:white; border:none; padding:6px 12px; border-radius:6px; margin-right:5px; cursor:pointer; font-size:12px;">✏️ Edit</button>';
+          html += '<button onclick="saveTaskEdit(' + task.rowIndex + ')" id="save-btn-' + task.rowIndex + '" style="display:none; background:#388e3c; color:white; border:none; padding:6px 12px; border-radius:6px; margin-right:5px; cursor:pointer; font-size:12px;">💾 Save</button>';
+          html += '<button onclick="cancelTaskEdit(' + task.rowIndex + ')" id="cancel-btn-' + task.rowIndex + '" style="display:none; background:#757575; color:white; border:none; padding:6px 12px; border-radius:6px; margin-right:5px; cursor:pointer; font-size:12px;">✖️ Cancel</button>';
+        }
+
+        html += '<button onclick="confirmDeleteTask(' + task.rowIndex + ', \'' + task.name.replace(/'/g, "\\'") + '\', \'' + task.task.replace(/'/g, "\\'") + '\')" style="background:#d32f2f; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px;">🗑️ Delete</button>';
+        html += '</div>';
+      });
+
+      html += '</div>';
+      container.innerHTML = html;
+    });
+  }
+
+  function toggleEditTask(rowIndex) {
+    document.getElementById('task-text-' + rowIndex).style.display = 'none';
+    document.getElementById('task-edit-' + rowIndex).style.display = 'block';
+    document.getElementById('edit-btn-' + rowIndex).style.display = 'none';
+    document.getElementById('save-btn-' + rowIndex).style.display = 'inline-block';
+    document.getElementById('cancel-btn-' + rowIndex).style.display = 'inline-block';
+  }
+
+  function cancelTaskEdit(rowIndex) {
+    document.getElementById('task-text-' + rowIndex).style.display = 'block';
+    document.getElementById('task-edit-' + rowIndex).style.display = 'none';
+    document.getElementById('edit-btn-' + rowIndex).style.display = 'inline-block';
+    document.getElementById('save-btn-' + rowIndex).style.display = 'none';
+    document.getElementById('cancel-btn-' + rowIndex).style.display = 'none';
+
+    // Also hide reassign area if it was open
+    const reassignArea = document.getElementById('reassign-area-' + rowIndex);
+    const reassignBtn = document.getElementById('reassign-btn-' + rowIndex);
+    if (reassignArea) reassignArea.style.display = 'none';
+    if (reassignBtn) reassignBtn.style.display = 'inline-block';
+  }
+
+  function saveTaskEdit(rowIndex) {
+    const pin = document.getElementById('pin').value;
+    const newTask = document.getElementById('task-input-' + rowIndex).value.trim();
+
+    if (!newTask) {
+      showToast("Task cannot be empty");
+      return;
     }
-    
-    function populateStaffSelect(staff) {
-      const select = document.getElementById('staffSelect');
-      select.innerHTML = '<option value="">-- Select Staff --</option>';
-      staff.forEach(s => {
+
+    showToast("Saving...");
+    callGoogleJSONP({
+      action: "editTask",
+      pin: pin,
+      rowIndex: rowIndex,
+      newTask: newTask
+    }, function(res) {
+      if (res.success) {
+        showToast("Task updated!");
+        loadAllTasks(currentTaskFilter);
+      } else {
+        showToast("Error: " + (res.error || "Unknown error"));
+      }
+    });
+  }
+
+  function confirmDeleteTask(rowIndex, staffName, taskText) {
+    if (!confirm('Delete this task?\n\nStaff: ' + staffName + '\nTask: ' + taskText)) return;
+    const pin = document.getElementById('pin').value;
+    showToast("Deleting...");
+    callGoogleJSONP({
+      action: "deleteTask",
+      pin: pin,
+      rowIndex: rowIndex
+    }, function(res) {
+      if (res.success) {
+        showToast("Task deleted!");
+        loadAllTasks(currentTaskFilter);
+      } else {
+        showToast("Error: " + (res.error || "Unknown error"));
+      }
+    });
+  }
+
+  function submitNewStaff(event) {
+    event.preventDefault();
+    const pin = document.getElementById('pin').value;
+    const name = document.getElementById('staffName').value.trim();
+    const phone = document.getElementById('staffPhone').value.trim();
+    const email = document.getElementById('staffEmail').value.trim();
+    const newPin = document.getElementById('staffPin').value.trim();
+    const rate = document.getElementById('staffRate').value.trim();
+
+    if (!name || !newPin || !rate) {
+      showToast("Please fill in all required fields");
+      return;
+    }
+    if (newPin.length !== 4 || isNaN(newPin)) {
+      showToast("PIN must be exactly 4 digits");
+      return;
+    }
+
+    showToast("Adding staff member...");
+    callGoogleJSONP({
+      action: "addStaffMember",
+      pin: pin,
+      name: name,
+      phone: phone,
+      email: email,
+      newPin: newPin,
+      rate: rate
+    }, function(res) {
+      if (res.success) {
+        showToast(res.msg);
+        document.getElementById('add-staff-form').reset();
+        cachedStaffList = null; // Clear cache so it refreshes next time
+        setTimeout(function() {
+          openScreen('admin');
+        }, 2000);
+      } else {
+        showToast("Error: " + (res.error || "Unknown error"));
+      }
+    });
+  }
+
+  function showReassignDropdown(rowIndex) {
+    console.log("showReassignDropdown called for row:", rowIndex);
+    console.log("cachedStaffList:", cachedStaffList);
+
+    const reassignBtn = document.getElementById('reassign-btn-' + rowIndex);
+    const reassignArea = document.getElementById('reassign-area-' + rowIndex);
+
+    if (!reassignBtn || !reassignArea) {
+      console.error("Could not find reassign elements for row", rowIndex);
+      return;
+    }
+
+    reassignBtn.style.display = 'none';
+    reassignArea.style.display = 'block';
+
+    // Populate the dropdown with cached staff list
+    const select = document.getElementById('reassign-select-' + rowIndex);
+    if (!select) {
+      console.error("Could not find select element for row", rowIndex);
+      return;
+    }
+
+    if (cachedStaffList && cachedStaffList.length > 0) {
+      select.innerHTML = '<option value="">-- Select New Staff Member --</option>';
+      cachedStaffList.forEach(s => {
         const option = document.createElement('option');
         option.value = s.pin;
         option.textContent = s.name;
         select.appendChild(option);
       });
+    } else {
+      // Staff list not cached, load it now
+      select.innerHTML = '<option value="">Loading staff...</option>';
+      loadStaffListForReassign(rowIndex);
+    }
+  }
+
+  function loadStaffListForReassign(rowIndex) {
+    const pin = document.getElementById('pin').value;
+    callGoogleJSONP({ action: "getStaffList", pin: pin }, function(res) {
+      if (res.staff) {
+        cachedStaffList = res.staff;
+        const select = document.getElementById('reassign-select-' + rowIndex);
+        if (select) {
+          select.innerHTML = '<option value="">-- Select New Staff Member --</option>';
+          res.staff.forEach(s => {
+            const option = document.createElement('option');
+            option.value = s.pin;
+            option.textContent = s.name;
+            select.appendChild(option);
+          });
+        }
+      }
+    });
+  }
+
+  function cancelReassign(rowIndex) {
+    document.getElementById('reassign-btn-' + rowIndex).style.display = 'inline-block';
+    document.getElementById('reassign-area-' + rowIndex).style.display = 'none';
+  }
+
+  function confirmReassign(rowIndex) {
+    const pin = document.getElementById('pin').value;
+    const newPin = document.getElementById('reassign-select-' + rowIndex).value;
+
+    if (!newPin) {
+      showToast("Please select a staff member");
+      return;
     }
 
-    function submitTasks() {
-      const pin = document.getElementById('pin').value;
-      const targetPin = document.getElementById('staffSelect').value;
-      const tasks = document.getElementById('tasksInput').value;
-      
-      if (!targetPin) { showToast("Please select a staff member"); return; }
-      if (!tasks.trim()) { showToast("Please enter at least one task"); return; }
-      
-      callGoogleJSONP({ 
-        action: "assignTasks", 
-        pin: pin, 
-        targetPin: targetPin, 
-        tasks: tasks 
-      }, function(res) {
-        if (res.success) {
-          showToast(res.msg);
-          document.getElementById('tasksInput').value = '';
-          document.getElementById('staffSelect').value = '';
-          openScreen('main');
-        } else {
-          showToast("Error: " + (res.error || "Unknown error"));
-        }
-      });
-    }
-
-    function showLunchInput() { 
-      document.getElementById('btn-out').classList.add('hidden'); 
-      document.getElementById('lunch-confirm-area').classList.remove('hidden'); 
-    }
-    
-    function hideLunchInput() { 
-      document.getElementById('btn-out').classList.remove('hidden'); 
-      document.getElementById('lunch-confirm-area').classList.add('hidden'); 
-    }
-    
-    function confirmClockOut() { 
-      runClock('clock-out', document.getElementById('lunchMinsInput').value); 
-      hideLunchInput(); 
-    }
-
-    function runClock(type, lunch) {
-      const pin = document.getElementById('pin').value;
-      document.getElementById('status-text').innerText = "Syncing...";
-      callGoogleJSONP({ action: "handleClockAction", pin: pin, type: type, lunchMinutes: lunch||0 }, function(res) {
-        if (res.showReport) { 
-          document.getElementById('summary-val').innerText = res.summary;
-          
-          // Show task completion if there are tasks
-          if (res.hasTasks && res.tasksPrefill) {
-            document.getElementById('task-completion').classList.remove('hidden');
-            document.getElementById('task-completion-list').innerHTML = res.tasksPrefill.replace(/\n/g, '<br>');
-            // Don't pre-fill the textarea - let them type their own work summary
-          } else {
-            document.getElementById('task-completion').classList.add('hidden');
-          }
-          
-          // Always leave textarea empty for them to fill in
-          document.getElementById('work').value = '';
-          
-          openScreen('report'); 
-        }
-        else { showToast("Status Updated!"); checkStatus(); }
-      });
-    }
-
-    function submitStock() {
-      callGoogleJSONP({ action: "sendLowStockAlert", pin: document.getElementById('pin').value, item: document.getElementById('stockItem').value }, function() {
-        showToast("Stock Alert Sent!"); 
-        document.getElementById('stockItem').value = '';
-        openScreen('main');
-      });
-    }
-
-    function submitMaint() {
-      callGoogleJSONP({ action: "sendEquipmentIssue", pin: document.getElementById('pin').value, machine: document.getElementById('machine').value, issue: document.getElementById('issue').value }, function() {
-        showToast("Maintenance Report Sent!"); 
-        document.getElementById('machine').value = '';
-        document.getElementById('issue').value = '';
-        openScreen('main');
-      });
-    }
-
-    function submitReport() {
-      if (isSubmittingReport) {
-        return; // Prevent duplicate submissions
-      }
-      
-      isSubmittingReport = true;
-      
-      callGoogleJSONP({ action: "submitShiftReport", pin: document.getElementById('pin').value, work: document.getElementById('work').value }, function() {
-        isSubmittingReport = false;
-        showToast("Summary Submitted!"); 
-        setTimeout(resetApp, 1500);
-      });
-    }
-
-    window.onload = function() { 
-      document.getElementById('pin').focus();
-      
-      // Register service worker for PWA functionality
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js').catch(function(err) {
-          console.log('ServiceWorker registration failed: ', err);
-        });
-      }
-    };
-    
-    let currentTaskFilter = 'active';
-    let isSubmittingReport = false;
-    
-    function filterTasks(filter) {
-      currentTaskFilter = filter;
-      loadAllTasks(filter);
-    }
-    
-    function loadAllTasks(filter) {
-      const pin = document.getElementById('pin').value;
-      const container = document.getElementById('tasks-table-container');
-      container.innerHTML = '<p style="text-align:center; color:#999;">Loading tasks...</p>';
-      
-      callGoogleJSONP({ action: "getAllTasks", pin: pin }, function(res) {
-        if (!res.tasks || res.tasks.length === 0) {
-          container.innerHTML = '<p style="text-align:center; color:#999;">No tasks found.</p>';
-          return;
-        }
-        
-        // Filter tasks
-        const filteredTasks = res.tasks.filter(t => {
-          if (filter === 'active') return t.status === 'Active';
-          if (filter === 'completed') return t.status === 'Completed';
-          return true;
-        });
-        
-        if (filteredTasks.length === 0) {
-          container.innerHTML = '<p style="text-align:center; color:#999;">No ' + filter + ' tasks.</p>';
-          return;
-        }
-        
-        let html = '<div style="font-size: 13px;">';
-        
-        filteredTasks.forEach(task => {
-          const statusColor = task.status === 'Active' ? '#388e3c' : '#757575';
-          const statusBg = task.status === 'Active' ? '#e8f5e9' : '#f5f5f5';
-          
-          html += '<div style="background:' + statusBg + '; padding:12px; margin-bottom:10px; border-radius:8px; border-left:4px solid ' + statusColor + ';">';
-          html += '<div style="margin-bottom:8px;"><strong style="color:#2b3d2b;">' + task.name + '</strong> ';
-          html += '<span style="background:' + statusColor + '; color:white; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:bold;">' + task.status + '</span></div>';
-          
-          html += '<div id="task-text-' + task.rowIndex + '" style="color:#424242; margin-bottom:8px;">' + task.task + '</div>';
-          html += '<div id="task-edit-' + task.rowIndex + '" style="display:none; margin-bottom:8px;">';
-          html += '<input type="text" id="task-input-' + task.rowIndex + '" value="' + task.task.replace(/"/g, '&quot;') + '" style="width:100%; padding:8px; border:2px solid #2b3d2b; border-radius:6px; font-size:14px; margin-bottom:8px;">';
-          html += '<div style="background:#f0f4ff; padding:10px; border-radius:6px; margin-bottom:8px;">';
-          html += '<div id="task-assigned-' + task.rowIndex + '" style="font-size:13px; color:#1565c0; margin-bottom:8px;"><strong>Assigned to:</strong> ' + task.name + '</div>';
-          html += '<button onclick="showReassignDropdown(' + task.rowIndex + ')" id="reassign-btn-' + task.rowIndex + '" style="background:#1976d2; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px;">🔄 Reassign Task</button>';
-          html += '<div id="reassign-area-' + task.rowIndex + '" style="display:none; margin-top:10px;">';
-          html += '<select id="reassign-select-' + task.rowIndex + '" style="width:100%; padding:8px; border:2px solid #1976d2; border-radius:6px; font-size:13px; margin-bottom:8px;"><option value="">Loading staff...</option></select>';
-          html += '<button onclick="confirmReassign(' + task.rowIndex + ')" style="background:#388e3c; color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer; font-size:12px; margin-right:5px;">✓ Confirm Reassign</button>';
-          html += '<button onclick="cancelReassign(' + task.rowIndex + ')" style="background:#757575; color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer; font-size:12px;">✖ Cancel</button>';
-          html += '</div></div>';
-          html += '</div>';
-          
-          html += '<div style="font-size:11px; color:#757575; margin-bottom:8px;">Assigned: ' + task.dateAssigned;
-          if (task.dateCompleted) html += ' | Completed: ' + task.dateCompleted;
-          html += '</div>';
-          
-          if (task.status === 'Active') {
-            html += '<button onclick="toggleEditTask(' + task.rowIndex + ')" id="edit-btn-' + task.rowIndex + '" style="background:#1976d2; color:white; border:none; padding:6px 12px; border-radius:6px; margin-right:5px; cursor:pointer; font-size:12px;">✏️ Edit</button>';
-            html += '<button onclick="saveTaskEdit(' + task.rowIndex + ')" id="save-btn-' + task.rowIndex + '" style="display:none; background:#388e3c; color:white; border:none; padding:6px 12px; border-radius:6px; margin-right:5px; cursor:pointer; font-size:12px;">💾 Save</button>';
-            html += '<button onclick="cancelTaskEdit(' + task.rowIndex + ')" id="cancel-btn-' + task.rowIndex + '" style="display:none; background:#757575; color:white; border:none; padding:6px 12px; border-radius:6px; margin-right:5px; cursor:pointer; font-size:12px;">✖️ Cancel</button>';
-          }
-          html += '<button onclick="confirmDeleteTask(' + task.rowIndex + ', \'' + task.name.replace(/'/g, "\\'") + '\', \'' + task.task.replace(/'/g, "\\'") + '\')" style="background:#d32f2f; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px;">🗑️ Delete</button>';
-          
-          html += '</div>';
-        });
-        
-        html += '</div>';
-        container.innerHTML = html;
-      });
-    }
-    
-    function toggleEditTask(rowIndex) {
-      document.getElementById('task-text-' + rowIndex).style.display = 'none';
-      document.getElementById('task-edit-' + rowIndex).style.display = 'block';
-      document.getElementById('edit-btn-' + rowIndex).style.display = 'none';
-      document.getElementById('save-btn-' + rowIndex).style.display = 'inline-block';
-      document.getElementById('cancel-btn-' + rowIndex).style.display = 'inline-block';
-    }
-    
-    function cancelTaskEdit(rowIndex) {
-      document.getElementById('task-text-' + rowIndex).style.display = 'block';
-      document.getElementById('task-edit-' + rowIndex).style.display = 'none';
-      document.getElementById('edit-btn-' + rowIndex).style.display = 'inline-block';
-      document.getElementById('save-btn-' + rowIndex).style.display = 'none';
-      document.getElementById('cancel-btn-' + rowIndex).style.display = 'none';
-      
-      // Also hide reassign area if it was open
-      const reassignArea = document.getElementById('reassign-area-' + rowIndex);
-      const reassignBtn = document.getElementById('reassign-btn-' + rowIndex);
-      if (reassignArea) reassignArea.style.display = 'none';
-      if (reassignBtn) reassignBtn.style.display = 'inline-block';
-    }
-    
-    function saveTaskEdit(rowIndex) {
-      const pin = document.getElementById('pin').value;
-      const newTask = document.getElementById('task-input-' + rowIndex).value.trim();
-      
-      if (!newTask) {
-        showToast("Task cannot be empty");
-        return;
-      }
-      
-      showToast("Saving...");
-      callGoogleJSONP({ 
-        action: "editTask", 
-        pin: pin, 
-        rowIndex: rowIndex, 
-        newTask: newTask 
-      }, function(res) {
-        if (res.success) {
-          showToast("Task updated!");
-          loadAllTasks(currentTaskFilter);
-        } else {
-          showToast("Error: " + (res.error || "Unknown error"));
-        }
-      });
-    }
-    
-    function confirmDeleteTask(rowIndex, staffName, taskText) {
-      if (!confirm('Delete this task?\n\nStaff: ' + staffName + '\nTask: ' + taskText)) return;
-      
-      const pin = document.getElementById('pin').value;
-      showToast("Deleting...");
-      
-      callGoogleJSONP({ 
-        action: "deleteTask", 
-        pin: pin, 
-        rowIndex: rowIndex 
-      }, function(res) {
-        if (res.success) {
-          showToast("Task deleted!");
-          loadAllTasks(currentTaskFilter);
-        } else {
-          showToast("Error: " + (res.error || "Unknown error"));
-        }
-      });
-    }
-    
-    function submitNewStaff(event) {
-      event.preventDefault();
-      
-      const pin = document.getElementById('pin').value;
-      const name = document.getElementById('staffName').value.trim();
-      const phone = document.getElementById('staffPhone').value.trim();
-      const email = document.getElementById('staffEmail').value.trim();
-      const newPin = document.getElementById('staffPin').value.trim();
-      const rate = document.getElementById('staffRate').value.trim();
-      
-      if (!name || !newPin || !rate) {
-        showToast("Please fill in all required fields");
-        return;
-      }
-      
-      if (newPin.length !== 4 || isNaN(newPin)) {
-        showToast("PIN must be exactly 4 digits");
-        return;
-      }
-      
-      showToast("Adding staff member...");
-      
-      callGoogleJSONP({ 
-        action: "addStaffMember", 
-        pin: pin,
-        name: name,
-        phone: phone,
-        email: email,
-        newPin: newPin,
-        rate: rate
-      }, function(res) {
-        if (res.success) {
-          showToast(res.msg);
-          document.getElementById('add-staff-form').reset();
-          cachedStaffList = null; // Clear cache so it refreshes next time
-          setTimeout(function() {
-            openScreen('admin');
-          }, 2000);
-        } else {
-          showToast("Error: " + (res.error || "Unknown error"));
-        }
-      });
-    }
-    function showReassignDropdown(rowIndex) {
-      console.log("showReassignDropdown called for row:", rowIndex);
-      console.log("cachedStaffList:", cachedStaffList);
-      
-      const reassignBtn = document.getElementById('reassign-btn-' + rowIndex);
-      const reassignArea = document.getElementById('reassign-area-' + rowIndex);
-      
-      if (!reassignBtn || !reassignArea) {
-        console.error("Could not find reassign elements for row", rowIndex);
-        return;
-      }
-      
-      reassignBtn.style.display = 'none';
-      reassignArea.style.display = 'block';
-      
-      // Populate the dropdown with cached staff list
-      const select = document.getElementById('reassign-select-' + rowIndex);
-      if (!select) {
-        console.error("Could not find select element for row", rowIndex);
-        return;
-      }
-      
-      if (cachedStaffList && cachedStaffList.length > 0) {
-        select.innerHTML = '<option value="">-- Select New Staff Member --</option>';
-        cachedStaffList.forEach(s => {
-          const option = document.createElement('option');
-          option.value = s.pin;
-          option.textContent = s.name;
-          select.appendChild(option);
-        });
+    showToast("Reassigning task...");
+    callGoogleJSONP({
+      action: "reassignTask",
+      pin: pin,
+      rowIndex: rowIndex,
+      newPin: newPin
+    }, function(res) {
+      if (res.success) {
+        showToast(res.msg);
+        loadAllTasks(currentTaskFilter);
       } else {
-        // Staff list not cached, load it now
-        select.innerHTML = '<option value="">Loading staff...</option>';
-        loadStaffListForReassign(rowIndex);
+        showToast("Error: " + (res.error || "Unknown error"));
       }
-    }
-    
-    function loadStaffListForReassign(rowIndex) {
-      const pin = document.getElementById('pin').value;
-      
-      callGoogleJSONP({ action: "getStaffList", pin: pin }, function(res) {
-        if (res.staff) {
-          cachedStaffList = res.staff;
-          const select = document.getElementById('reassign-select-' + rowIndex);
-          if (select) {
-            select.innerHTML = '<option value="">-- Select New Staff Member --</option>';
-            res.staff.forEach(s => {
-              const option = document.createElement('option');
-              option.value = s.pin;
-              option.textContent = s.name;
-              select.appendChild(option);
-            });
-          }
-        }
-      });
-    }
-    
-    function cancelReassign(rowIndex) {
-      document.getElementById('reassign-btn-' + rowIndex).style.display = 'inline-block';
-      document.getElementById('reassign-area-' + rowIndex).style.display = 'none';
-    }
-    
-    function confirmReassign(rowIndex) {
-      const pin = document.getElementById('pin').value;
-      const newPin = document.getElementById('reassign-select-' + rowIndex).value;
-      
-      if (!newPin) {
-        showToast("Please select a staff member");
-        return;
-      }
-      
-      showToast("Reassigning task...");
-      
-      callGoogleJSONP({ 
-        action: "reassignTask", 
-        pin: pin, 
-        rowIndex: rowIndex,
-        newPin: newPin
-      }, function(res) {
-        if (res.success) {
-          showToast(res.msg);
-          loadAllTasks(currentTaskFilter);
-        } else {
-          showToast("Error: " + (res.error || "Unknown error"));
-        }
-      });
-    }
-  </script>
+    });
+  }
+</script>
 </body>
 </html>
