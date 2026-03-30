@@ -33,7 +33,6 @@
     .tasks-box ul { margin: 0; padding-left: 20px; }
     .tasks-box li { margin-bottom: 8px; color: #5d4037; }
     .hidden { display: none; }
-    ul {  list-style-position: inside;  padding-left: 0; }
     #toast { position: fixed; top: 10%; left: 50%; transform: translateX(-50%); background: #2b3d2b; color: white; padding: 20px 40px; border-radius: 15px; z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.4); border: 2px solid #ffffff; font-size: 20px; font-weight: bold; width: 80%; max-width: 350px; transition: opacity 0.3s; pointer-events: none; }
     #lunch-confirm-area { grid-column: span 2; background: #fffcf0; padding: 15px; border-radius: 12px; border: 2px dashed #f57c00; margin-top: 5px; }
     .task-confirm-box { background: #e8eaf6; padding: 15px; margin-bottom: 15px; border-radius: 12px; border: 2px solid #5c6bc0; }
@@ -205,12 +204,12 @@
     <h3>My Recent History</h3>
     <div style="background:#f0f4ff; border-radius:10px; border:1px solid #c5cae9; padding:12px; margin-bottom:15px; font-size:13px; text-align:left; color:#37474f; line-height:1.5;">
       <strong>💳 About your pay:</strong> 
-      <ul>
+      <ol>
         <li>E-transfers are processed every Monday night (usually after 10pm).</li>
         <li>If your total hours for the week are under 3 hours, we will skip and send 2 weeks worth the following Monday evening.</li>
-        <ul><li>If still under 3 hours then we'll process the payout regardless.</li></ul>
+          <ul><li>If still under 3 hours then we'll process the payout regardless.</li></ul>
         <li>The <em>Date Paid</em> column shows <em>Pending</em> until your e-transfer has been sent.</li>
-      </ul>
+      </ol>
       
     </div>
     <div id="history-data" style="text-align:left;"></div>
