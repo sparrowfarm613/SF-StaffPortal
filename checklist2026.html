@@ -1,501 +1,2358 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bunnypalooza 2026 — Our Packing List</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500&display=swap');
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'DM Sans', sans-serif; font-size: 11pt; color: #1a1a18; background: #fff; }
-  .page { max-width: 780px; margin: 0 auto; padding: 28px 32px 40px; }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bunnypalooza 2026 — Our Packing List</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500&display=swap");
 
-  .header { display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 2px solid #1a1a18; padding-bottom: 10px; margin-bottom: 6px; }
-  .header-left h1 { font-family: 'DM Serif Display', serif; font-size: 26pt; font-weight: 400; line-height: 1; letter-spacing: -0.5px; }
-  .header-left p { font-size: 9.5pt; color: #666; margin-top: 3px; }
-  .header-right { text-align: right; font-size: 9pt; color: #888; line-height: 1.6; }
-  .header-right strong { color: #1a1a18; font-size: 10pt; }
-  .header-note { font-size: 9pt; font-style: italic; color: #999; margin-bottom: 18px; padding-top: 5px; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-  .tier-banner { font-family: 'DM Serif Display', serif; font-size: 13pt; font-weight: 400; margin: 22px 0 8px; padding: 4px 0 4px 2px; border-bottom: 1px solid #ccc; display: flex; align-items: baseline; gap: 10px; }
-  .tier-banner span { font-family: 'DM Sans', sans-serif; font-size: 8.5pt; color: #999; font-weight: 400; }
+    body {
+      font-family: "DM Sans", sans-serif;
+      font-size: 11pt;
+      color: #1a1a18;
+      background: #fff;
+    }
 
-  .section { margin-bottom: 14px; break-inside: avoid; }
-  .section-header { display: flex; align-items: center; gap: 8px; padding: 5px 10px; margin-bottom: 1px; border-radius: 4px 4px 0 0; }
-  .section-header h2 { font-family: 'DM Sans', sans-serif; font-size: 9pt; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase; }
-  .zone-note { font-size: 8.5pt; margin-left: auto; opacity: 0.85; }
+    .page {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 28px 32px 40px;
+    }
 
-  .tier-pre     .section-header { background: #f5e6f5; color: #4a1a5a; }
-  .tier-lobby   .section-header { background: #e6eeff; color: #1a2f6a; }
-  .tier-display .section-header { background: #d6f0e4; color: #0a4a2e; }
-  .tier-under   .section-header { background: #fde8c0; color: #5a3500; }
-  .tier-trailer .section-header { background: #e8e6e1; color: #3a3a36; }
-  .tier-tools   .section-header { background: #e2e8f5; color: #1a2f5a; }
+    .header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      border-bottom: 2px solid #1a1a18;
+      padding-bottom: 10px;
+      margin-bottom: 6px;
+    }
 
-  .items-table { width: 100%; border-collapse: collapse; font-size: 10pt; }
-  .items-table tr { break-inside: avoid; }
-  .items-table td { padding: 4px 8px; border: 0.5px solid #d8d6d0; vertical-align: middle; }
-  .items-table tbody tr:nth-child(even) td { background: #f9f8f6; }
-  .col-check { width: 22px; text-align: center; }
-  .col-qty   { width: 80px; text-align: right; font-weight: 500; color: #333; }
-  .col-name  { }
-  .col-sold  { width: 60px; text-align: right; font-size: 9pt; color: #888; }
-  .col-loc   { width: 110px; font-size: 9pt; color: #666; }
-  .check-box { display: inline-block; width: 13px; height: 13px; border: 1.5px solid #999; border-radius: 2px; vertical-align: middle; }
+    .header-left h1 {
+      font-family: "DM Serif Display", serif;
+      font-size: 26pt;
+      font-weight: 400;
+      line-height: 1;
+      letter-spacing: -0.5px;
+    }
 
-  .badge { display: inline-block; font-size: 7.5pt; padding: 1px 5px; border-radius: 3px; margin-left: 4px; vertical-align: middle; font-weight: 500; }
-  .b-new     { background: #dceeff; color: #0c4080; }
-  .b-remind  { background: #fff3cd; color: #7a4800; }
-  .b-online  { background: #ede8ff; color: #3d1f8a; }
-  .b-heavy   { background: #ffe0e0; color: #8a1f1f; }
-  .b-sponsor { background: #f5e6f5; color: #4a1a5a; }
+    .header-left p {
+      font-size: 9.5pt;
+      color: #666;
+      margin-top: 3px;
+    }
 
-  .section-note { font-size: 8.5pt; color: #777; padding: 5px 10px 7px; background: #fafaf8; border: 0.5px solid #d8d6d0; border-top: none; font-style: italic; line-height: 1.5; }
+    .header-right {
+      text-align: right;
+      font-size: 9pt;
+      color: #888;
+      line-height: 1.6;
+    }
 
-  .footer { margin-top: 28px; padding-top: 10px; border-top: 1px solid #ddd; font-size: 8pt; color: #aaa; display: flex; justify-content: space-between; }
+    .header-right strong {
+      color: #1a1a18;
+      font-size: 10pt;
+    }
 
-  @media print {
-    body { font-size: 10pt; }
-    .page { padding: 12px 18px 20px; max-width: 100%; }
-    .header-left h1 { font-size: 22pt; }
-    .no-print { display: none; }
-    .section { break-inside: avoid; }
-    .tier-banner { break-after: avoid; }
-  }
-  .print-btn { position: fixed; bottom: 24px; right: 24px; background: #1a1a18; color: #fff; border: none; padding: 10px 20px; border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: 11pt; cursor: pointer; z-index: 100; }
-  .print-btn:hover { background: #333; }
-</style>
+    .header-note {
+      font-size: 9pt;
+      font-style: italic;
+      color: #999;
+      margin-bottom: 18px;
+      padding-top: 5px;
+    }
+
+    .tier-banner {
+      font-family: "DM Serif Display", serif;
+      font-size: 13pt;
+      font-weight: 400;
+      margin: 22px 0 8px;
+      padding: 4px 0 4px 2px;
+      border-bottom: 1px solid #ccc;
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+
+    .tier-banner span {
+      font-family: "DM Sans", sans-serif;
+      font-size: 8.5pt;
+      color: #999;
+      font-weight: 400;
+    }
+
+    .section {
+      margin-bottom: 14px;
+      break-inside: avoid;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 10px;
+      margin-bottom: 1px;
+      border-radius: 4px 4px 0 0;
+    }
+
+    .section-header h2 {
+      font-family: "DM Sans", sans-serif;
+      font-size: 9pt;
+      font-weight: 500;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+
+    .zone-note {
+      font-size: 8.5pt;
+      margin-left: auto;
+      opacity: 0.85;
+    }
+
+    .tier-pre .section-header {
+      background: #f5e6f5;
+      color: #4a1a5a;
+    }
+
+    .tier-lobby .section-header {
+      background: #e6eeff;
+      color: #1a2f6a;
+    }
+
+    .tier-display .section-header {
+      background: #d6f0e4;
+      color: #0a4a2e;
+    }
+
+    .tier-under .section-header {
+      background: #fde8c0;
+      color: #5a3500;
+    }
+
+    .tier-trailer .section-header {
+      background: #e8e6e1;
+      color: #3a3a36;
+    }
+
+    .tier-tools .section-header {
+      background: #e2e8f5;
+      color: #1a2f5a;
+    }
+
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 10pt;
+    }
+
+    .items-table tr {
+      break-inside: avoid;
+    }
+
+    .items-table td {
+      padding: 4px 8px;
+      border: 0.5px solid #d8d6d0;
+      vertical-align: middle;
+    }
+
+    .items-table tbody tr:nth-child(even) td {
+      background: #f9f8f6;
+    }
+
+    .col-check {
+      width: 22px;
+      text-align: center;
+    }
+
+    .col-qty {
+      width: 80px;
+      text-align: right;
+      font-weight: 500;
+      color: #333;
+    }
+
+    .col-name {}
+
+    .col-sold {
+      width: 60px;
+      text-align: right;
+      font-size: 9pt;
+      color: #888;
+    }
+
+    .col-loc {
+      width: 110px;
+      font-size: 9pt;
+      color: #666;
+    }
+
+    .check-box {
+      display: inline-block;
+      width: 13px;
+      height: 13px;
+      border: 1.5px solid #999;
+      border-radius: 2px;
+      vertical-align: middle;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 7.5pt;
+      padding: 1px 5px;
+      border-radius: 3px;
+      margin-left: 4px;
+      vertical-align: middle;
+      font-weight: 500;
+    }
+
+    .b-new {
+      background: #dceeff;
+      color: #0c4080;
+    }
+
+    .b-remind {
+      background: #fff3cd;
+      color: #7a4800;
+    }
+
+    .b-online {
+      background: #ede8ff;
+      color: #3d1f8a;
+    }
+
+    .b-heavy {
+      background: #ffe0e0;
+      color: #8a1f1f;
+    }
+
+    .b-sponsor {
+      background: #f5e6f5;
+      color: #4a1a5a;
+    }
+
+    .section-note {
+      font-size: 8.5pt;
+      color: #777;
+      padding: 5px 10px 7px;
+      background: #fafaf8;
+      border: 0.5px solid #d8d6d0;
+      border-top: none;
+      font-style: italic;
+      line-height: 1.5;
+    }
+
+    .footer {
+      margin-top: 28px;
+      padding-top: 10px;
+      border-top: 1px solid #ddd;
+      font-size: 8pt;
+      color: #aaa;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    @media print {
+      body {
+        font-size: 10pt;
+      }
+
+      .page {
+        padding: 12px 18px 20px;
+        max-width: 100%;
+      }
+
+      .header-left h1 {
+        font-size: 22pt;
+      }
+
+      .no-print {
+        display: none;
+      }
+
+      .section {
+        break-inside: avoid;
+      }
+
+      .tier-banner {
+        break-after: avoid;
+      }
+    }
+
+    .print-btn {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #1a1a18;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-family: "DM Sans", sans-serif;
+      font-size: 11pt;
+      cursor: pointer;
+      z-index: 100;
+    }
+
+    .print-btn:hover {
+      background: #333;
+    }
+  </style>
 </head>
+
 <body>
-<div class="page">
-
-  <div class="header">
-    <div class="header-left">
-      <h1>Bunnypalooza 2026</h1>
-      <p>Our packing list &nbsp;·&nbsp; Sparrow Farms &nbsp;·&nbsp; May 23, 2026</p>
+  <div class="page">
+    <div class="header">
+      <div class="header-left">
+        <h1>Bunnypalooza 2026</h1>
+        <p>
+          Our packing list &nbsp;·&nbsp; Sparrow Farms &nbsp;·&nbsp; May 23,
+          2026
+        </p>
+      </div>
+      <div class="header-right">
+        <strong>Gold Sponsor &amp; Onsite Vendor</strong><br />
+        sparrowfarms.ca &nbsp;·&nbsp; @sparrowfarmhay<br />
+        Free Ottawa delivery within 5 days
+      </div>
     </div>
-    <div class="header-right">
-      <strong>Gold Sponsor &amp; Onsite Vendor</strong><br>
-      sparrowfarms.ca &nbsp;·&nbsp; @sparrowfarmhay<br>
-      Free Ottawa delivery within 5 days
+    <p class="header-note">
+      Our only in-person event of the year — let's make it count. Setup
+      window: Friday May 22, 4–6pm (partial load-in) and Saturday morning
+      until 9am hard deadline. Doors officially open at 10am but people showed
+      up early last year — we need to be fully ready by 9. &nbsp;·&nbsp;
+      <em>'25 sold</em> column = units sold at Bunnypalooza 2025. — = new
+      product this year.
+    </p>
+
+    <!-- ══ NIGHT BEFORE ══ -->
+    <div class="tier-banner">
+      Thursday night / Friday daytime
+      <span>prep, print, and pack — we have Friday 4–6pm for partial load-in at
+        the venue</span>
+    </div>
+
+    <div class="section tier-pre">
+      <div class="section-header">
+        <h2>Prep &amp; print</h2>
+      </div>
+      <table class="items-table">
+        <thead>
+          <tr>
+            <td class="col-check"></td>
+            <td class="col-name" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              item
+            </td>
+            <td class="col-qty" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              bring
+            </td>
+            <td class="col-sold" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              --
+            </td>
+            <td class="col-loc" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              location
+            </td>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              Print &amp; laminate QR sign — "Order today, free Ottawa
+              delivery within 5 days" → hay collection on sparrowfarms.ca
+              <span class="badge b-remind">print &amp; laminate</span>
+            </td>
+            <td class="col-qty">2</td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">bale display</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              "New this year!" signs for mini bales + small animal paper
+              bedding <span class="badge b-remind">print &amp; laminate</span>
+            </td>
+            <td class="col-qty"></td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">floor display</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              Assemble grab bags — 100 pieces/coupons
+              <span class="badge b-remind">count &amp; bag tonight</span>
+            </td>
+            <td class="col-qty">100</td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">event bag</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Brochures</td>
+            <td class="col-qty">60</td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">event bag</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              Laminated floater product list (Catalogue)
+            </td>
+            <td class="col-qty">2</td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">event bag</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              QR feedback/requests form — set up and test the link, print the
+              card for the stand
+            </td>
+            <td class="col-qty">1</td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">front table</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Free samples — portioned and labelled</td>
+            <td class="col-qty">30</td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">event bag</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Cash float — small bills and coins</td>
+            <td class="col-qty">$300</td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">cash box</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              3 iPhones (Fully Charged!!), tablet, power banks
+            </td>
+            <td class="col-qty"></td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">overnight</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Power bar with extension cord</td>
+            <td class="col-qty"></td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">overnight</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              Load trailer — heavy stuff on the bottom (litter pellets, then
+              bales, bedding on top) · bring Friday 4–6pm for early load-in
+            </td>
+            <td class="col-qty">see below for qty</td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">trailer</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ══ LOBBY & ENTRANCE ══ -->
+    <div class="tier-banner">
+      Lobby &amp; front entrance
+      <span>our sponsor presence before visitors even reach our booth</span>
+    </div>
+
+    <div class="section tier-lobby">
+      <div class="section-header">
+        <h2>Drop off at entrance on arrival — before we set up</h2>
+      </div>
+      <table class="items-table">
+        <thead>
+          <tr>
+            <td class="col-check"></td>
+            <td class="col-name" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              item
+            </td>
+            <td class="col-qty" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              bring
+            </td>
+            <td class="col-sold" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              '25 sold
+            </td>
+            <td class="col-loc" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              location
+            </td>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              Full-size Sparrow Farms poster — lobby display
+              <span class="badge b-remind">confirm print size ahead of time</span>
+            </td>
+            <td class="col-qty">1</td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">venue lobby</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              Living Habitat display donations — front entrance
+              <span class="badge b-sponsor">Gold Sponsor moment</span>
+            </td>
+            <td class="col-qty">TBD</td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">front entrance</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              Branded signage for Living Habitat donations (Sparrow Farms name
+              on it if we can)
+            </td>
+            <td class="col-qty"></td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">front entrance</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="section-note">
+        Confirm with the organizers on arrival where exactly the Living
+        Habitat donations go and whether we set them up ourselves or hand them
+        off.
+      </div>
+    </div>
+
+    <!-- ══ IN THE VENUE ══ -->
+    <div class="tier-banner">
+      In the venue — our display &amp; sell floor
+      <span>tables · floor · stage · easel</span>
+    </div>
+
+    <div class="section tier-display">
+      <div class="section-header">
+        <h2>Front table — Rosewood</h2>
+        <span class="zone-note">bring our full stock</span>
+      </div>
+      <table class="items-table">
+        <thead>
+          <tr>
+            <td class="col-check"></td>
+            <td class="col-name" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              item
+            </td>
+            <td class="col-qty" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              available
+            </td>
+            <td class="col-sold" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              '25 sold
+            </td>
+            <td class="col-loc" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              location
+            </td>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Dandelion Delight</td>
+            <td class="col-qty">44</td>
+            <td class="col-sold">5</td>
+            <td class="col-loc">front table</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Autumn Harvest</td>
+            <td class="col-qty">37</td>
+            <td class="col-sold" style="color: #bbb">0</td>
+            <td class="col-loc">front table</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Summer Harvest</td>
+            <td class="col-qty">36</td>
+            <td class="col-sold">6</td>
+            <td class="col-loc">front table</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Summerfield</td>
+            <td class="col-qty">33</td>
+            <td class="col-sold" style="color: #bbb">0</td>
+            <td class="col-loc">front table</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Pea Flakes</td>
+            <td class="col-qty">32</td>
+            <td class="col-sold" style="color: #bbb">0</td>
+            <td class="col-loc">front table</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Luxury Flower, Fruit &amp; Veg Bars</td>
+            <td class="col-qty">32</td>
+            <td class="col-sold">2</td>
+            <td class="col-loc">front table</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Grainless Nibble Pots</td>
+            <td class="col-qty">29</td>
+            <td class="col-sold">3</td>
+            <td class="col-loc">front table</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Weave-A-Ball</td>
+            <td class="col-qty">24</td>
+            <td class="col-sold">1</td>
+            <td class="col-loc">front table</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Herbs Plus</td>
+            <td class="col-qty">24</td>
+            <td class="col-sold">4</td>
+            <td class="col-loc">front table</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Herbal Garden</td>
+            <td class="col-qty">22</td>
+            <td class="col-sold">3</td>
+            <td class="col-loc">front table</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Flower 'n' Forage Blossom</td>
+            <td class="col-qty">20</td>
+            <td class="col-sold" style="color: #bbb">0</td>
+            <td class="col-loc">front table</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Fields of Gold</td>
+            <td class="col-qty">19</td>
+            <td class="col-sold">4</td>
+            <td class="col-loc">front table</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Strawberry Sticks</td>
+            <td class="col-qty">16</td>
+            <td class="col-sold" style="color: #bbb">0</td>
+            <td class="col-loc">front table</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Dandelion Meadow Sticks</td>
+            <td class="col-qty">14</td>
+            <td class="col-sold">1</td>
+            <td class="col-loc">front table</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Carrot &amp; Fennel Meadow Sticks</td>
+            <td class="col-qty">13</td>
+            <td class="col-sold" style="color: #bbb">0</td>
+            <td class="col-loc">front table</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Celebration Cake</td>
+            <td class="col-qty">13</td>
+            <td class="col-sold">1</td>
+            <td class="col-loc">front table</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">I Love Hay Cube — Med</td>
+            <td class="col-qty">12</td>
+            <td class="col-sold">1</td>
+            <td class="col-loc">front table</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">I Love Hay Cube — Lrg</td>
+            <td class="col-qty">12</td>
+            <td class="col-sold" style="color: #bbb">0</td>
+            <td class="col-loc">front table</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Fenugreek Crunchies</td>
+            <td class="col-qty">9</td>
+            <td class="col-sold" style="color: #bbb">0</td>
+            <td class="col-loc">front table</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Treat Basket</td>
+            <td class="col-qty">8</td>
+            <td class="col-sold" style="color: #bbb">0</td>
+            <td class="col-loc">front table</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="section-note">
+        Keep overflow of our top sellers (Dandelion, Harvests, Herbs Plus,
+        Summerfield) under the table so the surface stays neat through the
+        day.
+      </div>
+    </div>
+
+    <div class="section tier-display">
+      <div class="section-header">
+        <h2>Easel display — Mini Bits</h2>
+        <span class="zone-note">all restocked by May 23</span>
+      </div>
+      <table class="items-table">
+        <thead>
+          <tr>
+            <td class="col-check"></td>
+            <td class="col-name" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              item
+            </td>
+            <td class="col-qty" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              available
+            </td>
+            <td class="col-sold" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              '25 sold
+            </td>
+            <td class="col-loc" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              location
+            </td>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Snackers — Strawberry</td>
+            <td class="col-qty">30</td>
+            <td class="col-sold">5</td>
+            <td class="col-loc">easel</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Snackers — Banana Carrot</td>
+            <td class="col-qty">28</td>
+            <td class="col-sold">9</td>
+            <td class="col-loc">easel</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Snackers — DigestAid</td>
+            <td class="col-qty">19</td>
+            <td class="col-sold">3</td>
+            <td class="col-loc">easel</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Snackers — Raspberry</td>
+            <td class="col-qty">16</td>
+            <td class="col-sold">4</td>
+            <td class="col-loc">easel</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Forage Frenzy — Feeling Fine</td>
+            <td class="col-qty">15</td>
+            <td class="col-sold">6</td>
+            <td class="col-loc">easel</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Forage Frenzy — Flowery Fun</td>
+            <td class="col-qty">15</td>
+            <td class="col-sold">1</td>
+            <td class="col-loc">easel</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Forage Frenzy — Fueled Feast</td>
+            <td class="col-qty">15</td>
+            <td class="col-sold">2</td>
+            <td class="col-loc">easel</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Forage Frenzy — Function &amp; Flow</td>
+            <td class="col-qty">15</td>
+            <td class="col-sold">5</td>
+            <td class="col-loc">easel</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section tier-display">
+      <div class="section-header">
+        <h2>Far table — Tim Dips, Treat Bombs &amp; Dinner Boxes</h2>
+      </div>
+      <table class="items-table">
+        <thead>
+          <tr>
+            <td class="col-check"></td>
+            <td class="col-name" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              item
+            </td>
+            <td class="col-qty" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              available
+            </td>
+            <td class="col-sold" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              '25 sold
+            </td>
+            <td class="col-loc" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              location
+            </td>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Tim Dips — Plain</td>
+            <td class="col-qty">15</td>
+            <td class="col-sold">2</td>
+            <td class="col-loc">far table</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              Tim Dips — Banana
+              <span class="badge b-remind">top flavour last year</span>
+            </td>
+            <td class="col-qty">15</td>
+            <td class="col-sold">4</td>
+            <td class="col-loc">far table</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Tim Dips — Apple</td>
+            <td class="col-qty">15</td>
+            <td class="col-sold">2</td>
+            <td class="col-loc">far table</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Tim Dips — Papaya</td>
+            <td class="col-qty">15</td>
+            <td class="col-sold">2</td>
+            <td class="col-loc">far table</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Tim Dips — Strawberry</td>
+            <td class="col-qty">15</td>
+            <td class="col-sold">2</td>
+            <td class="col-loc">far table</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Treat Bomb Bags</td>
+            <td class="col-qty">20</td>
+            <td class="col-sold">7</td>
+            <td class="col-loc">far table</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Dinner Box!!</td>
+            <td class="col-qty">10</td>
+            <td class="col-sold" style="color: #bbb">0</td>
+            <td class="col-loc">far table</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section tier-display">
+      <div class="section-header">
+        <h2>Stage — Willow + Apple Sticks &amp; Sherwood</h2>
+      </div>
+      <table class="items-table">
+        <thead>
+          <tr>
+            <td class="col-check"></td>
+            <td class="col-name" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              item
+            </td>
+            <td class="col-qty" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              available
+            </td>
+            <td class="col-sold" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              '25 sold
+            </td>
+            <td class="col-loc" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              location
+            </td>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              Apple Wood Twigs &amp; Sticks
+              <span class="badge b-remind">8 sold last year</span>
+            </td>
+            <td class="col-qty">40</td>
+            <td class="col-sold">8</td>
+            <td class="col-loc">stage display</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              Willow Twigs &amp; Sticks
+              <span class="badge b-remind">#1 seller — 23 sold last year</span>
+            </td>
+            <td class="col-qty">40</td>
+            <td class="col-sold">23</td>
+            <td class="col-loc">stage display</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              Willow/greenery plants for stage backdrop
+            </td>
+            <td class="col-qty"></td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">stage</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Recovery Kit — Rabbits (200g)</td>
+            <td class="col-qty">16</td>
+            <td class="col-sold">1</td>
+            <td class="col-loc">stage</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Digestive Support</td>
+            <td class="col-qty">15</td>
+            <td class="col-sold">2</td>
+            <td class="col-loc">stage</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Joint Support</td>
+            <td class="col-qty">15</td>
+            <td class="col-sold">1</td>
+            <td class="col-loc">stage</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Prevention Tablet</td>
+            <td class="col-qty">15</td>
+            <td class="col-sold">1</td>
+            <td class="col-loc">stage</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Urinary Support</td>
+            <td class="col-qty">12</td>
+            <td class="col-sold" style="color: #bbb">0</td>
+            <td class="col-loc">stage</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Vitamin C</td>
+            <td class="col-qty">10</td>
+            <td class="col-sold" style="color: #bbb">0</td>
+            <td class="col-loc">stage</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Rabbit Pellets — Measured (green)</td>
+            <td class="col-qty">10</td>
+            <td class="col-sold">3</td>
+            <td class="col-loc">stage</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Appetite Restore</td>
+            <td class="col-qty">10</td>
+            <td class="col-sold" style="color: #bbb">0</td>
+            <td class="col-loc">stage</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Rabbit Pellets — Free Choice (blue)</td>
+            <td class="col-qty">8</td>
+            <td class="col-sold" style="color: #bbb">0</td>
+            <td class="col-loc">stage</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Recovery Kit — Guinea Pigs (full)</td>
+            <td class="col-qty">7</td>
+            <td class="col-sold" style="color: #bbb">0</td>
+            <td class="col-loc">stage</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Guinea Pig Pellets — Measured</td>
+            <td class="col-qty">6</td>
+            <td class="col-sold" style="color: #bbb">0</td>
+            <td class="col-loc">stage</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Recovery Kit — Rabbits (full kit)</td>
+            <td class="col-qty">4</td>
+            <td class="col-sold" style="color: #bbb">0</td>
+            <td class="col-loc">stage</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Guinea Pig Pellets — Free Choice</td>
+            <td class="col-qty">3</td>
+            <td class="col-sold" style="color: #bbb">0</td>
+            <td class="col-loc">stage</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Recovery Kit — Guinea Pigs (200g)</td>
+            <td class="col-qty">1</td>
+            <td class="col-sold" style="color: #bbb">0</td>
+            <td class="col-loc">stage</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section tier-display">
+      <div class="section-header">
+        <h2>Floor — hay display</h2>
+        <span class="zone-note">display ring + bale shelf + mini bales</span>
+      </div>
+      <table class="items-table">
+        <thead>
+          <tr>
+            <td class="col-check"></td>
+            <td class="col-name" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              item
+            </td>
+            <td class="col-qty" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              available
+            </td>
+            <td class="col-sold" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              '25 sold
+            </td>
+            <td class="col-loc" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              location
+            </td>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              Large hay bales — hold down our display ring + serve as floor
+              shelf
+              <span class="badge b-remind">structural — load first</span>
+            </td>
+            <td class="col-qty">4</td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">floor ring</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              15lb bale — Timothy (display only)
+              <span class="badge b-online">push online orders</span>
+            </td>
+            <td class="col-qty">2</td>
+            <td class="col-sold">13</td>
+            <td class="col-loc">bale shelf</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              15lb bale — Orchard Grass (display only)
+              <span class="badge b-online">push online orders</span>
+            </td>
+            <td class="col-qty">2</td>
+            <td class="col-sold" style="color: #bbb">0</td>
+            <td class="col-loc">bale shelf</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              15lb bale — Meadow Mix (display only)
+              <span class="badge b-online">push online orders</span>
+            </td>
+            <td class="col-qty">2</td>
+            <td class="col-sold">4</td>
+            <td class="col-loc">bale shelf</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              15lb bale — Premium Blend (display only)
+              <span class="badge b-online">push online orders</span>
+            </td>
+            <td class="col-qty">2</td>
+            <td class="col-sold">2</td>
+            <td class="col-loc">bale shelf</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              15lb bale — 2nd Cut Timothy/Meadow (display only)
+              <span class="badge b-online">push online orders</span>
+            </td>
+            <td class="col-qty">2</td>
+            <td class="col-sold">2</td>
+            <td class="col-loc">bale shelf</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              Mini Bale — Timothy <span class="badge b-new">new</span>
+            </td>
+            <td class="col-qty">25</td>
+            <td class="col-sold">5</td>
+            <td class="col-loc">bale shelf/floor</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              Mini Bale — Orchard Grass <span class="badge b-new">new</span>
+            </td>
+            <td class="col-qty">25</td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">bale shelf/floor</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              Mini Bale — Meadow Mix <span class="badge b-new">new</span>
+            </td>
+            <td class="col-qty">25</td>
+            <td class="col-sold">9</td>
+            <td class="col-loc">bale shelf/floor</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              Mini Bale — Premium Blend <span class="badge b-new">new</span>
+            </td>
+            <td class="col-qty">25</td>
+            <td class="col-sold">4</td>
+            <td class="col-loc">bale shelf/floor</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              Mini Bale — 2nd Cut Timothy/Meadow
+              <span class="badge b-new">new</span>
+            </td>
+            <td class="col-qty">25</td>
+            <td class="col-sold">6</td>
+            <td class="col-loc">bale shelf/floor</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              Demo storage tote "drilled" — 15lb bundle learning display
+              <span class="badge b-remind">don't forget this one</span>
+            </td>
+            <td class="col-qty">1</td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">floor display</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="section-note">
+        Hoping to keep the 15lb bales on the shelf for show until mid-day — we
+        point customers to order online or pay now at discount with free
+        delivery within 5 days. QR sign goes right on the bale display. Our
+        fulfillment stock stays in the trailer and goes home with us. Last
+        year hay bags were our #3 and #4 revenue items — mini bales are a
+        great replacement for the sampler format.
+      </div>
+    </div>
+
+    <div class="section tier-display">
+      <div class="section-header">
+        <h2>Floor — bedding &amp; pellets (display quantities in-venue)</h2>
+      </div>
+      <table class="items-table">
+        <thead>
+          <tr>
+            <td class="col-check"></td>
+            <td class="col-name" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              item
+            </td>
+            <td class="col-qty" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              available
+            </td>
+            <td class="col-sold" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              '25 sold
+            </td>
+            <td class="col-loc" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              location
+            </td>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              Paper Bedding — full size small animal
+              <span class="badge b-new">new</span>
+            </td>
+            <td class="col-qty">3–4</td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">floor display</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              Paper Bedding — full size horse
+              <span class="badge b-remind">11 sold last year — #2 by revenue</span>
+            </td>
+            <td class="col-qty">3–4</td>
+            <td class="col-sold">11</td>
+            <td class="col-loc">floor display</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              Paper Bedding sample — small animal
+              <span class="badge b-new">new</span>
+            </td>
+            <td class="col-qty">20</td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">floor/table edge</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Paper Bedding sample — horse</td>
+            <td class="col-qty">15</td>
+            <td class="col-sold">2</td>
+            <td class="col-loc">floor/table edge</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              Litter Pellets — large
+              <span class="badge b-heavy">40 lb each</span>
+            </td>
+            <td class="col-qty">3–4</td>
+            <td class="col-sold">1</td>
+            <td class="col-loc">floor display</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Litter Pellets — small</td>
+            <td class="col-qty">10</td>
+            <td class="col-sold" style="color: #bbb">0</td>
+            <td class="col-loc">floor</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Feed Pellets 5lb</td>
+            <td class="col-qty">9</td>
+            <td class="col-sold">1</td>
+            <td class="col-loc">floor/table edge</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="section-note">
+        Full-size bedding was one of our top sellers last year — we restock
+        from under the table as bags sell so we're not running to the trailer
+        mid-event.
+      </div>
+    </div>
+
+    <div class="section tier-display">
+      <div class="section-header">
+        <h2>Customer engagement — throughout the booth</h2>
+      </div>
+      <table class="items-table">
+        <thead>
+          <tr>
+            <td class="col-check"></td>
+            <td class="col-name" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              item
+            </td>
+            <td class="col-qty" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              bring
+            </td>
+            <td class="col-sold" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              '25 sold
+            </td>
+            <td class="col-loc" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              location
+            </td>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Grab bags — event giveaway/goodie bags</td>
+            <td class="col-qty">100</td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">hand off to organizers</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Brochures</td>
+            <td class="col-qty"></td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">1 stand per table</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Laminated catalogue</td>
+            <td class="col-qty">1</td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">1 per table</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              QR feedback/requests station — printed card in small stand
+            </td>
+            <td class="col-qty">1</td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">front table</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Free samples — portioned and labelled</td>
+            <td class="col-qty"></td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">
+              1 basket at far table + 1 atop MiniBits display
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ══ UNDER THE TABLES ══ -->
+    <div class="tier-banner">
+      Under our tables — restock
+      <span>grab-and-replace without a trailer run</span>
+    </div>
+
+    <div class="section tier-under">
+      <div class="section-header">
+        <h2>
+          Bedding restock (under the floor table, or back room if available
+          again)
+        </h2>
+      </div>
+      <table class="items-table">
+        <thead>
+          <tr>
+            <td class="col-check"></td>
+            <td class="col-name" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              item
+            </td>
+            <td class="col-qty" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              available
+            </td>
+            <td class="col-sold" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              '25 sold
+            </td>
+            <td class="col-loc" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              location
+            </td>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              Paper Bedding — full size horse (remaining after display)
+            </td>
+            <td class="col-qty">~8</td>
+            <td class="col-sold">11</td>
+            <td class="col-loc">under table</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              Paper Bedding — full size small animal (remaining after display)
+              <span class="badge b-new">new</span>
+            </td>
+            <td class="col-qty">~16</td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">under table</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              Litter Pellets — large
+              <span class="badge b-heavy">40 lb each</span>
+            </td>
+            <td class="col-qty">4–6</td>
+            <td class="col-sold">1</td>
+            <td class="col-loc">under table</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="section-note">
+        We bring 8–10 large litter bags total into the venue (display +
+        under-table). The rest stay in the trailer — if we sell through
+        everything under the table it's been a great day and a trailer run is
+        worth it at that point.
+      </div>
+    </div>
+
+    <div class="section tier-under">
+      <div class="section-header">
+        <h2>Rosewood overflow (under front table)</h2>
+      </div>
+      <table class="items-table">
+        <thead>
+          <tr>
+            <td class="col-check"></td>
+            <td class="col-name" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              item
+            </td>
+            <td class="col-qty" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              available
+            </td>
+            <td class="col-sold" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              '25 sold
+            </td>
+            <td class="col-loc" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              location
+            </td>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              Overflow boxes unopened — top Rosewood sellers (Dandelion,
+              Harvests, Herbs Plus, Summerfield)
+            </td>
+            <td class="col-qty">3 boxes of each</td>
+            <td class="col-sold" style="color: #bbb">0</td>
+            <td class="col-loc">under front table</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ══ TRAILER ══ -->
+    <div class="tier-banner">
+      Stays in the trailer
+      <span>too heavy, too bulky, or it's our online-order fulfillment
+        stock</span>
+    </div>
+
+    <div class="section tier-trailer">
+      <div class="section-header">
+        <h2>
+          Litter pellets — bulk remainder
+          <span class="badge b-heavy">40 lb each</span>
+        </h2>
+      </div>
+      <table class="items-table">
+        <thead>
+          <tr>
+            <td class="col-check"></td>
+            <td class="col-name" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              item
+            </td>
+            <td class="col-qty" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              available
+            </td>
+            <td class="col-sold" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              '25 sold
+            </td>
+            <td class="col-loc" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              location
+            </td>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              Litter Pellets — large (everything beyond our 8–10 in-venue
+              bags)
+            </td>
+            <td class="col-qty">~18–20</td>
+            <td class="col-sold">1</td>
+            <td class="col-loc">trailer</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="section-note">
+        We only do a trailer run for these if we sell through. No point in
+        hauling them all in at setup.
+      </div>
+    </div>
+
+    <div class="section tier-trailer">
+      <div class="section-header">
+        <h2>
+          15lb hay — fulfillment stock for online orders placed at the event
+        </h2>
+      </div>
+      <table class="items-table">
+        <thead>
+          <tr>
+            <td class="col-check"></td>
+            <td class="col-name" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              item
+            </td>
+            <td class="col-qty" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              available
+            </td>
+            <td class="col-sold" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              '25 sold
+            </td>
+            <td class="col-loc" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              location
+            </td>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              Timothy 15lb <span class="badge b-online">order online</span>
+            </td>
+            <td class="col-qty">5</td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">trailer</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              Orchard Grass 15lb
+              <span class="badge b-online">order online</span>
+            </td>
+            <td class="col-qty">2</td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">trailer</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              Meadow Mix 15lb <span class="badge b-online">order online</span>
+            </td>
+            <td class="col-qty">2</td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">trailer</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              Premium Blend 15lb
+              <span class="badge b-online">order online</span>
+            </td>
+            <td class="col-qty">3</td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">trailer</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              2nd Cut Timothy/Meadow 15lb
+              <span class="badge b-online">order online</span>
+            </td>
+            <td class="col-qty">2</td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">trailer</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="section-note">
+        Bagged for easy carry. These should be display bales just to show the
+        product (can start selling live units at mid-day) — ask customers to
+        order online (discount if ordered day of event, and we deliver free
+        within 5 days.
+      </div>
+    </div>
+
+    <div class="section tier-trailer">
+      <div class="section-header">
+        <h2>Zero stock — these stay home, but worth noting</h2>
+      </div>
+      <table class="items-table">
+        <thead>
+          <tr>
+            <td class="col-check"></td>
+            <td class="col-name" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              item
+            </td>
+            <td class="col-qty" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              out of stock
+            </td>
+            <td class="col-sold" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              '25 sold
+            </td>
+            <td class="col-loc" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              location
+            </td>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              Leafy Willow Rings
+              <span class="badge b-heavy">⚠ sold 22 last year — our #2 item! Try HARD to find and spin
+                up before May 23</span>
+            </td>
+            <td class="col-qty">50 min</td>
+            <td class="col-sold">22</td>
+            <td class="col-loc">—</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Birch Top Chews</td>
+            <td class="col-qty">0</td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">—</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Birch Top Twigs &amp; Sticks</td>
+            <td class="col-qty">0</td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">—</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              2nd Cut Orchardgrass — all sizes (sold 4 bag-equiv last year)
+            </td>
+            <td class="col-qty">0</td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">—</td>
+          </tr>
+          <!-- Colspan Rows: Check (1) + Name (1) + Qty/Sold (2) + Loc (1) = 5 columns -->
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Sherwood Trial Pack Recovery (both SKUs)</td>
+            <td class="col-qty" colspan="2" style="text-align: center">
+              feasible... but worth making?
+            </td>
+            <td class="col-loc">—</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              Sherwood Rabbit Pellets — Free Choice 10lb
+            </td>
+            <td class="col-qty" colspan="2" style="text-align: center">
+              take names... will stock in 2-3 weeks
+            </td>
+            <td class="col-loc">—</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Alfalfa Mix</td>
+            <td class="col-qty" colspan="2" style="text-align: center">
+              any avail Dave?
+            </td>
+            <td class="col-loc">—</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ══ TOOLS ══ -->
+    <div class="tier-banner">
+      Tools &amp; supplies
+      <span>setup, display, signage, and taking people's money</span>
+    </div>
+
+    <div class="section tier-tools">
+      <div class="section-header">
+        <h2>Setup &amp; assembly</h2>
+      </div>
+      <table class="items-table">
+        <thead>
+          <tr>
+            <td class="col-check"></td>
+            <td class="col-name" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              item
+            </td>
+            <td class="col-qty" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              bring
+            </td>
+            <td class="col-sold" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              '25 sold
+            </td>
+            <td class="col-loc" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              location
+            </td>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Drill + bits</td>
+            <td class="col-qty"></td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">tools bag</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Zip ties — assorted sizes</td>
+            <td class="col-qty"></td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">tools bag</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Pens/Notepads</td>
+            <td class="col-qty"></td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">tools bag</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Chalk marker/pen</td>
+            <td class="col-qty"></td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">tools bag</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Mini + Medium Blackboards</td>
+            <td class="col-qty"></td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">tools bag</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Clear tape</td>
+            <td class="col-qty"></td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">tools bag</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Double-sided tape</td>
+            <td class="col-qty"></td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">tools bag</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Glue gun + extra glue sticks</td>
+            <td class="col-qty"></td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">tools bag</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Scissors</td>
+            <td class="col-qty"></td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">tools bag</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Box cutter / utility knife</td>
+            <td class="col-qty"></td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">tools bag</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Bungee cords / ratchet straps</td>
+            <td class="col-qty"></td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">trailer</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Folding hand truck / dolly</td>
+            <td class="col-qty"></td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">trailer</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Reusable totes for sorting and carrying</td>
+            <td class="col-qty"></td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">trailer</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section tier-tools">
+      <div class="section-header">
+        <h2>Display &amp; signage</h2>
+      </div>
+      <table class="items-table">
+        <thead>
+          <tr>
+            <td class="col-check"></td>
+            <td class="col-name" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              item
+            </td>
+            <td class="col-qty" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              bring
+            </td>
+            <td class="col-sold" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              '25 sold
+            </td>
+            <td class="col-loc" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              location
+            </td>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Sparrow Farms banner / backdrop</td>
+            <td class="col-qty"></td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">display ring</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Display ring / arch + all hardware</td>
+            <td class="col-qty"></td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">trailer</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">White tablecloths</td>
+            <td class="col-qty"></td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">tables</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Wooden crates &amp; display risers</td>
+            <td class="col-qty"></td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">tables</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Price tags / labels</td>
+            <td class="col-qty"></td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">on products</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              Gold Sponsor badge + Bunnypalooza signage
+            </td>
+            <td class="col-qty"></td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">front of table</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Product info cards for hay varieties</td>
+            <td class="col-qty"></td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">floor display</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              QR sign — hay online ordering, laminated
+              <span class="badge b-remind">printed night before</span>
+            </td>
+            <td class="col-qty"></td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">bale display</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              "New this year!" signs for mini bales + new bedding
+              <span class="badge b-remind">printed night before</span>
+            </td>
+            <td class="col-qty"></td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">floor display</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section tier-tools">
+      <div class="section-header">
+        <h2>Payments &amp; admin</h2>
+      </div>
+      <table class="items-table">
+        <thead>
+          <tr>
+            <td class="col-check"></td>
+            <td class="col-name" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              item
+            </td>
+            <td class="col-qty" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              bring
+            </td>
+            <td class="col-sold" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              '25 sold
+            </td>
+            <td class="col-loc" style="
+                  font-size: 8pt;
+                  color: #999;
+                  font-weight: 500;
+                  padding-bottom: 2px;
+                ">
+              location
+            </td>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              3 iPhones + chargers - no card reader this year - all on phones
+            </td>
+            <td class="col-qty">2</td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">on us</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Power bank (charged)</td>
+            <td class="col-qty"></td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">under table</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Cash float + cash box with lock</td>
+            <td class="col-qty"></td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">under table</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              Receipt + Printer / order pad (backup, just in case)
+            </td>
+            <td class="col-qty"></td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">cash area</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">Paper bags (stamped) for purchases</td>
+            <td class="col-qty"></td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">under table</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">
+              Snacks &amp; water for us & the girls — it's a long day
+            </td>
+            <td class="col-qty"></td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">for us</td>
+          </tr>
+          <tr>
+            <td class="col-check"><span class="check-box"></span></td>
+            <td class="col-name">This checklist!</td>
+            <td class="col-qty">1</td>
+            <td class="col-sold">—</td>
+            <td class="col-loc">on us</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="footer">
+      <span>Sparrow Farms &nbsp;·&nbsp; Bunnypalooza 2026 &nbsp;·&nbsp; May
+        23&nbsp;·&nbsp; 10am-4pm</span>
+      <span>sparrowfarms.ca &nbsp;·&nbsp; @sparrowfarmhay</span>
     </div>
   </div>
-  <p class="header-note">Our only in-person event of the year — let's make it count. Setup window: Friday May 22, 4–6pm (partial load-in) and Saturday morning until 9am hard deadline. Doors officially open at 10am but people showed up early last year — we need to be fully ready by 9. &nbsp;·&nbsp; <em>'25 sold</em> column = units sold at Bunnypalooza 2025. — = new product this year.</p>
-
-  <!-- ══ NIGHT BEFORE ══ -->
-  <div class="tier-banner">Thursday night / Friday daytime <span>prep, print, and pack — we have Friday 4–6pm for partial load-in at the venue</span></div>
-
-  <div class="section tier-pre">
-    <div class="section-header"><h2>Prep &amp; print</h2></div>
-    <table class="items-table">
-<thead><tr>
-  <td class="col-check"></td>
-  <td class="col-name" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">item</td>
-  <td class="col-qty" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">bring</td>
-  <td class="col-sold" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">--</td>
-  <td class="col-loc" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">location</td>
-</tr></thead>
-<tbody>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Print &amp; laminate QR sign — "Order today, free Ottawa delivery within 5 days" → hay collection on sparrowfarms.ca <span class="badge b-remind">print &amp; laminate</span></td><td class="col-qty">2</td><td class="col-sold">—</td><td class="col-loc">bale display</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">"New this year!" signs for mini bales + small animal paper bedding <span class="badge b-remind">print &amp; laminate</span></td><td class="col-qty"></td><td class="col-sold">—</td><td class="col-loc">floor display</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Assemble grab bags — 100 pieces/coupons <span class="badge b-remind">count &amp; bag tonight</span></td><td class="col-qty">100</td><td class="col-sold">—</td><td class="col-loc">event bag</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Brochures</td><td class="col-qty">60</td><td class="col-sold">—</td><td class="col-loc">event bag</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Laminated floater product list (Catalogue)</td><td class="col-qty">2</td><td class="col-sold">—</td><td class="col-loc">event bag</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">QR feedback/requests form — set up and test the link, print the card for the stand</td><td class="col-qty">1</td><td class="col-sold">—</td><td class="col-loc">front table</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Free samples — portioned and labelled</td><td class="col-qty">30</td><td class="col-sold">—</td><td class="col-loc">event bag</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Cash float — small bills and coins</td><td class="col-qty">$300</td><td class="col-sold">—</td><td class="col-loc">cash box</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">3 iPhones (Fully Charged!!), tablet, power banks</td><td class="col-qty"></td><td class="col-sold">—</td><td class="col-loc">overnight</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Power bar with extension cord</td><td class="col-qty"></td><td class="col-sold">—</td><td class="col-loc">overnight</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Load trailer — heavy stuff on the bottom (litter pellets, then bales, bedding on top) · bring Friday 4–6pm for early load-in</td><td class="col-qty">see below for qty</td><td class="col-sold">—</td><td class="col-loc">trailer</td></tr>
-    </tbody></table>
+  <button class="print-btn no-print" onclick="window.print()">
+    Print checklist
+  </button>
+  <div style="margin-top: 28px; border-top: 1px solid #ddd; padding-top: 16px">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px">
+      <img src="PHOTO-1.jpg" alt="Bunnypalooza 2025" style="
+            width: 100%;
+            aspect-ratio: 4/3;
+            object-fit: cover;
+            border-radius: 4px;
+          " />
+      <img src="PHOTO-2.jpg" alt="Bunnypalooza 2025" style="
+            width: 100%;
+            aspect-ratio: 4/3;
+            object-fit: cover;
+            border-radius: 4px;
+          " />
+      <img src="PHOTO-3.jpg" alt="Bunnypalooza 2025" style="
+            width: 100%;
+            aspect-ratio: 4/3;
+            object-fit: cover;
+            border-radius: 4px;
+          " />
+      <img src="PHOTO-4.jpg" alt="Bunnypalooza 2025" style="
+            width: 100%;
+            aspect-ratio: 4/3;
+            object-fit: cover;
+            border-radius: 4px;
+          " />
+    </div>
+    <p style="font-size: 8pt; color: #aaa; margin-top: 8px; text-align: center">
+      Bunnypalooza 2025 — Sparrow Farms
+    </p>
   </div>
-
-  <!-- ══ LOBBY & ENTRANCE ══ -->
-  <div class="tier-banner">Lobby &amp; front entrance <span>our sponsor presence before visitors even reach our booth</span></div>
-
-  <div class="section tier-lobby">
-    <div class="section-header"><h2>Drop off at entrance on arrival — before we set up</h2></div>
-    <table class="items-table">
-<thead><tr>
-  <td class="col-check"></td>
-  <td class="col-name" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">item</td>
-  <td class="col-qty" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">bring</td>
-  <td class="col-sold" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">'25 sold</td>
-  <td class="col-loc" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">location</td>
-</tr></thead>
-<tbody>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Full-size Sparrow Farms poster — lobby display <span class="badge b-remind">confirm print size ahead of time</span></td><td class="col-qty">1</td><td class="col-sold">—</td><td class="col-loc">venue lobby</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Living Habitat display donations — front entrance <span class="badge b-sponsor">Gold Sponsor moment</span></td><td class="col-qty">TBD</td><td class="col-sold">—</td><td class="col-loc">front entrance</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Branded signage for Living Habitat donations (Sparrow Farms name on it if we can)</td><td class="col-qty"></td><td class="col-sold">—</td><td class="col-loc">front entrance</td></tr>
-    </tbody></table>
-    <div class="section-note">Confirm with the organizers on arrival where exactly the Living Habitat donations go and whether we set them up ourselves or hand them off.</div>
-  </div>
-
-  <!-- ══ IN THE VENUE ══ -->
-  <div class="tier-banner">In the venue — our display &amp; sell floor <span>tables · floor · stage · easel</span></div>
-
-  <div class="section tier-display">
-    <div class="section-header"><h2>Front table — Rosewood</h2><span class="zone-note">bring our full stock</span></div>
-    <table class="items-table">
-<thead><tr>
-  <td class="col-check"></td>
-  <td class="col-name" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">item</td>
-  <td class="col-qty" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">available</td>
-  <td class="col-sold" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">'25 sold</td>
-  <td class="col-loc" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">location</td>
-</tr></thead>
-<tbody>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Dandelion Delight</td><td class="col-qty">44</td><td class="col-sold">5</td><td class="col-loc">front table</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Autumn Harvest</td><td class="col-qty">37</td><td class="col-sold" style="color:#bbb;">0</td><td class="col-loc">front table</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Summer Harvest</td><td class="col-qty">36</td><td class="col-sold">6</td><td class="col-loc">front table</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Summerfield</td><td class="col-qty">33</td><td class="col-sold" style="color:#bbb;">0</td><td class="col-loc">front table</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Pea Flakes</td><td class="col-qty">32</td><td class="col-sold" style="color:#bbb;">0</td><td class="col-loc">front table</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Luxury Flower, Fruit &amp; Veg Bars</td><td class="col-qty">32</td><td class="col-sold">2</td><td class="col-loc">front table</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Grainless Nibble Pots</td><td class="col-qty">29</td><td class="col-sold">3</td><td class="col-loc">front table</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Weave-A-Ball</td><td class="col-qty">24</td><td class="col-sold">1</td><td class="col-loc">front table</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Herbs Plus</td><td class="col-qty">24</td><td class="col-sold">4</td><td class="col-loc">front table</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Herbal Garden</td><td class="col-qty">22</td><td class="col-sold">3</td><td class="col-loc">front table</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Flower 'n' Forage Blossom</td><td class="col-qty">20</td><td class="col-sold" style="color:#bbb;">0</td><td class="col-loc">front table</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Fields of Gold</td><td class="col-qty">19</td><td class="col-sold">4</td><td class="col-loc">front table</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Strawberry Sticks</td><td class="col-qty">16</td><td class="col-sold" style="color:#bbb;">0</td><td class="col-loc">front table</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Dandelion Meadow Sticks</td><td class="col-qty">14</td><td class="col-sold">1</td><td class="col-loc">front table</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Carrot &amp; Fennel Meadow Sticks</td><td class="col-qty">13</td><td class="col-sold" style="color:#bbb;">0</td><td class="col-loc">front table</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Celebration Cake</td><td class="col-qty">13</td><td class="col-sold">1</td><td class="col-loc">front table</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">I Love Hay Cube — Med</td><td class="col-qty">12</td><td class="col-sold">1</td><td class="col-loc">front table</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">I Love Hay Cube — Lrg</td><td class="col-qty">12</td><td class="col-sold" style="color:#bbb;">0</td><td class="col-loc">front table</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Fenugreek Crunchies</td><td class="col-qty">9</td><td class="col-sold" style="color:#bbb;">0</td><td class="col-loc">front table</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Treat Basket</td><td class="col-qty">8</td><td class="col-sold" style="color:#bbb;">0</td><td class="col-loc">front table</td></tr>
-    </tbody></table>
-    <div class="section-note">Keep overflow of our top sellers (Dandelion, Harvests, Herbs Plus, Summerfield) under the table so the surface stays neat through the day.</div>
-  </div>
-
-  <div class="section tier-display">
-    <div class="section-header"><h2>Easel display — Mini Bits</h2><span class="zone-note">all restocked by May 23</span></div>
-    <table class="items-table">
-<thead><tr>
-  <td class="col-check"></td>
-  <td class="col-name" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">item</td>
-  <td class="col-qty" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">available</td>
-  <td class="col-sold" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">'25 sold</td>
-  <td class="col-loc" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">location</td>
-</tr></thead>
-<tbody>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Snackers — Strawberry</td><td class="col-qty">30</td><td class="col-sold">5</td><td class="col-loc">easel</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Snackers — Banana Carrot</td><td class="col-qty">28</td><td class="col-sold">9</td><td class="col-loc">easel</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Snackers — DigestAid</td><td class="col-qty">19</td><td class="col-sold">3</td><td class="col-loc">easel</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Snackers — Raspberry</td><td class="col-qty">16</td><td class="col-sold">4</td><td class="col-loc">easel</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Forage Frenzy — Feeling Fine</td><td class="col-qty">15</td><td class="col-sold">6</td><td class="col-loc">easel</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Forage Frenzy — Flowery Fun</td><td class="col-qty">15</td><td class="col-sold">1</td><td class="col-loc">easel</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Forage Frenzy — Fueled Feast</td><td class="col-qty">15</td><td class="col-sold">2</td><td class="col-loc">easel</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Forage Frenzy — Function &amp; Flow</td><td class="col-qty">15</td><td class="col-sold">5</td><td class="col-loc">easel</td></tr>
-    </tbody></table>
-  </div>
-
-  <div class="section tier-display">
-    <div class="section-header"><h2>Far table — Tim Dips, Treat Bombs &amp; Dinner Boxes</h2></div>
-    <table class="items-table">
-<thead><tr>
-  <td class="col-check"></td>
-  <td class="col-name" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">item</td>
-  <td class="col-qty" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">available</td>
-  <td class="col-sold" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">'25 sold</td>
-  <td class="col-loc" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">location</td>
-</tr></thead>
-<tbody>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Tim Dips — Plain</td><td class="col-qty">15</td><td class="col-sold">2</td><td class="col-loc">far table</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Tim Dips — Banana <span class="badge b-remind">top flavour last year</span></td><td class="col-qty">15</td><td class="col-sold">4</td><td class="col-loc">far table</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Tim Dips — Apple</td><td class="col-qty">15</td><td class="col-sold">2</td><td class="col-loc">far table</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Tim Dips — Papaya</td><td class="col-qty">15</td><td class="col-sold">2</td><td class="col-loc">far table</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Tim Dips — Strawberry</td><td class="col-qty">15</td><td class="col-sold">2</td><td class="col-loc">far table</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Treat Bomb Bags</td><td class="col-qty">20</td><td class="col-sold">7</td><td class="col-loc">far table</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Dinner Box!!</td><td class="col-qty">10</td><td class="col-sold" style="color:#bbb;">0</td><td class="col-loc">far table</td></tr>
-    </tbody></table>
-  </div>
-
-  <div class="section tier-display">
-    <div class="section-header"><h2>Stage — Willow + Apple Sticks &amp; Sherwood</h2></div>
-    <table class="items-table">
-<thead><tr>
-  <td class="col-check"></td>
-  <td class="col-name" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">item</td>
-  <td class="col-qty" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">available</td>
-  <td class="col-sold" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">'25 sold</td>
-  <td class="col-loc" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">location</td>
-</tr></thead>
-<tbody>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Apple Wood Twigs &amp; Sticks <span class="badge b-remind">8 sold last year</span></td><td class="col-qty">40</td><td class="col-sold">8</td><td class="col-loc">stage display</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Willow Twigs &amp; Sticks <span class="badge b-remind">#1 seller — 23 sold last year</span></td><td class="col-qty">40</td><td class="col-sold">23</td><td class="col-loc">stage display</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Willow/greenery plants for stage backdrop</td><td class="col-qty"></td><td class="col-sold">—</td><td class="col-loc">stage</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Recovery Kit — Rabbits (200g)</td><td class="col-qty">16</td><td class="col-sold">1</td><td class="col-loc">stage</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Digestive Support</td><td class="col-qty">15</td><td class="col-sold">2</td><td class="col-loc">stage</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Joint Support</td><td class="col-qty">15</td><td class="col-sold">1</td><td class="col-loc">stage</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Prevention Tablet</td><td class="col-qty">15</td><td class="col-sold">1</td><td class="col-loc">stage</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Urinary Support</td><td class="col-qty">12</td><td class="col-sold" style="color:#bbb;">0</td><td class="col-loc">stage</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Vitamin C</td><td class="col-qty">10</td><td class="col-sold" style="color:#bbb;">0</td><td class="col-loc">stage</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Rabbit Pellets — Measured (green)</td><td class="col-qty">10</td><td class="col-sold">3</td><td class="col-loc">stage</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Appetite Restore</td><td class="col-qty">10</td><td class="col-sold" style="color:#bbb;">0</td><td class="col-loc">stage</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Rabbit Pellets — Free Choice (blue)</td><td class="col-qty">8</td><td class="col-sold" style="color:#bbb;">0</td><td class="col-loc">stage</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Recovery Kit — Guinea Pigs (full)</td><td class="col-qty">7</td><td class="col-sold" style="color:#bbb;">0</td><td class="col-loc">stage</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Guinea Pig Pellets — Measured</td><td class="col-qty">6</td><td class="col-sold" style="color:#bbb;">0</td><td class="col-loc">stage</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Recovery Kit — Rabbits (full kit)</td><td class="col-qty">4</td><td class="col-sold" style="color:#bbb;">0</td><td class="col-loc">stage</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Guinea Pig Pellets — Free Choice</td><td class="col-qty">3</td><td class="col-sold" style="color:#bbb;">0</td><td class="col-loc">stage</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Recovery Kit — Guinea Pigs (200g)</td><td class="col-qty">1</td><td class="col-sold" style="color:#bbb;">0</td><td class="col-loc">stage</td></tr>
-    </tbody></table>
-  </div>
-
-  <div class="section tier-display">
-    <div class="section-header"><h2>Floor — hay display</h2><span class="zone-note">display ring + bale shelf + mini bales</span></div>
-    <table class="items-table">
-<thead><tr>
-  <td class="col-check"></td>
-  <td class="col-name" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">item</td>
-  <td class="col-qty" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">available</td>
-  <td class="col-sold" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">'25 sold</td>
-  <td class="col-loc" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">location</td>
-</tr></thead>
-<tbody>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Large hay bales — hold down our display ring + serve as floor shelf <span class="badge b-remind">structural — load first</span></td><td class="col-qty">4</td><td class="col-sold">—</td><td class="col-loc">floor ring</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">15lb bale — Timothy (display only) <span class="badge b-online">push online orders</span></td><td class="col-qty">2</td><td class="col-sold">13</td><td class="col-loc">bale shelf</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">15lb bale — Orchard Grass (display only) <span class="badge b-online">push online orders</span></td><td class="col-qty">2</td><td class="col-sold" style="color:#bbb;">0</td><td class="col-loc">bale shelf</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">15lb bale — Meadow Mix (display only) <span class="badge b-online">push online orders</span></td><td class="col-qty">2</td><td class="col-sold">4</td><td class="col-loc">bale shelf</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">15lb bale — Premium Blend (display only) <span class="badge b-online">push online orders</span></td><td class="col-qty">2</td><td class="col-sold">2</td><td class="col-loc">bale shelf</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">15lb bale — 2nd Cut Timothy/Meadow (display only) <span class="badge b-online">push online orders</span></td><td class="col-qty">2</td><td class="col-sold">2</td><td class="col-loc">bale shelf</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Mini Bale — Timothy <span class="badge b-new">new</span></td><td class="col-qty">25</td><td class="col-sold">5</td><td class="col-loc">bale shelf/floor</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Mini Bale — Orchard Grass <span class="badge b-new">new</span></td><td class="col-qty">25</td><td class="col-sold">—</td><td class="col-loc">bale shelf/floor</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Mini Bale — Meadow Mix <span class="badge b-new">new</span></td><td class="col-qty">25</td><td class="col-sold">9</td><td class="col-loc">bale shelf/floor</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Mini Bale — Premium Blend <span class="badge b-new">new</span></td><td class="col-qty">25</td><td class="col-sold">4</td><td class="col-loc">bale shelf/floor</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Mini Bale — 2nd Cut Timothy/Meadow <span class="badge b-new">new</span></td><td class="col-qty">25</td><td class="col-sold">6</td><td class="col-loc">bale shelf/floor</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Demo storage tote "drilled" — 15lb bundle learning display <span class="badge b-remind">don't forget this one</span></td><td class="col-qty">1</td><td class="col-sold">—</td><td class="col-loc">floor display</td></tr>
-    </tbody></table>
-    <div class="section-note">Hoping to keep the 15lb bales on the shelf for show until mid-day — we point customers to order online or pay now at discount with free delivery within 5 days. QR sign goes right on the bale display. Our fulfillment stock stays in the trailer and goes home with us. Last year hay bags were our #3 and #4 revenue items — mini bales are a great replacement for the sampler format.</div>
-  </div>
-
-  <div class="section tier-display">
-    <div class="section-header"><h2>Floor — bedding &amp; pellets (display quantities in-venue)</h2></div>
-    <table class="items-table">
-<thead><tr>
-  <td class="col-check"></td>
-  <td class="col-name" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">item</td>
-  <td class="col-qty" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">available</td>
-  <td class="col-sold" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">'25 sold</td>
-  <td class="col-loc" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">location</td>
-</tr></thead>
-<tbody>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Paper Bedding — full size small animal <span class="badge b-new">new</span></td><td class="col-qty">3–4</td><td class="col-sold">—</td><td class="col-loc">floor display</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Paper Bedding — full size horse <span class="badge b-remind">11 sold last year — #2 by revenue</span></td><td class="col-qty">3–4</td><td class="col-sold">11</td><td class="col-loc">floor display</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Paper Bedding sample — small animal <span class="badge b-new">new</span></td><td class="col-qty">20</td><td class="col-sold">—</td><td class="col-loc">floor/table edge</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Paper Bedding sample — horse</td><td class="col-qty">15</td><td class="col-sold">2</td><td class="col-loc">floor/table edge</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Litter Pellets — large <span class="badge b-heavy">40 lb each</span></td><td class="col-qty">3–4</td><td class="col-sold">1</td><td class="col-loc">floor display</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Litter Pellets — small</td><td class="col-qty">10</td><td class="col-sold" style="color:#bbb;">0</td><td class="col-loc">floor</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Feed Pellets 5lb</td><td class="col-qty">9</td><td class="col-sold">1</td><td class="col-loc">floor/table edge</td></tr>
-    </tbody></table>
-    <div class="section-note">Full-size bedding was one of our top sellers last year — we restock from under the table as bags sell so we're not running to the trailer mid-event.</div>
-  </div>
-
-  <div class="section tier-display">
-    <div class="section-header"><h2>Customer engagement — throughout the booth</h2></div>
-    <table class="items-table">
-<thead><tr>
-  <td class="col-check"></td>
-  <td class="col-name" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">item</td>
-  <td class="col-qty" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">bring</td>
-  <td class="col-sold" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">'25 sold</td>
-  <td class="col-loc" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">location</td>
-</tr></thead>
-<tbody>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Grab bags — event giveaway/goodie bags</td><td class="col-qty">100</td><td class="col-sold">—</td><td class="col-loc">hand off to organizers</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Brochures</td><td class="col-qty"></td><td class="col-sold">—</td><td class="col-loc">1 stand per table</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Laminated catalogue</td><td class="col-qty">1</td><td class="col-sold">—</td><td class="col-loc">1 per table</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">QR feedback/requests station — printed card in small stand</td><td class="col-qty">1</td><td class="col-sold">—</td><td class="col-loc">front table</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Free samples — portioned and labelled</td><td class="col-qty"></td><td class="col-sold">—</td><td class="col-loc">1 basket at far table + 1 atop MiniBits display</td></tr>
-    </tbody></table>
-  </div>
-
-  <!-- ══ UNDER THE TABLES ══ -->
-  <div class="tier-banner">Under our tables — restock <span>grab-and-replace without a trailer run</span></div>
-
-  <div class="section tier-under">
-    <div class="section-header"><h2>Bedding restock (under the floor table, or back room if available again)</h2></div>
-    <table class="items-table">
-<thead><tr>
-  <td class="col-check"></td>
-  <td class="col-name" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">item</td>
-  <td class="col-qty" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">available</td>
-  <td class="col-sold" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">'25 sold</td>
-  <td class="col-loc" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">location</td>
-</tr></thead>
-<tbody>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Paper Bedding — full size horse (remaining after display)</td><td class="col-qty">~8</td><td class="col-sold">11</td><td class="col-loc">under table</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Paper Bedding — full size small animal (remaining after display) <span class="badge b-new">new</span></td><td class="col-qty">~16</td><td class="col-sold">—</td><td class="col-loc">under table</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Litter Pellets — large <span class="badge b-heavy">40 lb each</span></td><td class="col-qty">4–6</td><td class="col-sold">1</td><td class="col-loc">under table</td></tr>
-    </tbody></table>
-    <div class="section-note">We bring 8–10 large litter bags total into the venue (display + under-table). The rest stay in the trailer — if we sell through everything under the table it's been a great day and a trailer run is worth it at that point.</div>
-  </div>
-
-  <div class="section tier-under">
-    <div class="section-header"><h2>Rosewood overflow (under front table)</h2></div>
-    <table class="items-table">
-<thead><tr>
-  <td class="col-check"></td>
-  <td class="col-name" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">item</td>
-  <td class="col-qty" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">available</td>
-  <td class="col-sold" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">'25 sold</td>
-  <td class="col-loc" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">location</td>
-</tr></thead>
-<tbody>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Overflow boxes unopened — top Rosewood sellers (Dandelion, Harvests, Herbs Plus, Summerfield)</td><td class="col-qty">3 boxes of each</td><td class="col-sold" style="color:#bbb;">0</td><td class="col-loc">under front table</td></tr>
-    </tbody></table>
-  </div>
-
-  <!-- ══ TRAILER ══ -->
-  <div class="tier-banner">Stays in the trailer <span>too heavy, too bulky, or it's our online-order fulfillment stock</span></div>
-
-  <div class="section tier-trailer">
-    <div class="section-header"><h2>Litter pellets — bulk remainder <span class="badge b-heavy">40 lb each</span></h2></div>
-    <table class="items-table">
-<thead><tr>
-  <td class="col-check"></td>
-  <td class="col-name" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">item</td>
-  <td class="col-qty" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">available</td>
-  <td class="col-sold" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">'25 sold</td>
-  <td class="col-loc" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">location</td>
-</tr></thead>
-<tbody>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Litter Pellets — large (everything beyond our 8–10 in-venue bags)</td><td class="col-qty">~18–20</td><td class="col-sold">1</td><td class="col-loc">trailer</td></tr>
-    </tbody></table>
-    <div class="section-note">We only do a trailer run for these if we sell through. No point in hauling them all in at setup.</div>
-  </div>
-
-  <div class="section tier-trailer">
-    <div class="section-header"><h2>15lb hay — fulfillment stock for online orders placed at the event</h2></div>
-    <table class="items-table">
-<thead><tr>
-  <td class="col-check"></td>
-  <td class="col-name" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">item</td>
-  <td class="col-qty" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">available</td>
-  <td class="col-sold" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">'25 sold</td>
-  <td class="col-loc" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">location</td>
-</tr></thead>
-<tbody>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Timothy 15lb <span class="badge b-online">order online</span></td><td class="col-qty">5</td><td class="col-sold">—</td><td class="col-loc">trailer</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Orchard Grass 15lb <span class="badge b-online">order online</span></td><td class="col-qty">2</td><td class="col-sold">—</td><td class="col-loc">trailer</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Meadow Mix 15lb <span class="badge b-online">order online</span></td><td class="col-qty">2</td><td class="col-sold">—</td><td class="col-loc">trailer</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Premium Blend 15lb <span class="badge b-online">order online</span></td><td class="col-qty">3</td><td class="col-sold">—</td><td class="col-loc">trailer</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">2nd Cut Timothy/Meadow 15lb <span class="badge b-online">order online</span></td><td class="col-qty">2</td><td class="col-sold">—</td><td class="col-loc">trailer</td></tr>
-    </tbody></table>
-    <div class="section-note">Bagged for easy carry. These should be display bales just to show the product (can start selling live units at mid-day) — ask customers to order online (discount if ordered day of event, and we deliver free within 5 days.</div>
-  </div>
-
-  <div class="section tier-trailer">
-    <div class="section-header"><h2>Zero stock — these stay home, but worth noting</h2></div>
-    <table class="items-table">
-<thead><tr>
-  <td class="col-check"></td>
-  <td class="col-name" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">item</td>
-  <td class="col-qty" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">out of stock</td>
-  <td class="col-sold" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">'25 sold</td>
-  <td class="col-loc" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">location</td>
-</tr></thead>
-<tbody>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Leafy Willow Rings <span class="badge b-heavy">⚠ sold 22 last year — our #2 item! Try HARD to find and spin up before May 23</span></td><td class="col-qty">50 min</td><td class="col-sold">22</td><td class="col-loc">—</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Birch Top Chews</td><td class="col-qty">0</td><td class="col-sold">—</td><td class="col-loc">—</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Birch Top Twigs &amp; Sticks</td><td class="col-qty">0</td><td class="col-sold">—</td><td class="col-loc">—</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">2nd Cut Orchardgrass — all sizes (sold 4 bag-equiv last year)</td><td class="col-qty">0</td><td class="col-sold">—</td><td class="col-loc">—</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Sherwood Trial Pack Recovery (both SKUs)</td><td class="col-qty" colspan="2">feasible... but worth making?</td><td class="col-loc">—</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Sherwood Rabbit Pellets — Free Choice 10lb</td><td class="col-qty" colspan="2">take names... will stock in 2-3 weeks</td><td class="col-loc">—</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Alfalfa Mix</td><td class="col-qty" colspan="2">any avail Dave?</td><td class="col-loc">—</td></tr>
-    </tbody></table>
-  </div>
-
-  <!-- ══ TOOLS ══ -->
-  <div class="tier-banner">Tools &amp; supplies <span>setup, display, signage, and taking people's money</span></div>
-
-  <div class="section tier-tools">
-    <div class="section-header"><h2>Setup &amp; assembly</h2></div>
-    <table class="items-table">
-<thead><tr>
-  <td class="col-check"></td>
-  <td class="col-name" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">item</td>
-  <td class="col-qty" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">bring</td>
-  <td class="col-sold" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">'25 sold</td>
-  <td class="col-loc" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">location</td>
-</tr></thead>
-<tbody>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Drill + bits</td><td class="col-qty"></td><td class="col-sold">—</td><td class="col-loc">tools bag</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Zip ties — assorted sizes</td><td class="col-qty"></td><td class="col-sold">—</td><td class="col-loc">tools bag</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Pens/Notepads</td><td class="col-qty"></td><td class="col-sold">—</td><td class="col-loc">tools bag</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Chalk marker/pen</td><td class="col-qty"></td><td class="col-sold">—</td><td class="col-loc">tools bag</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Mini + Medium Blackboards</td><td class="col-qty"></td><td class="col-sold">—</td><td class="col-loc">tools bag</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Clear tape</td><td class="col-qty"></td><td class="col-sold">—</td><td class="col-loc">tools bag</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Double-sided tape</td><td class="col-qty"></td><td class="col-sold">—</td><td class="col-loc">tools bag</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Glue gun + extra glue sticks</td><td class="col-qty"></td><td class="col-sold">—</td><td class="col-loc">tools bag</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Scissors</td><td class="col-qty"></td><td class="col-sold">—</td><td class="col-loc">tools bag</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Box cutter / utility knife</td><td class="col-qty"></td><td class="col-sold">—</td><td class="col-loc">tools bag</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Bungee cords / ratchet straps</td><td class="col-qty"></td><td class="col-sold">—</td><td class="col-loc">trailer</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Folding hand truck / dolly</td><td class="col-qty"></td><td class="col-sold">—</td><td class="col-loc">trailer</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Reusable totes for sorting and carrying</td><td class="col-qty"></td><td class="col-sold">—</td><td class="col-loc">trailer</td></tr>
-    </tbody></table>
-  </div>
-
-  <div class="section tier-tools">
-    <div class="section-header"><h2>Display &amp; signage</h2></div>
-    <table class="items-table">
-<thead><tr>
-  <td class="col-check"></td>
-  <td class="col-name" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">item</td>
-  <td class="col-qty" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">bring</td>
-  <td class="col-sold" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">'25 sold</td>
-  <td class="col-loc" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">location</td>
-</tr></thead>
-<tbody>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Sparrow Farms banner / backdrop</td><td class="col-qty"></td><td class="col-sold">—</td><td class="col-loc">display ring</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Display ring / arch + all hardware</td><td class="col-qty"></td><td class="col-sold">—</td><td class="col-loc">trailer</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">White tablecloths</td><td class="col-qty"></td><td class="col-sold">—</td><td class="col-loc">tables</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Wooden crates &amp; display risers</td><td class="col-qty"></td><td class="col-sold">—</td><td class="col-loc">tables</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Price tags / labels</td><td class="col-qty"></td><td class="col-sold">—</td><td class="col-loc">on products</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Gold Sponsor badge + Bunnypalooza signage</td><td class="col-qty"></td><td class="col-sold">—</td><td class="col-loc">front of table</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Product info cards for hay varieties</td><td class="col-qty"></td><td class="col-sold">—</td><td class="col-loc">floor display</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">QR sign — hay online ordering, laminated <span class="badge b-remind">printed night before</span></td><td class="col-qty"></td><td class="col-sold">—</td><td class="col-loc">bale display</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">"New this year!" signs for mini bales + new bedding <span class="badge b-remind">printed night before</span></td><td class="col-qty"></td><td class="col-sold">—</td><td class="col-loc">floor display</td></tr>
-    </tbody></table>
-  </div>
-
-  <div class="section tier-tools">
-    <div class="section-header"><h2>Payments &amp; admin</h2></div>
-    <table class="items-table">
-<thead><tr>
-  <td class="col-check"></td>
-  <td class="col-name" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">item</td>
-  <td class="col-qty" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">bring</td>
-  <td class="col-sold" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">'25 sold</td>
-  <td class="col-loc" style="font-size:8pt;color:#999;font-weight:500;padding-bottom:2px;">location</td>
-</tr></thead>
-<tbody>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">3 iPhones + chargers - no card reader this year - all on phones</td><td class="col-qty">2</td><td class="col-sold">—</td><td class="col-loc">on us</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Power bank (charged)</td><td class="col-qty"></td><td class="col-sold">—</td><td class="col-loc">under table</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Cash float + cash box with lock</td><td class="col-qty"></td><td class="col-sold">—</td><td class="col-loc">under table</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Receipt + Printer / order pad (backup, just in case)</td><td class="col-qty"></td><td class="col-sold">—</td><td class="col-loc">cash area</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Paper bags (stamped) for purchases</td><td class="col-qty"></td><td class="col-sold">—</td><td class="col-loc">under table</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">Snacks &amp; water for us & the girls — it's a long day</td><td class="col-qty"></td><td class="col-sold">—</td><td class="col-loc">for us</td></tr>
-      <tr><td class="col-check"><span class="check-box"></span></td><td class="col-name">This checklist!</td><td class="col-qty">1</td><td class="col-sold">—</td><td class="col-loc">on us</td></tr>
-    </tbody></table>
-  </div>
-
-  <div class="footer">
-    <span>Sparrow Farms &nbsp;·&nbsp; Bunnypalooza 2026 &nbsp;·&nbsp; May 23&nbsp;·&nbsp; 10am-4pm</span>
-    <span>sparrowfarms.ca &nbsp;·&nbsp; @sparrowfarmhay</span>
-  </div>
-
-</div>
-<button class="print-btn no-print" onclick="window.print()">Print checklist</button>
-<div style="margin-top: 28px; border-top: 1px solid #ddd; padding-top: 16px;">
-  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-    <img src="PHOTO-1.jpg" alt="Bunnypalooza 2025" style="width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 4px;">
-    <img src="PHOTO-2.jpg" alt="Bunnypalooza 2025" style="width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 4px;">
-    <img src="PHOTO-3.jpg" alt="Bunnypalooza 2025" style="width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 4px;">
-    <img src="PHOTO-4.jpg" alt="Bunnypalooza 2025" style="width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 4px;">
-  </div>
-  <p style="font-size: 8pt; color: #aaa; margin-top: 8px; text-align: center;">Bunnypalooza 2025 — Sparrow Farms</p>
-</div>
 </body>
+
 </html>
