@@ -669,6 +669,17 @@ function getStaffDetails() {
     const g3Value = String(sheet.getRange("G3").getValue() || "").trim().toUpperCase();
     const isInactive = (g3Value === "INACTIVE");
 
+    // Find the most recent shift date (col A, rows 7+)
+    const lastRow = sheet.getLastRow();
+    let lastShift = null;
+    if (lastRow >= 7) {
+      const dates = sheet.getRange(7, 1, lastRow - 6, 1).getValues()
+        .flat()
+        .filter(d => d instanceof Date)
+        .sort((a, b) => b - a);
+      lastShift = dates.length > 0 ? dates[0] : null;
+    }
+
     staff.push({
       pin: String(pin),
       name: sheet.getRange("A3").getValue(),
@@ -676,14 +687,16 @@ function getStaffDetails() {
       email: sheet.getRange("C3").getValue(),
       rate: sheet.getRange("E3").getValue(),
       startDate: sheet.getRange("F3").getValue() ? new Date(sheet.getRange("F3").getValue()).toLocaleDateString() : "—",
+      lastShift: lastShift ? lastShift.toLocaleDateString() : "Never",
+      lastShiftMs: lastShift ? lastShift.getTime() : 0,
       inactive: isInactive
     });
   });
 
-  // Sort: active first, then inactive
+  // Sort: active first, then inactive; within each group sort by most recent shift descending
   staff.sort((a, b) => {
-    if (a.inactive === b.inactive) return a.name.localeCompare(b.name);
-    return a.inactive ? 1 : -1;
+    if (a.inactive !== b.inactive) return a.inactive ? 1 : -1;
+    return b.lastShiftMs - a.lastShiftMs;
   });
 
   return { staff: staff };
