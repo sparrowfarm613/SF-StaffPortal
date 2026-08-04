@@ -86,9 +86,9 @@
     <input type="password" id="pin" class="pin-input" placeholder="0000" inputmode="numeric" maxlength="4">
     <button id="btn-check" class="btn-submit" onclick="checkStatus()">Login / Check Status</button>
 
+    <div id="memo-block" class="hidden" style="background:#fff8e1; border:2px solid #ffb300; border-radius:10px; padding:12px; margin-bottom:12px; font-size:13px; text-align:left; color:#37474f; line-height:1.6;"></div>
+
     <div id="action-grid" class="grid hidden">
-      <!-- Memo block: shown after login if memo is set -->
-      <div id="memo-block" class="hidden" style="grid-column:span 2; background:#fff8e1; border:2px solid #ffb300; border-radius:10px; padding:12px; margin-bottom:4px; font-size:13px; text-align:left; color:#37474f; line-height:1.6;"></div>
       <button id="btn-in" class="btn-in" onclick="runClock('clock-in')">Clock In</button>
       <button id="btn-out" class="btn-out" onclick="showLunchInput()">Clock Out</button>
 
