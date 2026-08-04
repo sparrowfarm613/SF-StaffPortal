@@ -416,7 +416,12 @@
       // Store unpaid summary for use on the shift report screen
       currentUnpaidSummary = res.unpaidSummary || null;
 
-      renderHistoryTable(res.historyRows || []);
+      try {
+        renderHistoryTable(res.historyRows || []);
+      } catch(renderErr) {
+        console.error("renderHistoryTable error:", renderErr);
+        document.getElementById('history-data').innerHTML = '<p style="color:red; font-size:12px;">Could not render history: ' + renderErr.message + '</p>';
+      }
       if (res.unpaidSummary) {
         const balanceHtml = `<div style='margin-top:12px; padding:12px; background:#fff8e1; border-radius:10px; border:2px solid #ffb300; font-size:14px; text-align:left;'>
           <strong>💰 Pending balance:</strong> ${res.unpaidSummary.hours} hrs &nbsp;|&nbsp; <strong>$${res.unpaidSummary.pay}</strong>
@@ -900,10 +905,11 @@ function renderHistoryTable(rows) {
       ? `<button onclick="toggleShiftEdit('${row.timeInKey}')" style="background:#5c6bc0; color:white; border:none; padding:2px 7px; border-radius:5px; cursor:pointer; font-size:11px; margin-left:5px;">✏️</button>`
       : '';
 
+    const rowId = row.timeInKey || row.date.replace(/\//g, '-');
     html += `<tr style='border-bottom:1px solid #eee;'>
       <td style='padding:5px;'>${row.date}</td>
-      <td style='padding:5px; text-align:right;' id='hrs-${row.timeInKey || row.date}'>${row.hours}</td>
-      <td style='padding:5px; text-align:right;' id='pay-${row.timeInKey || row.date}'>$${row.pay}</td>
+      <td style='padding:5px; text-align:right;' id='hrs-${rowId}'>${row.hours}</td>
+      <td style='padding:5px; text-align:right;' id='pay-${rowId}'>$${row.pay}</td>
       <td style='padding:5px; text-align:center;'>${statusCell}${editBtn}</td>
     </tr>`;
 
@@ -911,7 +917,7 @@ function renderHistoryTable(rows) {
       html += `<tr id="edit-row-${row.timeInKey}" style="display:none; background:#f0f4ff;">
         <td colspan="4" style="padding:10px;">
           <label style="font-size:11px; font-weight:bold; color:#37474f; display:block; margin-bottom:3px;">Work Summary</label>
-          <textarea id="work-${row.timeInKey}" rows="3" style="width:100%; padding:7px; border:1px solid #c5cae9; border-radius:6px; font-size:12px; box-sizing:border-box; margin-bottom:8px; resize:vertical;">${row.work}</textarea>
+          <textarea id="work-${row.timeInKey}" rows="3" style="width:100%; padding:7px; border:1px solid #c5cae9; border-radius:6px; font-size:12px; box-sizing:border-box; margin-bottom:8px; resize:vertical;">${row.work.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
           <label style="font-size:11px; font-weight:bold; color:#37474f; display:block; margin-bottom:3px;">Break / Lunch (minutes)</label>
           <input type="number" id="lunch-${row.timeInKey}" value="${row.lunchMins}" min="0" step="5" style="width:100%; padding:7px; border:1px solid #c5cae9; border-radius:6px; font-size:13px; box-sizing:border-box; margin-bottom:8px;">
           <div id="shift-result-${row.timeInKey}" style="font-size:11px; color:#388e3c; font-weight:bold; margin-bottom:6px; min-height:14px;"></div>
