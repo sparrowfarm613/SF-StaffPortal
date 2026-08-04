@@ -72,7 +72,7 @@ function handleRequest(params) {
       } else if (action === "getMemo") {
         result = getMemo();
       } else if (action === "updateMemo") {
-        result = isAdmin ? updateMemo(params.memo) : { error: "Unauthorized" };
+        result = isAdmin ? updateMemo(params.memo, userSheet.getRange("A3").getValue()) : { error: "Unauthorized" };
       } else if (action === "getMyPendingShifts") {
         result = getMyPendingShifts(pin);
       } else if (action === "updateMyShift") {
@@ -214,7 +214,9 @@ function getWeeklyHistory(pin) {
     unpaidSummary: isAdmin ? null : { hours: unpaidHours.toFixed(2), pay: unpaidPay.toFixed(2) },
     isAdmin: isAdmin,
     tasks: tasks.tasks || [],
-    memo: memoData.memo || ""
+    memo: memoData.memo || "",
+    memoDate: memoData.memoDate || "",
+    memoBy: memoData.memoBy || ""
   };
 }
 
@@ -574,9 +576,15 @@ function getSettingsSheet() {
   let sheet = ss.getSheetByName("Settings");
   if (!sheet) {
     sheet = ss.insertSheet("Settings");
-    sheet.getRange("A1").setValue("Memo");
+    // Create heading row
+    sheet.getRange("A1").setValue("Admin Text Settings");
     sheet.getRange("A1").setFontWeight("bold");
-    sheet.getRange("B1").setValue("");
+    sheet.getRange("A1:C1").merge();
+    sheet.getRange("A1:C1").setBackground("#212121").setFontColor("white");
+    // Column headers in row 2
+    sheet.getRange("A2:C2").setValues([["Timestamp", "Memo", "Set By"]]);
+    sheet.getRange("A2:C2").setFontWeight("bold");
+    sheet.setFrozenRows(2);
     sheet.hideSheet();
   }
   return sheet;
@@ -584,13 +592,17 @@ function getSettingsSheet() {
 
 function getMemo() {
   const sheet = getSettingsSheet();
-  const memo = sheet.getRange("B1").getValue() || "";
-  return { memo: memo };
+  const lastRow = sheet.getLastRow();
+  // Data starts at row 3 (rows 1-2 are heading/headers)
+  if (lastRow < 3) return { memo: "", memoDate: null, memoBy: "" };
+  const row = sheet.getRange(lastRow, 1, 1, 3).getValues()[0];
+  const date = row[0] instanceof Date ? row[0].toLocaleDateString() : "";
+  return { memo: row[1] || "", memoDate: date, memoBy: row[2] || "" };
 }
 
-function updateMemo(memo) {
+function updateMemo(memo, adminName) {
   const sheet = getSettingsSheet();
-  sheet.getRange("B1").setValue(memo || "");
+  sheet.appendRow([new Date(), memo || "", adminName || "Admin"]);
   return { success: true, msg: "Memo updated." };
 }
 
