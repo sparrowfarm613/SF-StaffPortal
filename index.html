@@ -422,6 +422,7 @@
       document.getElementById('action-grid').classList.remove('hidden');
 
       // Show memo if set
+      console.log("Memo from server:", res.memo, "Date:", res.memoDate);
       if (res.memo && res.memo.trim()) {
         const memoBlock = document.getElementById('memo-block');
         const byLine = (res.memoDate || res.memoBy)
