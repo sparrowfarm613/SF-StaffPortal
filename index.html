@@ -83,6 +83,9 @@
       <ul id="tasks-list"></ul>
     </div>
 
+    <!-- Memo block: shown after login, hidden until then -->
+    <div id="memo-block" class="hidden" style="background:#fff8e1; border:2px solid #ffb300; border-radius:10px; padding:12px; margin-bottom:12px; font-size:13px; text-align:left; color:#37474f; line-height:1.6; white-space:pre-wrap;"></div>
+
     <input type="password" id="pin" class="pin-input" placeholder="0000" inputmode="numeric" maxlength="4">
     <button id="btn-check" class="btn-submit" onclick="checkStatus()">Login / Check Status</button>
 
@@ -140,6 +143,11 @@
     </div>
     <button class="btn-submit" style="background:#388e3c; margin-top:10px; width:100%;" onclick="openScreen('staff-mgmt')">🧑‍🌾 Staff Management</button>
     <button class="btn-submit" style="background:#f57c00; margin-top:10px; width:100%;" onclick="triggerRecalc()">🔄 Recalculate Payroll Data</button>
+    <div style="margin-top:15px; text-align:left;">
+      <label style="font-size:13px; font-weight:bold; color:#37474f; display:block; margin-bottom:5px;">📌 Staff Memo</label>
+      <textarea id="memo-input" rows="4" placeholder="Write a note visible to all staff after login..." style="width:100%; padding:10px; border:2px solid #c5cae9; border-radius:10px; font-size:13px; box-sizing:border-box; resize:vertical;"></textarea>
+      <button onclick="saveMemo()" style="background:#1976d2; color:white; border:none; padding:10px; border-radius:8px; cursor:pointer; font-size:13px; font-weight:bold; width:100%; margin-top:8px;">💾 Save Memo</button>
+    </div>
     <button class="btn-history" style="width:100%; margin-top:15px; background:#607d8b" onclick="openScreen('main')">Back</button>
   </div>
 
@@ -366,6 +374,8 @@
     document.getElementById('btn-check').classList.remove('hidden');
     document.getElementById('btn-admin').classList.add('hidden');
     document.getElementById('tasks-display').classList.add('hidden');
+    document.getElementById('memo-block').classList.add('hidden');
+    document.getElementById('memo-block').textContent = '';
     cachedStaffList = null;
     cachedAdminLogs = null;
     cachedPaySummary = null;
@@ -411,6 +421,18 @@
 
       document.getElementById('action-grid').classList.remove('hidden');
 
+      // Show memo if set
+      if (res.memo && res.memo.trim()) {
+        const memoBlock = document.getElementById('memo-block');
+        memoBlock.textContent = '📌 ' + res.memo;
+        memoBlock.classList.remove('hidden');
+      }
+
+      // Pre-populate memo editor for admins
+      if (res.isAdmin) {
+        document.getElementById('memo-input').value = res.memo || '';
+      }
+
       document.getElementById('btn-check').classList.add('hidden');
 
       if (res.isAdmin) {
@@ -429,6 +451,8 @@
         document.getElementById('tasks-display').classList.remove('hidden');
       } else {
         document.getElementById('tasks-display').classList.add('hidden');
+    document.getElementById('memo-block').classList.add('hidden');
+    document.getElementById('memo-block').textContent = '';
       }
 
       document.getElementById('btn-in').classList.toggle('hidden', res.currentStatus !== "Clocked Out");
@@ -927,6 +951,33 @@ async function saveMyShift(timeInKey) {
   } catch(err) {
     resultEl.textContent = "Connection error. Please try again.";
     resultEl.style.color = "#d32f2f";
+  }
+}
+
+// ===== MEMO =====
+
+async function saveMemo() {
+  const pin = document.getElementById('pin').value;
+  const memo = document.getElementById('memo-input').value.trim();
+  showToast("Saving memo...");
+  try {
+    const res = await callAPI({ action: 'updateMemo', pin: pin, memo: memo });
+    if (res.success) {
+      showToast("✓ Memo updated.");
+      // Update the live memo block immediately
+      const memoBlock = document.getElementById('memo-block');
+      if (memo) {
+        memoBlock.textContent = '📌 ' + memo;
+        memoBlock.classList.remove('hidden');
+      } else {
+        memoBlock.textContent = '';
+        memoBlock.classList.add('hidden');
+      }
+    } else {
+      showToast("Error: " + (res.error || "Unknown error"));
+    }
+  } catch(err) {
+    showToast("Connection error. Please try again.");
   }
 }
 
