@@ -876,7 +876,8 @@ async function loadStaffDetails() {
       html += `📞 ${s.phone || '—'}<br>`;
       html += `✉️ ${s.email || '—'}<br>`;
       html += `💰 $${parseFloat(s.rate).toFixed(2)}/hr<br>`;
-      html += `📅 Started: ${s.startDate}`;
+      html += `📅 Started: ${s.startDate}<br>`;
+      html += `🕐 Last shift: ${s.lastShift}`;
       html += `</div>`;
       html += `<div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">`;
       if (!inactive) {
