@@ -98,6 +98,7 @@
       </div>
 
       <button class="btn-history" onclick="openScreen('history')">📅 My History</button>
+      <button id="btn-my-shifts" class="btn-history" style="background:#5c6bc0; display:none;" onclick="openScreen('my-shifts')">📝 My Shifts</button>
       <button class="btn-alert" onclick="openScreen('stock')">⚠️ Low Stock</button>
       <button class="btn-maint" onclick="openScreen('issue')">🛠️ Maintenance</button>
       <button id="btn-admin" class="btn-admin hidden" onclick="showAdmin()">🔐 Admin Quick View</button>
@@ -206,6 +207,16 @@
     <input type="password" id="change-pin-input" inputmode="numeric" maxlength="4" placeholder="0000" style="font-size:32px; text-align:center; letter-spacing:10px; width:100%; padding:12px; border:2px solid #ddd; border-radius:12px; box-sizing:border-box; margin-bottom:15px;">
     <button class="btn-submit" onclick="submitChangePin()">Update PIN</button>
     <button class="btn-history" style="width:100%; margin-top:10px; background:#607d8b" onclick="openScreen('staff-mgmt')">Cancel</button>
+  </div>
+
+  <!-- ===== MY PENDING SHIFTS ===== -->
+  <div id="screen-my-shifts" class="hidden">
+    <h3>📝 My Pending Shifts</h3>
+    <p style="font-size:13px; color:#555; margin-bottom:15px;">Update your work notes or add any missed break time for unpaid shifts below. Break changes will recalculate your hours and pay.</p>
+    <div id="my-shifts-container">
+      <p style="text-align:center; color:#999;">Loading...</p>
+    </div>
+    <button class="btn-history" style="width:100%; margin-top:15px; background:#607d8b" onclick="openScreen('main')">Back</button>
   </div>
 
   <!-- ===== STOCK / ISSUE / HISTORY / REPORT ===== -->
@@ -343,7 +354,7 @@
   }
 
   function openScreen(id) {
-    ['main', 'stock', 'issue', 'history', 'report', 'admin', 'assign', 'manage-tasks', 'add-staff', 'staff-mgmt', 'change-pin'].forEach(s => {
+    ['main', 'stock', 'issue', 'history', 'report', 'admin', 'assign', 'manage-tasks', 'add-staff', 'staff-mgmt', 'change-pin', 'my-shifts'].forEach(s => {
       const el = document.getElementById('screen-' + s);
       if (el) el.classList.add('hidden');
     });
@@ -354,6 +365,7 @@
     if (id === 'add-staff') document.getElementById('add-staff-form').reset();
     if (id === 'staff-mgmt') loadStaffDetails();
     if (id === 'change-pin') loadChangePinSelect();
+    if (id === 'my-shifts') loadMyPendingShifts();
 
     resetSessionTimer();
   }
@@ -406,6 +418,11 @@
       document.getElementById('history-data').innerHTML = historyContent;
 
       document.getElementById('action-grid').classList.remove('hidden');
+      // Show My Shifts button only if staff has pending shifts
+      if (!data.isAdmin) {
+        const hasPending = data.unpaidSummary && parseFloat(data.unpaidSummary.hours) > 0;
+        document.getElementById('btn-my-shifts').style.display = hasPending ? 'block' : 'none';
+      }
       document.getElementById('btn-check').classList.add('hidden');
 
       if (res.isAdmin) {
@@ -844,7 +861,69 @@
     }
   }
 
-  // ===== STAFF MANAGEMENT =====
+  // ===== MY PENDING SHIFTS (Staff Self-Edit) =====
+
+async function loadMyPendingShifts() {
+  const pin = document.getElementById('pin').value;
+  const container = document.getElementById('my-shifts-container');
+  container.innerHTML = '<p style="text-align:center; color:#999;">Loading...</p>';
+
+  try {
+    const res = await callAPI({ action: 'getMyPendingShifts', pin: pin });
+    if (!res.shifts || res.shifts.length === 0) {
+      container.innerHTML = '<p style="text-align:center; color:#999;">No unpaid shifts to edit.</p>';
+      return;
+    }
+
+    let html = '';
+    res.shifts.forEach(s => {
+      html += `<div style="background:#f9fbf9; border-left:4px solid #5c6bc0; border-radius:10px; padding:14px; margin-bottom:14px;">`;
+      html += `<div style="font-size:14px; font-weight:bold; color:#2b3d2b; margin-bottom:4px;">📅 ${s.date}</div>`;
+      html += `<div style="font-size:12px; color:#666; margin-bottom:10px;">🕐 ${s.timeIn} → ${s.timeOut} &nbsp;|&nbsp; ⏱ ${s.hours} hrs &nbsp;|&nbsp; 💰 $${s.pay}</div>`;
+
+      html += `<label style="font-size:12px; font-weight:bold; color:#37474f; display:block; margin-bottom:4px;">Work Summary</label>`;
+      html += `<textarea id="work-${s.timeInKey}" rows="3" style="width:100%; padding:8px; border:2px solid #c5cae9; border-radius:8px; font-size:13px; box-sizing:border-box; margin-bottom:10px; resize:vertical;">${s.work}</textarea>`;
+
+      html += `<label style="font-size:12px; font-weight:bold; color:#37474f; display:block; margin-bottom:4px;">Break / Lunch (minutes)</label>`;
+      html += `<input type="number" id="lunch-${s.timeInKey}" value="${s.lunchMins}" min="0" step="5" style="width:100%; padding:8px; border:2px solid #c5cae9; border-radius:8px; font-size:14px; box-sizing:border-box; margin-bottom:12px;">`;
+
+      html += `<div id="shift-result-${s.timeInKey}" style="font-size:12px; color:#388e3c; font-weight:bold; margin-bottom:8px; min-height:16px;"></div>`;
+      html += `<button onclick="saveMyShift('${s.timeInKey}')" style="background:#5c6bc0; color:white; border:none; padding:10px; border-radius:8px; cursor:pointer; font-size:13px; font-weight:bold; width:100%;">💾 Save Changes</button>`;
+
+      html += `</div>`;
+    });
+
+    container.innerHTML = html;
+  } catch(err) {
+    container.innerHTML = '<p style="text-align:center; color:red;">Failed to load shifts. Please try again.</p>';
+  }
+}
+
+async function saveMyShift(timeInKey) {
+  const pin = document.getElementById('pin').value;
+  const work = document.getElementById('work-' + timeInKey).value.trim();
+  const lunchMins = document.getElementById('lunch-' + timeInKey).value;
+  const resultEl = document.getElementById('shift-result-' + timeInKey);
+
+  resultEl.textContent = "Saving...";
+  resultEl.style.color = "#888";
+
+  try {
+    const res = await callAPI({ action: 'updateMyShift', pin: pin, timeInKey: timeInKey, work: work, lunchMins: lunchMins });
+    if (res.success) {
+      resultEl.textContent = "✓ " + res.msg;
+      resultEl.style.color = "#388e3c";
+    } else {
+      resultEl.textContent = "Error: " + (res.error || "Unknown error");
+      resultEl.style.color = "#d32f2f";
+    }
+  } catch(err) {
+    resultEl.textContent = "Connection error. Please try again.";
+    resultEl.style.color = "#d32f2f";
+  }
+}
+
+// ===== STAFF MANAGEMENT =====
 
 async function loadStaffDetails() {
   const pin = document.getElementById('pin').value;
