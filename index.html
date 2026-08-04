@@ -877,6 +877,62 @@ function switchHistoryTab(tab) {
   if (!isHistory) loadMyPendingShifts();
 }
 
+// ===== MY HISTORY TABLE RENDERER =====
+
+function renderHistoryTable(rows) {
+  const container = document.getElementById('history-data');
+  if (!rows || rows.length === 0) {
+    container.innerHTML = '<p style="text-align:center; color:#999; font-size:13px;">No history yet.</p>';
+    return;
+  }
+
+  let html = "<table style='width:100%; font-size:13px; border-collapse:collapse;'>";
+  html += "<tr style='background:#eee; font-size:11px;'><th style='padding:5px; text-align:left;'>Date</th><th style='padding:5px; text-align:right;'>Hrs</th><th style='padding:5px; text-align:right;'>Pay</th><th style='padding:5px; text-align:center;'>Status</th></tr>";
+
+  rows.forEach(row => {
+    const statusCell = row.isPaid
+      ? `<span style='color:#388e3c; font-size:11px;'>✓ ${row.paidDate}</span>`
+      : row.isPending
+        ? `<span style='color:#f57c00; font-size:11px;'>Pending</span>`
+        : `<span style='color:#bbb; font-size:11px;'>-</span>`;
+
+    const editBtn = row.isPending && row.timeInKey
+      ? `<button onclick="toggleShiftEdit('${row.timeInKey}')" style="background:#5c6bc0; color:white; border:none; padding:2px 7px; border-radius:5px; cursor:pointer; font-size:11px; margin-left:5px;">✏️</button>`
+      : '';
+
+    html += `<tr style='border-bottom:1px solid #eee;'>
+      <td style='padding:5px;'>${row.date}</td>
+      <td style='padding:5px; text-align:right;' id='hrs-${row.timeInKey || row.date}'>${row.hours}</td>
+      <td style='padding:5px; text-align:right;' id='pay-${row.timeInKey || row.date}'>$${row.pay}</td>
+      <td style='padding:5px; text-align:center;'>${statusCell}${editBtn}</td>
+    </tr>`;
+
+    if (row.isPending && row.timeInKey) {
+      html += `<tr id="edit-row-${row.timeInKey}" style="display:none; background:#f0f4ff;">
+        <td colspan="4" style="padding:10px;">
+          <label style="font-size:11px; font-weight:bold; color:#37474f; display:block; margin-bottom:3px;">Work Summary</label>
+          <textarea id="work-${row.timeInKey}" rows="3" style="width:100%; padding:7px; border:1px solid #c5cae9; border-radius:6px; font-size:12px; box-sizing:border-box; margin-bottom:8px; resize:vertical;">${row.work}</textarea>
+          <label style="font-size:11px; font-weight:bold; color:#37474f; display:block; margin-bottom:3px;">Break / Lunch (minutes)</label>
+          <input type="number" id="lunch-${row.timeInKey}" value="${row.lunchMins}" min="0" step="5" style="width:100%; padding:7px; border:1px solid #c5cae9; border-radius:6px; font-size:13px; box-sizing:border-box; margin-bottom:8px;">
+          <div id="shift-result-${row.timeInKey}" style="font-size:11px; color:#388e3c; font-weight:bold; margin-bottom:6px; min-height:14px;"></div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+            <button onclick="saveMyShift('${row.timeInKey}')" style="background:#388e3c; color:white; border:none; padding:8px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:bold;">💾 Save</button>
+            <button onclick="toggleShiftEdit('${row.timeInKey}')" style="background:#757575; color:white; border:none; padding:8px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:bold;">✖ Cancel</button>
+          </div>
+        </td>
+      </tr>`;
+    }
+  });
+
+  html += "</table>";
+  container.innerHTML = html;
+}
+
+function toggleShiftEdit(timeInKey) {
+  const row = document.getElementById('edit-row-' + timeInKey);
+  row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+}
+
 // ===== MY PENDING SHIFTS (Staff Self-Edit) =====
 
 async function loadMyPendingShifts() {
