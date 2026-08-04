@@ -918,9 +918,7 @@ async function saveMyShift(timeInKey) {
   try {
     const res = await callAPI({ action: 'updateMyShift', pin: pin, timeInKey: timeInKey, work: work, lunchMins: lunchMins });
     if (res.success) {
-      // Collapse the edit row automatically
-      document.getElementById('edit-row-' + timeInKey).style.display = 'none';
-      // Show a brief toast confirmation instead
+      toggleShiftEdit(timeInKey); // collapse the edit row
       showToast("✓ " + res.msg);
     } else {
       resultEl.textContent = "Error: " + (res.error || "Unknown error");
