@@ -20,7 +20,7 @@ function handleRequest(params) {
     if (!userSheet) {
       result = { error: "PIN not found" };
     } else {
-      const isAdmin = (String(userSheet.getRange("H3").getValue()).toUpperCase() === "ADMIN");
+      const isAdmin = (String(userSheet.getRange("I3").getValue()).toUpperCase() === "ADMIN");
 
       if (action === "getWeeklyHistory") {
         result = getWeeklyHistory(pin);
@@ -150,7 +150,7 @@ function getWeeklyHistory(pin) {
   const userSheet = findSheetByPin(pin);
   if (!userSheet) return { error: "Not found" };
 
-  const h3Value = String(userSheet.getRange("H3").getValue() || "").trim().toUpperCase();
+  const h3Value = String(userSheet.getRange("I3").getValue() || "").trim().toUpperCase();
   const isAdmin = (h3Value === "ADMIN");
 
   let status = "Clocked Out";
@@ -165,6 +165,8 @@ function getWeeklyHistory(pin) {
 
   // Fetch cols A-K (11 columns) to include Pay (col E, index 4) and Pay Date (col K, index 10)
   const data = userSheet.getLastRow() < 7 ? [] : userSheet.getRange(7, 1, userSheet.getLastRow() - 6, 11).getValues();
+
+  console.log("getWeeklyHistory — pin: " + pin + ", isAdmin: " + isAdmin + ", status: " + status + ", rows: " + data.length);
 
   // Safe date formatter for GAS server environment
   function fmtDate(d) {
@@ -307,10 +309,10 @@ function getPaySummary() {
     const pin = sheet.getRange("D3").getValue();
     if (!pin || sheet.getName().includes("Log") || sheet.getName().includes("Tasks")) return;
 
-    const h3Value = String(sheet.getRange("H3").getValue() || "").trim().toUpperCase();
+    const h3Value = String(sheet.getRange("I3").getValue() || "").trim().toUpperCase();
     if (h3Value === "ADMIN") return; // Skip admin accounts
 
-    const isInactive = (String(sheet.getRange("G3").getValue() || "").trim().toUpperCase() === "INACTIVE");
+    const isInactive = (String(sheet.getRange("H3").getValue() || "").trim().toUpperCase() === "INACTIVE");
     const name = sheet.getRange("A3").getValue();
     const lastRow = sheet.getLastRow();
     if (lastRow < 7) return;
@@ -549,7 +551,7 @@ function handleClockAction(pin, type, lunchMinutes) {
   if (!userSheet) return { error: "Invalid PIN" };
 
   const name = userSheet.getRange("A3").getValue();
-  const isAdmin = (String(userSheet.getRange("H3").getValue()).toUpperCase() === "ADMIN");
+  const isAdmin = (String(userSheet.getRange("I3").getValue()).toUpperCase() === "ADMIN");
   const now = new Date();
   const currentRate = userSheet.getRange("E3").getValue();
 
@@ -739,9 +741,9 @@ function getStaffList() {
     if (!pin || sheet.getName().includes("Log") || sheet.getName().includes("Tasks")) return;
 
     const name = sheet.getRange("A3").getValue();
-    const h3Value = String(sheet.getRange("H3").getValue() || "").trim().toUpperCase();
+    const h3Value = String(sheet.getRange("I3").getValue() || "").trim().toUpperCase();
     const isAdmin = (h3Value === "ADMIN");
-    const isInactive = (String(sheet.getRange("G3").getValue() || "").trim().toUpperCase() === "INACTIVE");
+    const isInactive = (String(sheet.getRange("H3").getValue() || "").trim().toUpperCase() === "INACTIVE");
 
     if (!isAdmin && !isInactive) {
       staff.push({ name: name, pin: String(pin) });
@@ -761,11 +763,11 @@ function getStaffDetails() {
     const pin = sheet.getRange("D3").getValue();
     if (!pin || sheet.getName().includes("Log") || sheet.getName().includes("Tasks")) return;
 
-    const h3Value = String(sheet.getRange("H3").getValue() || "").trim().toUpperCase();
+    const h3Value = String(sheet.getRange("I3").getValue() || "").trim().toUpperCase();
     const isAdmin = (h3Value === "ADMIN");
     if (isAdmin) return;
 
-    const g3Value = String(sheet.getRange("G3").getValue() || "").trim().toUpperCase();
+    const g3Value = String(sheet.getRange("H3").getValue() || "").trim().toUpperCase();
     const isInactive = (g3Value === "INACTIVE");
 
     // Find the most recent shift date (col A, rows 7+)
@@ -841,7 +843,7 @@ function deactivateStaffMember(targetPin) {
   if (!sheet) return { error: "Staff member not found." };
 
   const name = sheet.getRange("A3").getValue();
-  sheet.getRange("G3").setValue("INACTIVE");
+  sheet.getRange("H3").setValue("INACTIVE");
   sheet.hideSheet();
 
   return { success: true, msg: name + " has been deactivated." };
@@ -1017,7 +1019,7 @@ function addStaffMember(name, phone, email, pin, rate) {
   newSheet.getRange("D3").setValue(String(pin));
   newSheet.getRange("E3").setValue(parseFloat(rate));
   newSheet.getRange("F3").setValue(new Date());
-  newSheet.getRange("G3").setValue("");
+  newSheet.getRange("H3").setValue("ACTIVE");
 
   newSheet.activate();
   ss.moveActiveSheet(1);
