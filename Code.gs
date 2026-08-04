@@ -18,11 +18,13 @@ function handleRequest(params) {
     const userSheet = findSheetByPin(pin);
 
     if (!userSheet) {
+      if (action === "getWeeklyHistory") logLogin(pin, null, false);
       result = { error: "PIN not found" };
     } else {
       const isAdmin = (String(userSheet.getRange("I3").getValue()).toUpperCase() === "ADMIN");
 
       if (action === "getWeeklyHistory") {
+        logLogin(pin, userSheet.getRange("A3").getValue(), true);
         result = getWeeklyHistory(pin);
       } else if (action === "handleClockAction") {
         result = handleClockAction(pin, params.type, params.lunchMinutes);
@@ -67,6 +69,10 @@ function handleRequest(params) {
         result = isAdmin ? changeStaffPin(params.targetPin, params.newPin) : { error: "Unauthorized" };
       } else if (action === "deactivateStaffMember") {
         result = isAdmin ? deactivateStaffMember(params.targetPin) : { error: "Unauthorized" };
+      } else if (action === "getMemo") {
+        result = getMemo();
+      } else if (action === "updateMemo") {
+        result = isAdmin ? updateMemo(params.memo) : { error: "Unauthorized" };
       } else if (action === "getMyPendingShifts") {
         result = getMyPendingShifts(pin);
       } else if (action === "updateMyShift") {
@@ -199,6 +205,7 @@ function getWeeklyHistory(pin) {
   const unpaidPay = pendingRows.reduce((sum, row) => sum + (parseFloat(row[4]) || 0), 0);
 
   const tasks = getTasks(pin);
+  const memoData = getMemo();
   return {
     name: userSheet.getRange("A3").getValue(),
     currentStatus: status,
@@ -206,7 +213,8 @@ function getWeeklyHistory(pin) {
     historyRows: rows,
     unpaidSummary: isAdmin ? null : { hours: unpaidHours.toFixed(2), pay: unpaidPay.toFixed(2) },
     isAdmin: isAdmin,
-    tasks: tasks.tasks || []
+    tasks: tasks.tasks || [],
+    memo: memoData.memo || ""
   };
 }
 
@@ -529,6 +537,61 @@ function updateMyShift(pin, timeInKey, work, lunchMins) {
   }
 
   return { success: true, msg: "Shift notes updated." };
+}
+
+// ===== LOGIN LOG =====
+
+function logLogin(pin, name, success) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let logSheet = ss.getSheetByName("Login Log");
+
+    // Create the sheet with headers if it doesn't exist
+    if (!logSheet) {
+      logSheet = ss.insertSheet("Login Log");
+      logSheet.getRange(1, 1, 1, 4).setValues([["Timestamp", "PIN", "Name", "Result"]]);
+      logSheet.getRange(1, 1, 1, 4).setFontWeight("bold");
+      logSheet.setFrozenRows(1);
+      logSheet.hideSheet(); // Keep it out of the way but accessible
+    }
+
+    logSheet.appendRow([
+      new Date(),
+      pin,
+      name || "—",
+      success ? "Success" : "Failed"
+    ]);
+  } catch(e) {
+    // Never let logging errors break the main flow
+    console.log("logLogin error: " + e.toString());
+  }
+}
+
+// ===== MEMO =====
+
+function getSettingsSheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName("Settings");
+  if (!sheet) {
+    sheet = ss.insertSheet("Settings");
+    sheet.getRange("A1").setValue("Memo");
+    sheet.getRange("A1").setFontWeight("bold");
+    sheet.getRange("B1").setValue("");
+    sheet.hideSheet();
+  }
+  return sheet;
+}
+
+function getMemo() {
+  const sheet = getSettingsSheet();
+  const memo = sheet.getRange("B1").getValue() || "";
+  return { memo: memo };
+}
+
+function updateMemo(memo) {
+  const sheet = getSettingsSheet();
+  sheet.getRange("B1").setValue(memo || "");
+  return { success: true, msg: "Memo updated." };
 }
 
 function findSheetByPin(pin) {
