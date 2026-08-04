@@ -374,8 +374,7 @@
     document.getElementById('pin').classList.remove('hidden');
     document.getElementById('btn-admin').classList.add('hidden');
     document.getElementById('tasks-display').classList.add('hidden');
-    document.getElementById('memo-block').classList.add('hidden');
-    document.getElementById('memo-block').style.display = '';
+    document.getElementById('memo-block').style.display = 'none';
     document.getElementById('memo-block').innerHTML = '';
     cachedStaffList = null;
     cachedAdminLogs = null;
@@ -431,7 +430,6 @@
           ? `<div style="font-size:11px; color:#888; margin-top:6px;">Posted ${res.memoDate}${res.memoBy ? ' by ' + res.memoBy : ''}</div>`
           : '';
         memoBlock.innerHTML = '<strong>📌 Notice</strong><div style="margin-top:4px;">' + memoText.replace(/\n/g, '<br>') + '</div>' + byLine;
-        memoBlock.classList.remove('hidden');
         memoBlock.style.display = 'block';
         console.log("Memo block shown, display:", memoBlock.style.display, "classes:", memoBlock.className, "innerHTML length:", memoBlock.innerHTML.length, "offsetHeight:", memoBlock.offsetHeight);
       } else {
@@ -462,8 +460,7 @@
         document.getElementById('tasks-display').classList.remove('hidden');
       } else {
         document.getElementById('tasks-display').classList.add('hidden');
-    document.getElementById('memo-block').classList.add('hidden');
-    document.getElementById('memo-block').style.display = '';
+    document.getElementById('memo-block').style.display = 'none';
     document.getElementById('memo-block').innerHTML = '';
       }
 
@@ -981,10 +978,10 @@ async function saveMemo() {
       if (memo) {
         const today = new Date().toLocaleDateString();
         memoBlock.innerHTML = '<strong>📌 Notice</strong><div style="margin-top:4px;">' + memo.replace(/\n/g, '<br>') + '</div><div style="font-size:11px; color:#888; margin-top:6px;">Posted ' + today + '</div>';
-        memoBlock.classList.remove('hidden');
+        memoBlock.style.display = 'block';
       } else {
         memoBlock.innerHTML = '';
-        memoBlock.classList.add('hidden');
+        memoBlock.style.display = 'none';
       }
     } else {
       showToast("Error: " + (res.error || "Unknown error"));
