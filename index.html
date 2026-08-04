@@ -230,8 +230,10 @@
       <p style="font-size: 0.85em; color: #555; margin: 10px 0;">Update the status in parentheses below (e.g., "DONE", "PARTIAL", "NOT STARTED")</p>
     </div>
 
-    <textarea id="work" rows="5" placeholder="What did you work on today?"></textarea>
-    <button class="btn-submit" onclick="submitReport()">Finish &amp; Submit</button>
+    <textarea id="work" rows="5" placeholder="What did you work on today?"
+  oninput="document.getElementById('btn-finish-submit').disabled = this.value.trim().length === 0; document.getElementById('btn-finish-submit').style.opacity = this.value.trim().length === 0 ? '0.5' : '1';"
+></textarea>
+    <button id="btn-finish-submit" class="btn-submit" onclick="submitReport()" disabled style="opacity:0.5; cursor:not-allowed; transition: opacity 0.2s;">Finish &amp; Submit</button>
   </div>
 
 </div>
@@ -764,6 +766,8 @@
         }
 
         document.getElementById('work').value = '';
+        document.getElementById('btn-finish-submit').disabled = true;
+        document.getElementById('btn-finish-submit').style.opacity = '0.5';
         openScreen('report');
       } else {
         showToast("Status Updated!");
@@ -795,6 +799,8 @@
   }
 
   async function submitReport() {
+    const workVal = document.getElementById('work').value.trim();
+    if (!workVal) { showToast("Please describe what you worked on today."); return; }
     if (isSubmittingReport) return;
     isSubmittingReport = true;
     const btn = document.querySelector('#screen-report .btn-submit');
