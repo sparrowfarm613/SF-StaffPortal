@@ -37,7 +37,7 @@ function handleRequest(params) {
         sendEquipmentIssue(pin, params.machine, params.issue);
         result = { success: true };
       } else if (action === "submitShiftReport") {
-        submitShiftReport(pin, params.work);
+        submitShiftReport(pin, params.work, isAdmin);
         result = { success: true };
       } else if (action === "assignTasks") {
         result = isAdmin ? assignTasks(params.targetPin, params.tasks) : { error: "Unauthorized" };
@@ -500,11 +500,10 @@ function sendEquipmentIssue(pin, machine, issue) {
   MailApp.sendEmail(SECRETS.NOTIFY_EMAILS, `Maintenance: ${machine}`, `Staff: ${name}\nMachine: ${machine}\nIssue: ${issue}`);
 }
 
-function submitShiftReport(pin, work) {
+function submitShiftReport(pin, work, isAdmin) {
   const userSheet = findSheetByPin(pin);
   if (userSheet) {
     const name = userSheet.getRange("A3").getValue();
-    const isAdmin = (String(userSheet.getRange("H3").getValue()).toUpperCase() === "ADMIN");
     userSheet.getRange(userSheet.getLastRow(), 2).setValue(work);
     userSheet.getRange(userSheet.getLastRow(), 10).setValue(new Date());
     if (!isAdmin) {
