@@ -230,7 +230,8 @@
       <p style="font-size: 0.85em; color: #555; margin: 10px 0;">Update the status in parentheses below (e.g., "DONE", "PARTIAL", "NOT STARTED")</p>
     </div>
 
-    <textarea id="work" rows="5" placeholder="What did you work on today?"
+    <p style="margin: 0 0 8px 0; font-size: 13px; color: #b71c1c; font-weight: bold;">⚠️ Blank submissions may result in pay delays.</p>
+<textarea id="work" rows="5" placeholder="What did you work on today?"
   oninput="document.getElementById('btn-finish-submit').disabled = this.value.trim().length === 0; document.getElementById('btn-finish-submit').style.opacity = this.value.trim().length === 0 ? '0.5' : '1';"
 ></textarea>
     <button id="btn-finish-submit" class="btn-submit" onclick="submitReport()" disabled style="opacity:0.5; cursor:not-allowed; transition: opacity 0.2s;">Finish &amp; Submit</button>
