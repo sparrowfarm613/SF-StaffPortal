@@ -370,7 +370,6 @@
     if (id === 'assign') loadStaffList();
     if (id === 'manage-tasks') loadAllTasks('active');
     if (id === 'add-staff') document.getElementById('add-staff-form').reset();
-    if (id === 'history') switchHistoryTab('history');
     if (id === 'staff-mgmt') loadStaffDetails();
     if (id === 'change-pin') loadChangePinSelect();
 
@@ -869,19 +868,6 @@
     }
   }
 
-  // ===== MY HISTORY TABS =====
-
-function switchHistoryTab(tab) {
-  const isHistory = tab === 'history';
-  document.getElementById('tab-history').style.display = isHistory ? 'block' : 'none';
-  document.getElementById('tab-shifts').style.display = isHistory ? 'none' : 'block';
-  document.getElementById('tab-btn-history').style.background = isHistory ? '#455a64' : 'white';
-  document.getElementById('tab-btn-history').style.color = isHistory ? 'white' : '#455a64';
-  document.getElementById('tab-btn-shifts').style.background = isHistory ? 'white' : '#455a64';
-  document.getElementById('tab-btn-shifts').style.color = isHistory ? '#455a64' : 'white';
-  if (!isHistory) loadMyPendingShifts();
-}
-
 // ===== MY HISTORY TABLE RENDERER =====
 
 function renderHistoryTable(rows) {
@@ -937,44 +923,6 @@ function renderHistoryTable(rows) {
 function toggleShiftEdit(timeInKey) {
   const row = document.getElementById('edit-row-' + timeInKey);
   row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
-}
-
-// ===== MY PENDING SHIFTS (Staff Self-Edit) =====
-
-async function loadMyPendingShifts() {
-  const pin = document.getElementById('pin').value;
-  const container = document.getElementById('my-shifts-container');
-  container.innerHTML = '<p style="text-align:center; color:#999;">Loading...</p>';
-
-  try {
-    const res = await callAPI({ action: 'getMyPendingShifts', pin: pin });
-    if (!res.shifts || res.shifts.length === 0) {
-      container.innerHTML = '<p style="text-align:center; color:#999;">No unpaid shifts to edit.</p>';
-      return;
-    }
-
-    let html = '';
-    res.shifts.forEach(s => {
-      html += `<div style="background:#f9fbf9; border-left:4px solid #5c6bc0; border-radius:10px; padding:14px; margin-bottom:14px;">`;
-      html += `<div style="font-size:14px; font-weight:bold; color:#2b3d2b; margin-bottom:4px;">📅 ${s.date}</div>`;
-      html += `<div style="font-size:12px; color:#666; margin-bottom:10px;">🕐 ${s.timeIn} → ${s.timeOut} &nbsp;|&nbsp; ⏱ ${s.hours} hrs &nbsp;|&nbsp; 💰 $${s.pay}</div>`;
-
-      html += `<label style="font-size:12px; font-weight:bold; color:#37474f; display:block; margin-bottom:4px;">Work Summary</label>`;
-      html += `<textarea id="work-${s.timeInKey}" rows="3" style="width:100%; padding:8px; border:2px solid #c5cae9; border-radius:8px; font-size:13px; box-sizing:border-box; margin-bottom:10px; resize:vertical;">${s.work}</textarea>`;
-
-      html += `<label style="font-size:12px; font-weight:bold; color:#37474f; display:block; margin-bottom:4px;">Break / Lunch (minutes)</label>`;
-      html += `<input type="number" id="lunch-${s.timeInKey}" value="${s.lunchMins}" min="0" step="5" style="width:100%; padding:8px; border:2px solid #c5cae9; border-radius:8px; font-size:14px; box-sizing:border-box; margin-bottom:12px;">`;
-
-      html += `<div id="shift-result-${s.timeInKey}" style="font-size:12px; color:#388e3c; font-weight:bold; margin-bottom:8px; min-height:16px;"></div>`;
-      html += `<button onclick="saveMyShift('${s.timeInKey}')" style="background:#5c6bc0; color:white; border:none; padding:10px; border-radius:8px; cursor:pointer; font-size:13px; font-weight:bold; width:100%;">💾 Save Changes</button>`;
-
-      html += `</div>`;
-    });
-
-    container.innerHTML = html;
-  } catch(err) {
-    container.innerHTML = '<p style="text-align:center; color:red;">Failed to load shifts. Please try again.</p>';
-  }
 }
 
 async function saveMyShift(timeInKey) {
