@@ -551,18 +551,25 @@ function logLogin(pin, name, success) {
     // Create the sheet with headers if it doesn't exist
     if (!logSheet) {
       logSheet = ss.insertSheet("Login Log");
-      logSheet.getRange(1, 1, 1, 4).setValues([["Timestamp", "PIN", "Name", "Result"]]);
-      logSheet.getRange(1, 1, 1, 4).setFontWeight("bold");
-      logSheet.setFrozenRows(1);
-      logSheet.hideSheet(); // Keep it out of the way but accessible
+      // Heading row
+      logSheet.getRange("A1:D1").merge();
+      logSheet.getRange("A1").setValue("Login Log");
+      logSheet.getRange("A1:D1").setBackground("#212121").setFontColor("white").setFontWeight("bold");
+      // Column headers
+      logSheet.getRange("A2:D2").setValues([["Timestamp", "PIN", "Name", "Result"]]);
+      logSheet.getRange("A2:D2").setFontWeight("bold");
+      logSheet.setFrozenRows(2);
+      logSheet.hideSheet();
     }
 
-    logSheet.appendRow([
+    // Insert at row 3 so newest is always at the top
+    logSheet.insertRowBefore(3);
+    logSheet.getRange(3, 1, 1, 4).setValues([[
       new Date(),
       pin,
       name || "—",
       success ? "Success" : "Failed"
-    ]);
+    ]]);
   } catch(e) {
     // Never let logging errors break the main flow
     console.log("logLogin error: " + e.toString());
