@@ -504,9 +504,12 @@ function submitShiftReport(pin, work) {
   const userSheet = findSheetByPin(pin);
   if (userSheet) {
     const name = userSheet.getRange("A3").getValue();
+    const isAdmin = (String(userSheet.getRange("H3").getValue()).toUpperCase() === "ADMIN");
     userSheet.getRange(userSheet.getLastRow(), 2).setValue(work);
     userSheet.getRange(userSheet.getLastRow(), 10).setValue(new Date());
-    MailApp.sendEmail(SECRETS.NOTIFY_EMAILS, `Shift Report: ${name}`, `Staff: ${name}\nWork:\n${work}`);
+    if (!isAdmin) {
+      MailApp.sendEmail(SECRETS.NOTIFY_EMAILS, `Shift Report: ${name}`, `Staff: ${name}\nWork:\n${work}`);
+    }
     clearCompletedTasks(pin);
   }
 }
