@@ -416,13 +416,13 @@
       // Store unpaid summary for use on the shift report screen
       currentUnpaidSummary = res.unpaidSummary || null;
 
-      let historyContent = res.history;
+      renderHistoryTable(res.historyRows || []);
       if (res.unpaidSummary) {
-        historyContent += `<div style='margin-top:12px; padding:12px; background:#fff8e1; border-radius:10px; border:2px solid #ffb300; font-size:14px; text-align:left;'>
+        const balanceHtml = `<div style='margin-top:12px; padding:12px; background:#fff8e1; border-radius:10px; border:2px solid #ffb300; font-size:14px; text-align:left;'>
           <strong>💰 Pending balance:</strong> ${res.unpaidSummary.hours} hrs &nbsp;|&nbsp; <strong>$${res.unpaidSummary.pay}</strong>
         </div>`;
+        document.getElementById('history-data').insertAdjacentHTML('beforeend', balanceHtml);
       }
-      document.getElementById('history-data').innerHTML = historyContent;
 
       document.getElementById('action-grid').classList.remove('hidden');
 
