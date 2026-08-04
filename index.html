@@ -225,36 +225,17 @@
   </div>
 
   <div id="screen-history" class="hidden">
-    <h3>My History &amp; Shifts</h3>
-
-    <!-- Tab toggle -->
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:15px;">
-      <button id="tab-btn-history" onclick="switchHistoryTab('history')" style="padding:10px; border-radius:8px; border:2px solid #455a64; background:#455a64; color:white; font-weight:bold; cursor:pointer; font-size:13px;">📅 History</button>
-      <button id="tab-btn-shifts" onclick="switchHistoryTab('shifts')" style="padding:10px; border-radius:8px; border:2px solid #455a64; background:white; color:#455a64; font-weight:bold; cursor:pointer; font-size:13px;">📝 Pending Shifts</button>
+    <h3>My Recent History</h3>
+    <div style="background:#f0f4ff; border-radius:10px; border:1px solid #c5cae9; padding:12px; margin-bottom:15px; font-size:13px; text-align:left; color:#37474f; line-height:1.5;">
+      <strong>💳 About your pay:</strong>
+      <ol>
+        <li>E-transfers are processed every Monday night (usually after 10pm).</li>
+        <li>If your total hours for the week are under 3 hours, we will skip and send 2 weeks worth the following Monday evening.</li>
+          <ul><li>If still under 3 hours then we'll process the payout regardless.</li></ul>
+        <li>The <em>Date Paid</em> column shows <em>Pending</em> until your e-transfer has been sent.</li>
+      </ol>
     </div>
-
-    <!-- History tab -->
-    <div id="tab-history">
-      <div style="background:#f0f4ff; border-radius:10px; border:1px solid #c5cae9; padding:12px; margin-bottom:15px; font-size:13px; text-align:left; color:#37474f; line-height:1.5;">
-        <strong>💳 About your pay:</strong>
-        <ol>
-          <li>E-transfers are processed every Monday night (usually after 10pm).</li>
-          <li>If your total hours for the week are under 3 hours, we will skip and send 2 weeks worth the following Monday evening.</li>
-            <ul><li>If still under 3 hours then we'll process the payout regardless.</li></ul>
-          <li>The <em>Date Paid</em> column shows <em>Pending</em> until your e-transfer has been sent.</li>
-        </ol>
-      </div>
-      <div id="history-data" style="text-align:left;"></div>
-    </div>
-
-    <!-- Pending Shifts tab -->
-    <div id="tab-shifts" style="display:none;">
-      <p style="font-size:13px; color:#555; margin-bottom:15px;">Update your work notes or add any missed break time. Break changes will recalculate your hours and pay.</p>
-      <div id="my-shifts-container">
-        <p style="text-align:center; color:#999;">Loading...</p>
-      </div>
-    </div>
-
+    <div id="history-data" style="text-align:left;"></div>
     <button class="btn-history" style="width:100%; margin-top:20px; background:#607d8b" onclick="openScreen('main')">Back</button>
   </div>
 
