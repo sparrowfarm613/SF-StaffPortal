@@ -371,6 +371,7 @@
     document.getElementById('msg-text').innerHTML = "";
     document.getElementById('action-grid').classList.add('hidden');
     document.getElementById('btn-check').classList.remove('hidden');
+    document.getElementById('pin').classList.remove('hidden');
     document.getElementById('btn-admin').classList.add('hidden');
     document.getElementById('tasks-display').classList.add('hidden');
     document.getElementById('memo-block').classList.add('hidden');
@@ -443,6 +444,7 @@
       }
 
       document.getElementById('btn-check').classList.add('hidden');
+      document.getElementById('pin').classList.add('hidden');
 
       if (res.isAdmin) {
         document.getElementById('btn-admin').classList.remove('hidden');
