@@ -432,7 +432,7 @@
         memoBlock.innerHTML = '<strong>📌 Notice</strong><div style="margin-top:4px;">' + memoText.replace(/\n/g, '<br>') + '</div>' + byLine;
         memoBlock.classList.remove('hidden');
         memoBlock.style.display = 'block';
-        console.log("Memo block shown, display:", memoBlock.style.display, "classes:", memoBlock.className);
+        console.log("Memo block shown, display:", memoBlock.style.display, "classes:", memoBlock.className, "innerHTML length:", memoBlock.innerHTML.length, "offsetHeight:", memoBlock.offsetHeight);
       } else {
         console.log("Memo text empty after trim, not showing block");
       }
