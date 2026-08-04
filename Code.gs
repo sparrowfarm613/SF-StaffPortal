@@ -599,13 +599,28 @@ function getMemoSheet() {
 function getMemo() {
   const sheet = getMemoSheet();
   const lastRow = sheet.getLastRow();
-  console.log("getMemo: sheet=" + sheet.getName() + " lastRow=" + lastRow);
   if (lastRow < 3) return { memo: "", memoDate: "", memoBy: "" };
-  // Read wider range in case of merged cells — cols A through D
-  const row = sheet.getRange(3, 1, 1, 4).getValues()[0];
-  console.log("getMemo row3: A=" + row[0] + " B=" + row[1] + " C=" + row[2] + " D=" + row[3]);
-  const date = row[0] instanceof Date ? (row[0].getMonth()+1) + "/" + row[0].getDate() + "/" + row[0].getFullYear() : "";
-  return { memo: String(row[1] || ""), memoDate: date, memoBy: String(row[2] || "") };
+
+  // Read cols A-F to handle any merged cell layouts
+  const lastCol = Math.max(sheet.getLastColumn(), 6);
+  const row = sheet.getRange(3, 1, 1, lastCol).getValues()[0];
+
+  // Col A = Timestamp (Date object)
+  const timestamp = row[0] instanceof Date ? row[0] : null;
+  const date = timestamp ? (timestamp.getMonth()+1) + "/" + timestamp.getDate() + "/" + timestamp.getFullYear() : "";
+
+  // Find memo text: first non-empty string value after column A
+  let memo = "";
+  let memoBy = "";
+  let foundMemo = false;
+  for (let i = 1; i < row.length; i++) {
+    const val = String(row[i] || "").trim();
+    if (!val) continue;
+    if (!foundMemo) { memo = val; foundMemo = true; }
+    else { memoBy = val; break; }
+  }
+
+  return { memo: memo, memoDate: date, memoBy: memoBy };
 }
 
 function updateMemo(memo, adminName) {
