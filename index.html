@@ -918,8 +918,10 @@ async function saveMyShift(timeInKey) {
   try {
     const res = await callAPI({ action: 'updateMyShift', pin: pin, timeInKey: timeInKey, work: work, lunchMins: lunchMins });
     if (res.success) {
-      resultEl.textContent = "✓ " + res.msg;
-      resultEl.style.color = "#388e3c";
+      // Collapse the edit row automatically
+      document.getElementById('edit-row-' + timeInKey).style.display = 'none';
+      // Show a brief toast confirmation instead
+      showToast("✓ " + res.msg);
     } else {
       resultEl.textContent = "Error: " + (res.error || "Unknown error");
       resultEl.style.color = "#d32f2f";
