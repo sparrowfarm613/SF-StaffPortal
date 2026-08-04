@@ -67,6 +67,10 @@ function handleRequest(params) {
         result = isAdmin ? changeStaffPin(params.targetPin, params.newPin) : { error: "Unauthorized" };
       } else if (action === "deactivateStaffMember") {
         result = isAdmin ? deactivateStaffMember(params.targetPin) : { error: "Unauthorized" };
+      } else if (action === "getMyPendingShifts") {
+        result = getMyPendingShifts(pin);
+      } else if (action === "updateMyShift") {
+        result = updateMyShift(pin, params.timeInKey, params.work, params.lunchMins);
       }
     }
   } catch (err) {
@@ -428,6 +432,102 @@ function correctTimeEntry(targetPin, timeInKey, newDate, newTimeIn, newTimeOut, 
     success: true,
     msg: `Entry updated. Recalculated: ${hours.toFixed(2)} hrs / $${earned.toFixed(2)}`
   };
+}
+
+// ===== STAFF SELF-EDIT: PENDING SHIFTS =====
+
+// Returns pending shifts for a staff member so they can update work summary and lunch
+function getMyPendingShifts(pin) {
+  const sheet = findSheetByPin(pin);
+  if (!sheet) return { error: "Staff member not found." };
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 7) return { shifts: [] };
+
+  const data = sheet.getRange(7, 1, lastRow - 6, 11).getValues();
+  const rate = parseFloat(sheet.getRange("E3").getValue()) || 0;
+
+  const shifts = [];
+  data.forEach((row, i) => {
+    const isPending = String(row[10]).toLowerCase() === "pending";
+    if (!isPending) return;
+
+    const timeInVal = row[5]; // Col F: Time In
+    if (!(timeInVal instanceof Date)) return;
+
+    const timeOutVal = row[8]; // Col I: Time Out
+    const lunchStr = String(row[6] || "0");
+    const lunchMins = parseInt(lunchStr.replace(/[^0-9]/g, "")) || 0;
+
+    shifts.push({
+      date: row[0] ? new Date(row[0]).toLocaleDateString() : "—",
+      timeIn: timeInVal.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      timeOut: timeOutVal instanceof Date ? timeOutVal.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—",
+      hours: parseFloat(row[3] || 0).toFixed(2),
+      pay: parseFloat(row[4] || 0).toFixed(2),
+      work: row[1] || "",
+      lunchMins: lunchMins,
+      timeInKey: String(timeInVal.getTime()), // unique row identifier
+      rate: rate
+    });
+  });
+
+  // Most recent first
+  shifts.reverse();
+  return { shifts: shifts };
+}
+
+// Allows staff to update work summary and/or lunch on their own pending shifts only
+function updateMyShift(pin, timeInKey, work, lunchMins) {
+  const sheet = findSheetByPin(pin);
+  if (!sheet) return { error: "Staff member not found." };
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 7) return { error: "No shifts found." };
+
+  const data = sheet.getRange(7, 1, lastRow - 6, 11).getValues();
+  const timeInKeyNum = parseInt(timeInKey);
+  const rate = parseFloat(sheet.getRange("E3").getValue()) || 0;
+
+  let targetRowIndex = -1;
+  let targetRow = null;
+  for (let i = 0; i < data.length; i++) {
+    if (data[i][5] instanceof Date && data[i][5].getTime() === timeInKeyNum) {
+      // Only allow edits on pending rows
+      if (String(data[i][10]).toLowerCase() !== "pending") {
+        return { error: "Only pending (unpaid) shifts can be edited." };
+      }
+      targetRowIndex = i + 7;
+      targetRow = data[i];
+      break;
+    }
+  }
+
+  if (targetRowIndex === -1) return { error: "Shift not found." };
+
+  // Update work summary
+  sheet.getRange(targetRowIndex, 2).setValue(work || "");
+
+  // Update lunch and recalculate hours/pay if lunch changed
+  const newLunchMins = Math.max(0, parseInt(String(lunchMins).replace(/[^0-9]/g, "")) || 0);
+  const timeInDate = targetRow[5];
+  const timeOutDate = targetRow[8];
+
+  sheet.getRange(targetRowIndex, 7).setValue(newLunchMins + " mins");
+
+  if (timeInDate instanceof Date && timeOutDate instanceof Date) {
+    const totalMs = timeOutDate - timeInDate - (newLunchMins * 60 * 1000);
+    const hours = Math.max(0, totalMs / (1000 * 60 * 60));
+    const earned = hours * rate;
+    sheet.getRange(targetRowIndex, 4).setValue(hours.toFixed(2));
+    sheet.getRange(targetRowIndex, 5).setValue(earned.toFixed(2));
+    return {
+      success: true,
+      msg: `Shift updated. ${hours.toFixed(2)} hrs / $${earned.toFixed(2)}`
+    };
+  }
+
+  return { success: true, msg: "Shift notes updated." };
 }
 
 function findSheetByPin(pin) {
