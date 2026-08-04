@@ -138,7 +138,7 @@
       <button style="background:white; color:#2b3d2b; border:2px solid #6a1b9a; padding:12px; font-size:14px; border-radius:10px; font-weight:bold; cursor:pointer; text-transform:uppercase;" onclick="openScreen('assign')">➕ Assign New</button>
       <button style="background:white; color:#2b3d2b; border:2px solid #6a1b9a; padding:12px; font-size:14px; border-radius:10px; font-weight:bold; cursor:pointer; text-transform:uppercase;" onclick="openScreen('manage-tasks')">📝 Manage Existing</button>
     </div>
-    <button class="btn-submit" style="background:#388e3c; margin-top:10px; width:100%;" onclick="openScreen('add-staff')">🧑‍🌾 Add New Staff Member</button>
+    <button class="btn-submit" style="background:#388e3c; margin-top:10px; width:100%;" onclick="openScreen('staff-mgmt')">🧑‍🌾 Staff Management</button>
     <button class="btn-submit" style="background:#f57c00; margin-top:10px; width:100%;" onclick="triggerRecalc()">🔄 Recalculate Payroll Data</button>
     <button class="btn-history" style="width:100%; margin-top:15px; background:#607d8b" onclick="openScreen('main')">Back</button>
   </div>
@@ -181,7 +181,31 @@
       <input type="number" id="staffRate" required step="0.01" min="0" placeholder="18.00">
       <button type="submit" class="btn-submit" style="margin-top:10px;">Add Staff Member</button>
     </form>
-    <button class="btn-history" style="width:100%; margin-top:10px; background:#607d8b" onclick="openScreen('admin')">Cancel</button>
+    <button class="btn-history" style="width:100%; margin-top:10px; background:#607d8b" onclick="openScreen('staff-mgmt')">Cancel</button>
+  </div>
+
+  <!-- ===== STAFF MANAGEMENT ===== -->
+  <div id="screen-staff-mgmt" class="hidden">
+    <h3>Staff Management</h3>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px;">
+      <button style="background:#388e3c; color:white; border:none; padding:12px; border-radius:10px; font-weight:bold; cursor:pointer; font-size:13px; text-transform:uppercase;" onclick="openScreen('add-staff')">➕ Add Staff</button>
+      <button style="background:#1976d2; color:white; border:none; padding:12px; border-radius:10px; font-weight:bold; cursor:pointer; font-size:13px; text-transform:uppercase;" onclick="openScreen('change-pin')">🔑 Change PIN</button>
+    </div>
+    <div id="staff-details-container" style="text-align:left;">
+      <p style="text-align:center; color:#999;">Loading staff...</p>
+    </div>
+    <button class="btn-history" style="width:100%; margin-top:15px; background:#607d8b" onclick="openScreen('admin')">Back</button>
+  </div>
+
+  <!-- ===== CHANGE PIN ===== -->
+  <div id="screen-change-pin" class="hidden">
+    <h3>Change Staff PIN</h3>
+    <label style="display:block; text-align:left; margin-bottom:5px; font-weight:bold;">Select Staff Member:</label>
+    <select id="change-pin-select" style="width:100%; padding:12px; margin-bottom:15px; border:2px solid #ddd; border-radius:12px; font-size:16px; box-sizing:border-box;"></select>
+    <label style="display:block; text-align:left; margin-bottom:5px; font-weight:bold;">New 4-Digit PIN:</label>
+    <input type="password" id="change-pin-input" inputmode="numeric" maxlength="4" placeholder="0000" style="font-size:32px; text-align:center; letter-spacing:10px; width:100%; padding:12px; border:2px solid #ddd; border-radius:12px; box-sizing:border-box; margin-bottom:15px;">
+    <button class="btn-submit" onclick="submitChangePin()">Update PIN</button>
+    <button class="btn-history" style="width:100%; margin-top:10px; background:#607d8b" onclick="openScreen('staff-mgmt')">Cancel</button>
   </div>
 
   <!-- ===== STOCK / ISSUE / HISTORY / REPORT ===== -->
@@ -319,7 +343,7 @@
   }
 
   function openScreen(id) {
-    ['main', 'stock', 'issue', 'history', 'report', 'admin', 'assign', 'manage-tasks', 'add-staff'].forEach(s => {
+    ['main', 'stock', 'issue', 'history', 'report', 'admin', 'assign', 'manage-tasks', 'add-staff', 'staff-mgmt', 'change-pin'].forEach(s => {
       const el = document.getElementById('screen-' + s);
       if (el) el.classList.add('hidden');
     });
@@ -328,6 +352,8 @@
     if (id === 'assign') loadStaffList();
     if (id === 'manage-tasks') loadAllTasks('active');
     if (id === 'add-staff') document.getElementById('add-staff-form').reset();
+    if (id === 'staff-mgmt') loadStaffDetails();
+    if (id === 'change-pin') loadChangePinSelect();
 
     resetSessionTimer();
   }
@@ -818,7 +844,142 @@
     }
   }
 
-  window.onload = function() {
+  // ===== STAFF MANAGEMENT =====
+
+async function loadStaffDetails() {
+  const pin = document.getElementById('pin').value;
+  const container = document.getElementById('staff-details-container');
+  container.innerHTML = '<p style="text-align:center; color:#999;">Loading...</p>';
+
+  try {
+    const res = await callAPI({ action: 'getStaffDetails', pin: pin });
+    if (!res.staff || res.staff.length === 0) {
+      container.innerHTML = '<p style="text-align:center; color:#999;">No staff found.</p>';
+      return;
+    }
+
+    let html = '';
+    res.staff.forEach(s => {
+      const inactive = s.inactive;
+      const cardBg = inactive ? '#f5f5f5' : '#f9fbf9';
+      const borderColor = inactive ? '#bdbdbd' : '#388e3c';
+      const statusBadge = inactive
+        ? '<span style="background:#757575; color:white; font-size:11px; padding:2px 8px; border-radius:10px; font-weight:bold; margin-left:8px;">INACTIVE</span>'
+        : '';
+
+      html += `<div id="staff-card-${s.pin}" style="background:${cardBg}; border-left:4px solid ${borderColor}; border-radius:10px; padding:14px; margin-bottom:12px;">`;
+
+      // View mode
+      html += `<div id="staff-view-${s.pin}">`;
+      html += `<div style="font-size:15px; font-weight:bold; color:#2b3d2b; margin-bottom:6px;">${s.name}${statusBadge}</div>`;
+      html += `<div style="font-size:13px; color:#555; line-height:1.7;">`;
+      html += `📞 ${s.phone || '—'}<br>`;
+      html += `✉️ ${s.email || '—'}<br>`;
+      html += `💰 $${parseFloat(s.rate).toFixed(2)}/hr<br>`;
+      html += `📅 Started: ${s.startDate}`;
+      html += `</div>`;
+      html += `<div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">`;
+      if (!inactive) {
+        html += `<button onclick="toggleStaffEdit('${s.pin}')" style="background:#1976d2; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:bold;">✏️ Edit</button>`;
+        html += `<button onclick="confirmDeactivate('${s.pin}', '${s.name.replace(/'/g, "\'")}')" style="background:#d32f2f; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:bold;">🚫 Deactivate</button>`;
+      }
+      html += `</div></div>`;
+
+      // Edit mode (hidden by default)
+      html += `<div id="staff-edit-${s.pin}" style="display:none; margin-top:10px;">`;
+      html += `<label style="font-size:12px; font-weight:bold; color:#37474f; display:block; margin-bottom:3px;">Name</label>`;
+      html += `<input type="text" id="edit-name-${s.pin}" value="${s.name}" style="width:100%; padding:8px; border:1px solid #c5cae9; border-radius:6px; font-size:14px; box-sizing:border-box; margin-bottom:8px;">`;
+      html += `<label style="font-size:12px; font-weight:bold; color:#37474f; display:block; margin-bottom:3px;">Phone</label>`;
+      html += `<input type="tel" id="edit-phone-${s.pin}" value="${s.phone || ''}" style="width:100%; padding:8px; border:1px solid #c5cae9; border-radius:6px; font-size:14px; box-sizing:border-box; margin-bottom:8px;">`;
+      html += `<label style="font-size:12px; font-weight:bold; color:#37474f; display:block; margin-bottom:3px;">Email</label>`;
+      html += `<input type="email" id="edit-email-${s.pin}" value="${s.email || ''}" style="width:100%; padding:8px; border:1px solid #c5cae9; border-radius:6px; font-size:14px; box-sizing:border-box; margin-bottom:8px;">`;
+      html += `<label style="font-size:12px; font-weight:bold; color:#37474f; display:block; margin-bottom:3px;">Hourly Rate ($)</label>`;
+      html += `<input type="number" id="edit-rate-${s.pin}" value="${s.rate}" step="0.01" min="0" style="width:100%; padding:8px; border:1px solid #c5cae9; border-radius:6px; font-size:14px; box-sizing:border-box; margin-bottom:10px;">`;
+      html += `<div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">`;
+      html += `<button onclick="saveStaffEdit('${s.pin}')" style="background:#388e3c; color:white; border:none; padding:10px; border-radius:8px; cursor:pointer; font-size:12px; font-weight:bold;">💾 Save</button>`;
+      html += `<button onclick="toggleStaffEdit('${s.pin}')" style="background:#757575; color:white; border:none; padding:10px; border-radius:8px; cursor:pointer; font-size:12px; font-weight:bold;">✖ Cancel</button>`;
+      html += `</div></div>`;
+
+      html += `</div>`;
+    });
+
+    container.innerHTML = html;
+  } catch(err) {
+    container.innerHTML = '<p style="text-align:center; color:red;">Failed to load. Please try again.</p>';
+  }
+}
+
+function toggleStaffEdit(pin) {
+  const view = document.getElementById('staff-view-' + pin);
+  const edit = document.getElementById('staff-edit-' + pin);
+  const viewHidden = view.style.display === 'none';
+  view.style.display = viewHidden ? 'block' : 'none';
+  edit.style.display = viewHidden ? 'none' : 'block';
+}
+
+async function saveStaffEdit(pin) {
+  const adminPin = document.getElementById('pin').value;
+  const name = document.getElementById('edit-name-' + pin).value.trim();
+  const phone = document.getElementById('edit-phone-' + pin).value.trim();
+  const email = document.getElementById('edit-email-' + pin).value.trim();
+  const rate = document.getElementById('edit-rate-' + pin).value.trim();
+
+  if (!name || !rate) { showToast("Name and rate are required."); return; }
+
+  showToast("Saving...");
+  try {
+    const res = await callAPI({ action: 'updateStaffMember', pin: adminPin, targetPin: pin, name, phone, email, rate });
+    if (res.success) { showToast(res.msg); loadStaffDetails(); }
+    else { showToast("Error: " + (res.error || "Unknown error")); }
+  } catch(err) { showToast("Connection error. Please try again."); }
+}
+
+async function confirmDeactivate(targetPin, name) {
+  if (!confirm(`Deactivate ${name}?\n\nThis will hide their sheet and remove them from active staff lists. Any unpaid shifts will still appear in Pay Summary.`)) return;
+  const adminPin = document.getElementById('pin').value;
+  showToast("Deactivating...");
+  try {
+    const res = await callAPI({ action: 'deactivateStaffMember', pin: adminPin, targetPin: targetPin });
+    if (res.success) { showToast(res.msg); loadStaffDetails(); }
+    else { showToast("Error: " + (res.error || "Unknown error")); }
+  } catch(err) { showToast("Connection error. Please try again."); }
+}
+
+async function loadChangePinSelect() {
+  const pin = document.getElementById('pin').value;
+  const select = document.getElementById('change-pin-select');
+  select.innerHTML = '<option value="">Loading...</option>';
+  document.getElementById('change-pin-input').value = '';
+  try {
+    const res = await callAPI({ action: 'getStaffDetails', pin: pin });
+    select.innerHTML = '<option value="">-- Select Staff Member --</option>';
+    (res.staff || []).filter(s => !s.inactive).forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.pin;
+      opt.textContent = s.name;
+      select.appendChild(opt);
+    });
+  } catch(err) { select.innerHTML = '<option value="">Failed to load</option>'; }
+}
+
+async function submitChangePin() {
+  const adminPin = document.getElementById('pin').value;
+  const targetPin = document.getElementById('change-pin-select').value;
+  const newPin = document.getElementById('change-pin-input').value.trim();
+  if (!targetPin) { showToast("Please select a staff member."); return; }
+  if (!newPin || newPin.length !== 4 || isNaN(newPin)) { showToast("PIN must be exactly 4 digits."); return; }
+  showToast("Updating PIN...");
+  try {
+    const res = await callAPI({ action: 'changeStaffPin', pin: adminPin, targetPin: targetPin, newPin: newPin });
+    if (res.success) {
+      showToast(res.msg);
+      document.getElementById('change-pin-input').value = '';
+      document.getElementById('change-pin-select').value = '';
+    } else { showToast("Error: " + (res.error || "Unknown error")); }
+  } catch(err) { showToast("Connection error. Please try again."); }
+}
+
+window.onload = function() {
     document.getElementById('pin').focus();
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').catch(err => {
