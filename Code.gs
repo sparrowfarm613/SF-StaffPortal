@@ -166,31 +166,24 @@ function getWeeklyHistory(pin) {
   // Fetch cols A-K (11 columns) to include Pay (col E, index 4) and Pay Date (col K, index 10)
   const data = userSheet.getLastRow() < 7 ? [] : userSheet.getRange(7, 1, userSheet.getLastRow() - 6, 11).getValues();
 
-  let html = "<table style='width:100%; font-size: 13px; border-collapse: collapse;'>";
-  html += "<tr style='background:#eee; font-size:11px;'><th style='padding:5px; text-align:left;'>Date</th><th style='padding:5px; text-align:right;'>Hrs</th><th style='padding:5px; text-align:right;'>Pay</th><th style='padding:5px; text-align:center;'>Date Paid</th></tr>";
-
-  data.slice(-10).reverse().forEach(row => {
-    const dateStr = row[0] ? new Date(row[0]).toLocaleDateString() : '';
-    const hours = parseFloat(row[3] || 0).toFixed(2);
-    const pay = parseFloat(row[4] || 0).toFixed(2);
+  // Return structured rows so the frontend can render edit buttons on pending shifts
+  const rows = data.slice(-10).reverse().map(row => {
     const payDateVal = row[10];
     const isPending = String(payDateVal).toLowerCase() === "pending";
     const isPaid = payDateVal instanceof Date;
-    const paidLabel = isPaid
-      ? `<span style='color:#388e3c; font-size:11px;'>✓ ${new Date(payDateVal).toLocaleDateString()}</span>`
-      : isPending
-        ? `<span style='color:#f57c00; font-size:11px;'>Pending</span>`
-        : `<span style='color:#bbb; font-size:11px;'>-</span>`;
-
-    html += `<tr style='border-bottom: 1px solid #eee;'>
-      <td style='padding:5px;'>${dateStr}</td>
-      <td style='padding:5px; text-align:right;'>${hours}</td>
-      <td style='padding:5px; text-align:right;'>$${pay}</td>
-      <td style='padding:5px; text-align:center;'>${paidLabel}</td>
-    </tr>`;
+    const timeInVal = row[5]; // Col F
+    return {
+      date: row[0] ? new Date(row[0]).toLocaleDateString() : '',
+      hours: parseFloat(row[3] || 0).toFixed(2),
+      pay: parseFloat(row[4] || 0).toFixed(2),
+      work: row[1] || "",
+      lunchMins: parseInt(String(row[6] || "0").replace(/[^0-9]/g, "")) || 0,
+      isPending: isPending,
+      isPaid: isPaid,
+      paidDate: isPaid ? new Date(payDateVal).toLocaleDateString() : null,
+      timeInKey: (timeInVal instanceof Date) ? String(timeInVal.getTime()) : null
+    };
   });
-
-  html += "</table>";
 
   // Compute unpaid balance (pending rows only)
   const pendingRows = data.filter(row => String(row[10]).toLowerCase() === "pending");
@@ -202,7 +195,7 @@ function getWeeklyHistory(pin) {
     name: userSheet.getRange("A3").getValue(),
     currentStatus: status,
     pay: isAdmin ? "Administrator Access" : `Current Rate: $${rate}/hr`,
-    history: html,
+    historyRows: rows,
     unpaidSummary: isAdmin ? null : { hours: unpaidHours.toFixed(2), pay: unpaidPay.toFixed(2) },
     isAdmin: isAdmin,
     tasks: tasks.tasks || []
