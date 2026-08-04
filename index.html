@@ -374,7 +374,8 @@
     document.getElementById('btn-admin').classList.add('hidden');
     document.getElementById('tasks-display').classList.add('hidden');
     document.getElementById('memo-block').classList.add('hidden');
-    document.getElementById('memo-block').textContent = '';
+    document.getElementById('memo-block').style.display = '';
+    document.getElementById('memo-block').innerHTML = '';
     cachedStaffList = null;
     cachedAdminLogs = null;
     cachedPaySummary = null;
@@ -429,6 +430,7 @@
           : '';
         memoBlock.innerHTML = '<strong>📌 Notice</strong><div style="margin-top:4px;">' + res.memo.replace(/\n/g, '<br>') + '</div>' + byLine;
         memoBlock.classList.remove('hidden');
+        memoBlock.style.display = 'block';
       }
 
       // Pre-populate memo editor for admins
@@ -455,7 +457,8 @@
       } else {
         document.getElementById('tasks-display').classList.add('hidden');
     document.getElementById('memo-block').classList.add('hidden');
-    document.getElementById('memo-block').textContent = '';
+    document.getElementById('memo-block').style.display = '';
+    document.getElementById('memo-block').innerHTML = '';
       }
 
       document.getElementById('btn-in').classList.toggle('hidden', res.currentStatus !== "Clocked Out");
