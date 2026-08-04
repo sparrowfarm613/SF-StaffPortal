@@ -598,9 +598,12 @@ function getMemoSheet() {
 
 function getMemo() {
   const sheet = getMemoSheet();
-  // Newest memo is always row 3 (we insert at top)
-  if (sheet.getLastRow() < 3) return { memo: "", memoDate: "", memoBy: "" };
-  const row = sheet.getRange(3, 1, 1, 3).getValues()[0];
+  const lastRow = sheet.getLastRow();
+  console.log("getMemo: sheet=" + sheet.getName() + " lastRow=" + lastRow);
+  if (lastRow < 3) return { memo: "", memoDate: "", memoBy: "" };
+  // Read wider range in case of merged cells — cols A through D
+  const row = sheet.getRange(3, 1, 1, 4).getValues()[0];
+  console.log("getMemo row3: A=" + row[0] + " B=" + row[1] + " C=" + row[2] + " D=" + row[3]);
   const date = row[0] instanceof Date ? (row[0].getMonth()+1) + "/" + row[0].getDate() + "/" + row[0].getFullYear() : "";
   return { memo: String(row[1] || ""), memoDate: date, memoBy: String(row[2] || "") };
 }
