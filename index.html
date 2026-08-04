@@ -98,7 +98,6 @@
       </div>
 
       <button class="btn-history" onclick="openScreen('history')">📅 My History</button>
-      <button id="btn-my-shifts" class="btn-history" style="background:#5c6bc0; display:none;" onclick="openScreen('my-shifts')">📝 My Shifts</button>
       <button class="btn-alert" onclick="openScreen('stock')">⚠️ Low Stock</button>
       <button class="btn-maint" onclick="openScreen('issue')">🛠️ Maintenance</button>
       <button id="btn-admin" class="btn-admin hidden" onclick="showAdmin()">🔐 Admin Quick View</button>
@@ -209,16 +208,6 @@
     <button class="btn-history" style="width:100%; margin-top:10px; background:#607d8b" onclick="openScreen('staff-mgmt')">Cancel</button>
   </div>
 
-  <!-- ===== MY PENDING SHIFTS ===== -->
-  <div id="screen-my-shifts" class="hidden">
-    <h3>📝 My Pending Shifts</h3>
-    <p style="font-size:13px; color:#555; margin-bottom:15px;">Update your work notes or add any missed break time for unpaid shifts below. Break changes will recalculate your hours and pay.</p>
-    <div id="my-shifts-container">
-      <p style="text-align:center; color:#999;">Loading...</p>
-    </div>
-    <button class="btn-history" style="width:100%; margin-top:15px; background:#607d8b" onclick="openScreen('main')">Back</button>
-  </div>
-
   <!-- ===== STOCK / ISSUE / HISTORY / REPORT ===== -->
   <div id="screen-stock" class="hidden">
     <h3>Low Stock Report</h3>
@@ -236,18 +225,36 @@
   </div>
 
   <div id="screen-history" class="hidden">
-    <h3>My Recent History</h3>
-    <div style="background:#f0f4ff; border-radius:10px; border:1px solid #c5cae9; padding:12px; margin-bottom:15px; font-size:13px; text-align:left; color:#37474f; line-height:1.5;">
-      <strong>💳 About your pay:</strong> 
-      <ol>
-        <li>E-transfers are processed every Monday night (usually after 10pm).</li>
-        <li>If your total hours for the week are under 3 hours, we will skip and send 2 weeks worth the following Monday evening.</li>
-          <ul><li>If still under 3 hours then we'll process the payout regardless.</li></ul>
-        <li>The <em>Date Paid</em> column shows <em>Pending</em> until your e-transfer has been sent.</li>
-      </ol>
-      
+    <h3>My History &amp; Shifts</h3>
+
+    <!-- Tab toggle -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:15px;">
+      <button id="tab-btn-history" onclick="switchHistoryTab('history')" style="padding:10px; border-radius:8px; border:2px solid #455a64; background:#455a64; color:white; font-weight:bold; cursor:pointer; font-size:13px;">📅 History</button>
+      <button id="tab-btn-shifts" onclick="switchHistoryTab('shifts')" style="padding:10px; border-radius:8px; border:2px solid #455a64; background:white; color:#455a64; font-weight:bold; cursor:pointer; font-size:13px;">📝 Pending Shifts</button>
     </div>
-    <div id="history-data" style="text-align:left;"></div>
+
+    <!-- History tab -->
+    <div id="tab-history">
+      <div style="background:#f0f4ff; border-radius:10px; border:1px solid #c5cae9; padding:12px; margin-bottom:15px; font-size:13px; text-align:left; color:#37474f; line-height:1.5;">
+        <strong>💳 About your pay:</strong>
+        <ol>
+          <li>E-transfers are processed every Monday night (usually after 10pm).</li>
+          <li>If your total hours for the week are under 3 hours, we will skip and send 2 weeks worth the following Monday evening.</li>
+            <ul><li>If still under 3 hours then we'll process the payout regardless.</li></ul>
+          <li>The <em>Date Paid</em> column shows <em>Pending</em> until your e-transfer has been sent.</li>
+        </ol>
+      </div>
+      <div id="history-data" style="text-align:left;"></div>
+    </div>
+
+    <!-- Pending Shifts tab -->
+    <div id="tab-shifts" style="display:none;">
+      <p style="font-size:13px; color:#555; margin-bottom:15px;">Update your work notes or add any missed break time. Break changes will recalculate your hours and pay.</p>
+      <div id="my-shifts-container">
+        <p style="text-align:center; color:#999;">Loading...</p>
+      </div>
+    </div>
+
     <button class="btn-history" style="width:100%; margin-top:20px; background:#607d8b" onclick="openScreen('main')">Back</button>
   </div>
 
@@ -354,7 +361,7 @@
   }
 
   function openScreen(id) {
-    ['main', 'stock', 'issue', 'history', 'report', 'admin', 'assign', 'manage-tasks', 'add-staff', 'staff-mgmt', 'change-pin', 'my-shifts'].forEach(s => {
+    ['main', 'stock', 'issue', 'history', 'report', 'admin', 'assign', 'manage-tasks', 'add-staff', 'staff-mgmt', 'change-pin'].forEach(s => {
       const el = document.getElementById('screen-' + s);
       if (el) el.classList.add('hidden');
     });
@@ -363,9 +370,9 @@
     if (id === 'assign') loadStaffList();
     if (id === 'manage-tasks') loadAllTasks('active');
     if (id === 'add-staff') document.getElementById('add-staff-form').reset();
+    if (id === 'history') switchHistoryTab('history');
     if (id === 'staff-mgmt') loadStaffDetails();
     if (id === 'change-pin') loadChangePinSelect();
-    if (id === 'my-shifts') loadMyPendingShifts();
 
     resetSessionTimer();
   }
@@ -418,11 +425,7 @@
       document.getElementById('history-data').innerHTML = historyContent;
 
       document.getElementById('action-grid').classList.remove('hidden');
-      // Show My Shifts button only if staff has pending shifts
-      if (!data.isAdmin) {
-        const hasPending = data.unpaidSummary && parseFloat(data.unpaidSummary.hours) > 0;
-        document.getElementById('btn-my-shifts').style.display = hasPending ? 'block' : 'none';
-      }
+
       document.getElementById('btn-check').classList.add('hidden');
 
       if (res.isAdmin) {
@@ -861,7 +864,20 @@
     }
   }
 
-  // ===== MY PENDING SHIFTS (Staff Self-Edit) =====
+  // ===== MY HISTORY TABS =====
+
+function switchHistoryTab(tab) {
+  const isHistory = tab === 'history';
+  document.getElementById('tab-history').style.display = isHistory ? 'block' : 'none';
+  document.getElementById('tab-shifts').style.display = isHistory ? 'none' : 'block';
+  document.getElementById('tab-btn-history').style.background = isHistory ? '#455a64' : 'white';
+  document.getElementById('tab-btn-history').style.color = isHistory ? 'white' : '#455a64';
+  document.getElementById('tab-btn-shifts').style.background = isHistory ? 'white' : '#455a64';
+  document.getElementById('tab-btn-shifts').style.color = isHistory ? '#455a64' : 'white';
+  if (!isHistory) loadMyPendingShifts();
+}
+
+// ===== MY PENDING SHIFTS (Staff Self-Edit) =====
 
 async function loadMyPendingShifts() {
   const pin = document.getElementById('pin').value;
