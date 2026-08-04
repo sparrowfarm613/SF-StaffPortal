@@ -166,6 +166,12 @@ function getWeeklyHistory(pin) {
   // Fetch cols A-K (11 columns) to include Pay (col E, index 4) and Pay Date (col K, index 10)
   const data = userSheet.getLastRow() < 7 ? [] : userSheet.getRange(7, 1, userSheet.getLastRow() - 6, 11).getValues();
 
+  // Safe date formatter for GAS server environment
+  function fmtDate(d) {
+    if (!(d instanceof Date)) return '';
+    return (d.getMonth()+1) + '/' + d.getDate() + '/' + d.getFullYear();
+  }
+
   // Return structured rows so the frontend can render edit buttons on pending shifts
   const rows = data.slice(-10).reverse().map(row => {
     const payDateVal = row[10];
@@ -173,14 +179,14 @@ function getWeeklyHistory(pin) {
     const isPaid = payDateVal instanceof Date;
     const timeInVal = row[5]; // Col F
     return {
-      date: row[0] ? new Date(row[0]).toLocaleDateString() : '',
+      date: row[0] instanceof Date ? fmtDate(new Date(row[0])) : '',
       hours: parseFloat(row[3] || 0).toFixed(2),
       pay: parseFloat(row[4] || 0).toFixed(2),
       work: row[1] || "",
       lunchMins: parseInt(String(row[6] || "0").replace(/[^0-9]/g, "")) || 0,
       isPending: isPending,
       isPaid: isPaid,
-      paidDate: isPaid ? new Date(payDateVal).toLocaleDateString() : null,
+      paidDate: isPaid ? fmtDate(new Date(payDateVal)) : null,
       timeInKey: (timeInVal instanceof Date) ? String(timeInVal.getTime()) : null
     };
   });
