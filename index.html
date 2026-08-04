@@ -424,7 +424,10 @@
       // Show memo if set
       if (res.memo && res.memo.trim()) {
         const memoBlock = document.getElementById('memo-block');
-        memoBlock.textContent = '📌 ' + res.memo;
+        const byLine = (res.memoDate || res.memoBy)
+          ? `<div style="font-size:11px; color:#888; margin-top:6px;">Posted ${res.memoDate}${res.memoBy ? ' by ' + res.memoBy : ''}</div>`
+          : '';
+        memoBlock.innerHTML = '<strong>📌 Notice</strong><div style="margin-top:4px;">' + res.memo.replace(/\n/g, '<br>') + '</div>' + byLine;
         memoBlock.classList.remove('hidden');
       }
 
@@ -967,10 +970,11 @@ async function saveMemo() {
       // Update the live memo block immediately
       const memoBlock = document.getElementById('memo-block');
       if (memo) {
-        memoBlock.textContent = '📌 ' + memo;
+        const today = new Date().toLocaleDateString();
+        memoBlock.innerHTML = '<strong>📌 Notice</strong><div style="margin-top:4px;">' + memo.replace(/\n/g, '<br>') + '</div><div style="font-size:11px; color:#888; margin-top:6px;">Posted ' + today + '</div>';
         memoBlock.classList.remove('hidden');
       } else {
-        memoBlock.textContent = '';
+        memoBlock.innerHTML = '';
         memoBlock.classList.add('hidden');
       }
     } else {
