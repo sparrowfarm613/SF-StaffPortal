@@ -571,18 +571,17 @@ function logLogin(pin, name, success) {
 
 // ===== MEMO =====
 
-function getSettingsSheet() {
+function getMemoSheet() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let sheet = ss.getSheetByName("Settings");
+  let sheet = ss.getSheetByName("Memo Log");
   if (!sheet) {
-    sheet = ss.insertSheet("Settings");
-    // Create heading row
-    sheet.getRange("A1").setValue("Admin Text Settings");
-    sheet.getRange("A1").setFontWeight("bold");
+    sheet = ss.insertSheet("Memo Log");
+    // Heading row
     sheet.getRange("A1:C1").merge();
-    sheet.getRange("A1:C1").setBackground("#212121").setFontColor("white");
-    // Column headers in row 2
-    sheet.getRange("A2:C2").setValues([["Timestamp", "Memo", "Set By"]]);
+    sheet.getRange("A1").setValue("Admin Memo Log");
+    sheet.getRange("A1:C1").setBackground("#212121").setFontColor("white").setFontWeight("bold");
+    // Column headers
+    sheet.getRange("A2:C2").setValues([["Timestamp", "Memo Text", "Posted by"]]);
     sheet.getRange("A2:C2").setFontWeight("bold");
     sheet.setFrozenRows(2);
     sheet.hideSheet();
@@ -591,18 +590,19 @@ function getSettingsSheet() {
 }
 
 function getMemo() {
-  const sheet = getSettingsSheet();
-  const lastRow = sheet.getLastRow();
-  // Data starts at row 3 (rows 1-2 are heading/headers)
-  if (lastRow < 3) return { memo: "", memoDate: null, memoBy: "" };
-  const row = sheet.getRange(lastRow, 1, 1, 3).getValues()[0];
-  const date = row[0] instanceof Date ? row[0].toLocaleDateString() : "";
-  return { memo: row[1] || "", memoDate: date, memoBy: row[2] || "" };
+  const sheet = getMemoSheet();
+  // Newest memo is always row 3 (we insert at top)
+  if (sheet.getLastRow() < 3) return { memo: "", memoDate: "", memoBy: "" };
+  const row = sheet.getRange(3, 1, 1, 3).getValues()[0];
+  const date = row[0] instanceof Date ? (row[0].getMonth()+1) + "/" + row[0].getDate() + "/" + row[0].getFullYear() : "";
+  return { memo: String(row[1] || ""), memoDate: date, memoBy: String(row[2] || "") };
 }
 
 function updateMemo(memo, adminName) {
-  const sheet = getSettingsSheet();
-  sheet.appendRow([new Date(), memo || "", adminName || "Admin"]);
+  const sheet = getMemoSheet();
+  // Insert at row 3 so newest is always at the top
+  sheet.insertRowBefore(3);
+  sheet.getRange(3, 1, 1, 3).setValues([[new Date(), memo || "", adminName || "Admin"]]);
   return { success: true, msg: "Memo updated." };
 }
 
