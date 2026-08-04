@@ -59,6 +59,14 @@ function handleRequest(params) {
         result = isAdmin ? getPaySummary() : { error: "Unauthorized" };
       } else if (action === "correctTimeEntry") {
         result = isAdmin ? correctTimeEntry(params.targetPin, params.timeInKey, params.newDate, params.newTimeIn, params.newTimeOut, params.newLunch, params.newWork) : { error: "Unauthorized" };
+      } else if (action === "getStaffDetails") {
+        result = isAdmin ? getStaffDetails() : { error: "Unauthorized" };
+      } else if (action === "updateStaffMember") {
+        result = isAdmin ? updateStaffMember(params.targetPin, params.name, params.phone, params.email, params.rate) : { error: "Unauthorized" };
+      } else if (action === "changeStaffPin") {
+        result = isAdmin ? changeStaffPin(params.targetPin, params.newPin) : { error: "Unauthorized" };
+      } else if (action === "deactivateStaffMember") {
+        result = isAdmin ? deactivateStaffMember(params.targetPin) : { error: "Unauthorized" };
       }
     }
   } catch (err) {
@@ -299,6 +307,7 @@ function getPaySummary() {
     const h3Value = String(sheet.getRange("H3").getValue() || "").trim().toUpperCase();
     if (h3Value === "ADMIN") return; // Skip admin accounts
 
+    const isInactive = (String(sheet.getRange("G3").getValue() || "").trim().toUpperCase() === "INACTIVE");
     const name = sheet.getRange("A3").getValue();
     const lastRow = sheet.getLastRow();
     if (lastRow < 7) return;
@@ -314,6 +323,9 @@ function getPaySummary() {
 
     const pendingHours = pendingRows.reduce((sum, row) => sum + (parseFloat(row[3]) || 0), 0);
     const pendingPay = pendingRows.reduce((sum, row) => sum + (parseFloat(row[4]) || 0), 0);
+
+    // Skip inactive staff with no outstanding pay
+    if (isInactive && pendingPay === 0) return;
 
     // Last paid date
     const lastPayDate = data
@@ -630,13 +642,97 @@ function getStaffList() {
     const name = sheet.getRange("A3").getValue();
     const h3Value = String(sheet.getRange("H3").getValue() || "").trim().toUpperCase();
     const isAdmin = (h3Value === "ADMIN");
+    const isInactive = (String(sheet.getRange("G3").getValue() || "").trim().toUpperCase() === "INACTIVE");
 
-    if (!isAdmin) {
+    if (!isAdmin && !isInactive) {
       staff.push({ name: name, pin: String(pin) });
     }
   });
 
   return { staff: staff };
+}
+
+// Returns full staff details for the Staff Management screen
+function getStaffDetails() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheets = ss.getSheets();
+  let staff = [];
+
+  sheets.forEach(sheet => {
+    const pin = sheet.getRange("D3").getValue();
+    if (!pin || sheet.getName().includes("Log") || sheet.getName().includes("Tasks")) return;
+
+    const h3Value = String(sheet.getRange("H3").getValue() || "").trim().toUpperCase();
+    const isAdmin = (h3Value === "ADMIN");
+    if (isAdmin) return;
+
+    const g3Value = String(sheet.getRange("G3").getValue() || "").trim().toUpperCase();
+    const isInactive = (g3Value === "INACTIVE");
+
+    staff.push({
+      pin: String(pin),
+      name: sheet.getRange("A3").getValue(),
+      phone: sheet.getRange("B3").getValue(),
+      email: sheet.getRange("C3").getValue(),
+      rate: sheet.getRange("E3").getValue(),
+      startDate: sheet.getRange("F3").getValue() ? new Date(sheet.getRange("F3").getValue()).toLocaleDateString() : "—",
+      inactive: isInactive
+    });
+  });
+
+  // Sort: active first, then inactive
+  staff.sort((a, b) => {
+    if (a.inactive === b.inactive) return a.name.localeCompare(b.name);
+    return a.inactive ? 1 : -1;
+  });
+
+  return { staff: staff };
+}
+
+// Update name, phone, email, rate for a staff member
+function updateStaffMember(targetPin, name, phone, email, rate) {
+  const sheet = findSheetByPin(String(targetPin).trim());
+  if (!sheet) return { error: "Staff member not found" };
+
+  if (name) sheet.getRange("A3").setValue(name);
+  if (phone !== undefined) sheet.getRange("B3").setValue(phone);
+  if (email !== undefined) sheet.getRange("C3").setValue(email);
+  if (rate) sheet.getRange("E3").setValue(parseFloat(rate));
+
+  // Also rename the sheet if name changed
+  if (name && name !== sheet.getName()) {
+    try { sheet.setName(name); } catch(e) { /* sheet name conflict — leave as is */ }
+  }
+
+  return { success: true, msg: "Staff member updated." };
+}
+
+// Change a staff member's PIN
+function changeStaffPin(targetPin, newPin) {
+  if (!newPin || String(newPin).length !== 4 || isNaN(newPin)) {
+    return { error: "New PIN must be exactly 4 digits." };
+  }
+  // Check new PIN isn't already in use
+  const conflict = findSheetByPin(String(newPin).trim());
+  if (conflict) return { error: "That PIN is already in use by another staff member." };
+
+  const sheet = findSheetByPin(String(targetPin).trim());
+  if (!sheet) return { error: "Staff member not found." };
+
+  sheet.getRange("D3").setValue(String(newPin));
+  return { success: true, msg: "PIN updated successfully." };
+}
+
+// Deactivate a staff member: mark G3 as INACTIVE and hide the sheet
+function deactivateStaffMember(targetPin) {
+  const sheet = findSheetByPin(String(targetPin).trim());
+  if (!sheet) return { error: "Staff member not found." };
+
+  const name = sheet.getRange("A3").getValue();
+  sheet.getRange("G3").setValue("INACTIVE");
+  sheet.hideSheet();
+
+  return { success: true, msg: name + " has been deactivated." };
 }
 
 function assignTasks(targetPin, tasksText) {
