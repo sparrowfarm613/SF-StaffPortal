@@ -422,15 +422,19 @@
       document.getElementById('action-grid').classList.remove('hidden');
 
       // Show memo if set
-      console.log("Memo from server:", res.memo, "Date:", res.memoDate);
-      if (res.memo && res.memo.trim()) {
-        const memoBlock = document.getElementById('memo-block');
+      console.log("Memo from server:", JSON.stringify(res.memo), "length:", res.memo ? res.memo.length : 0);
+      const memoBlock = document.getElementById('memo-block');
+      const memoText = String(res.memo || '').trim();
+      if (memoText) {
         const byLine = (res.memoDate || res.memoBy)
           ? `<div style="font-size:11px; color:#888; margin-top:6px;">Posted ${res.memoDate}${res.memoBy ? ' by ' + res.memoBy : ''}</div>`
           : '';
-        memoBlock.innerHTML = '<strong>📌 Notice</strong><div style="margin-top:4px;">' + res.memo.replace(/\n/g, '<br>') + '</div>' + byLine;
+        memoBlock.innerHTML = '<strong>📌 Notice</strong><div style="margin-top:4px;">' + memoText.replace(/\n/g, '<br>') + '</div>' + byLine;
         memoBlock.classList.remove('hidden');
         memoBlock.style.display = 'block';
+        console.log("Memo block shown, display:", memoBlock.style.display, "classes:", memoBlock.className);
+      } else {
+        console.log("Memo text empty after trim, not showing block");
       }
 
       // Pre-populate memo editor for admins
