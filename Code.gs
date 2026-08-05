@@ -71,6 +71,8 @@ function handleRequest(params) {
         result = isAdmin ? deactivateStaffMember(params.targetPin) : { error: "Unauthorized" };
       } else if (action === "getMemo") {
         result = getMemo();
+      } else if (action === "getMemoHistory") {
+        result = getMemoHistory();
       } else if (action === "updateMemo") {
         result = isAdmin ? updateMemo(params.memo, userSheet.getRange("A3").getValue()) : { error: "Unauthorized" };
       } else if (action === "getMyPendingShifts") {
@@ -621,6 +623,37 @@ function getMemo() {
   }
 
   return { memo: memo, memoDate: date, memoBy: memoBy };
+}
+
+function getMemoHistory() {
+  const sheet = getMemoSheet();
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 3) return { memos: [] };
+
+  const numRows = lastRow - 2; // skip heading + headers
+  const data = sheet.getRange(3, 1, numRows, Math.max(sheet.getLastColumn(), 3)).getValues();
+
+  const memos = [];
+  for (let i = 0; i < data.length; i++) {
+    const row = data[i];
+    const timestamp = row[0] instanceof Date ? row[0] : null;
+    if (!timestamp) continue;
+    const date = (timestamp.getMonth()+1) + "/" + timestamp.getDate() + "/" + timestamp.getFullYear();
+
+    // Find memo text and author by scanning columns
+    let text = "", by = "";
+    let foundText = false;
+    for (let j = 1; j < row.length; j++) {
+      const val = String(row[j] || "").trim();
+      if (!val) continue;
+      if (!foundText) { text = val; foundText = true; }
+      else { by = val; break; }
+    }
+    if (!text) continue;
+    memos.push({ date: date, text: text, by: by });
+  }
+
+  return { memos: memos };
 }
 
 function updateMemo(memo, adminName) {
