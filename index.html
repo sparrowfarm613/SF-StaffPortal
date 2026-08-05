@@ -215,6 +215,17 @@
     <button class="btn-history" style="width:100%; margin-top:10px; background:#607d8b" onclick="openScreen('staff-mgmt')">Cancel</button>
   </div>
 
+  <!-- ===== MEMO HISTORY MODAL ===== -->
+  <div id="memo-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
+    <div style="background:white; border-radius:16px; padding:20px; max-width:400px; width:90%; max-height:80vh; overflow-y:auto; position:relative;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h3 style="margin:0; font-size:16px; color:#2b3d2b;">📋 Memo History</h3>
+        <button onclick="closeMemoModal()" style="background:none; border:none; font-size:20px; cursor:pointer; color:#666; padding:0; line-height:1;">✕</button>
+      </div>
+      <div id="memo-history-list"><p style="text-align:center; color:#999; font-size:13px;">Loading...</p></div>
+    </div>
+  </div>
+
   <!-- ===== STOCK / ISSUE / HISTORY / REPORT ===== -->
   <div id="screen-stock" class="hidden">
     <h3>Low Stock Report</h3>
@@ -429,7 +440,12 @@
         const byLine = (res.memoDate || res.memoBy)
           ? `<div style="font-size:11px; color:#888; margin-top:6px;">Posted ${res.memoDate}${res.memoBy ? ' by ' + res.memoBy : ''}</div>`
           : '';
-        memoBlock.innerHTML = '<strong>📌 Notice</strong><div style="margin-top:4px;">' + memoText.replace(/\n/g, '<br>') + '</div>' + byLine;
+        memoBlock.innerHTML =
+          '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">' +
+            '<strong style="font-size:13px;">📌 Latest Memo</strong>' +
+            '<button onclick="openMemoModal()" title="Memo history" style="background:none; border:none; cursor:pointer; font-size:15px; padding:0; line-height:1; color:#888;">🕐</button>' +
+          '</div>' +
+          '<div>' + memoText.replace(/\n/g, '<br>') + '</div>' + byLine;
         memoBlock.style.display = 'block';
       } else {
         console.log("Memo text empty after trim, not showing block");
@@ -960,6 +976,36 @@ async function saveMyShift(timeInKey) {
   }
 }
 
+// ===== MEMO MODAL =====
+
+async function openMemoModal() {
+  const modal = document.getElementById('memo-modal');
+  const list = document.getElementById('memo-history-list');
+  modal.style.display = 'flex';
+  list.innerHTML = '<p style="text-align:center; color:#999; font-size:13px;">Loading...</p>';
+
+  try {
+    const pin = document.getElementById('pin').value;
+    const res = await callAPI({ action: 'getMemoHistory', pin: pin });
+    if (!res.memos || res.memos.length === 0) {
+      list.innerHTML = '<p style="text-align:center; color:#999; font-size:13px;">No memo history yet.</p>';
+      return;
+    }
+    list.innerHTML = res.memos.map((m, i) => `
+      <div style="padding:10px; ${i < res.memos.length - 1 ? 'border-bottom:1px solid #eee;' : ''}">
+        <div style="font-size:12px; color:#888; margin-bottom:4px;">${m.date}${m.by ? ' · ' + m.by : ''}</div>
+        <div style="font-size:13px; color:#37474f;">${m.text.replace(/\n/g, '<br>')}</div>
+      </div>
+    `).join('');
+  } catch(err) {
+    list.innerHTML = '<p style="text-align:center; color:red; font-size:13px;">Could not load history.</p>';
+  }
+}
+
+function closeMemoModal() {
+  document.getElementById('memo-modal').style.display = 'none';
+}
+
 // ===== MEMO =====
 
 async function saveMemo() {
@@ -974,7 +1020,13 @@ async function saveMemo() {
       const memoBlock = document.getElementById('memo-block');
       if (memo) {
         const today = new Date().toLocaleDateString();
-        memoBlock.innerHTML = '<strong>📌 Notice</strong><div style="margin-top:4px;">' + memo.replace(/\n/g, '<br>') + '</div><div style="font-size:11px; color:#888; margin-top:6px;">Posted ' + today + '</div>';
+        memoBlock.innerHTML =
+          '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">' +
+            '<strong style="font-size:13px;">📌 Latest Memo</strong>' +
+            '<button onclick="openMemoModal()" title="Memo history" style="background:none; border:none; cursor:pointer; font-size:15px; padding:0; line-height:1; color:#888;">🕐</button>' +
+          '</div>' +
+          '<div>' + memo.replace(/\n/g, '<br>') + '</div>' +
+          '<div style="font-size:11px; color:#888; margin-top:6px;">Posted ' + today + '</div>';
         memoBlock.style.display = 'block';
       } else {
         memoBlock.innerHTML = '';
