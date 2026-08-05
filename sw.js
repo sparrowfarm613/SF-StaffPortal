@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sparrow-farms-v7';
+const CACHE_NAME = 'sparrow-farms-v8';
 const urlsToCache = [
   '/',
   '/index.html'
@@ -12,6 +12,7 @@ self.addEventListener('install', function(event) {
         return cache.addAll(urlsToCache);
       })
   );
+  self.skipWaiting(); // Activate immediately
 });
 
 // Serve cached content when offline - but NEVER cache API calls
@@ -20,13 +21,19 @@ self.addEventListener('fetch', function(event) {
   if (event.request.url.includes('script.google.com')) {
     return; // Let it fetch normally, don't cache
   }
-  
+
   event.respondWith(
-    caches.match(event.request)
+    fetch(event.request)
       .then(function(response) {
-        return response || fetch(event.request);
-      }
-    )
+        // Update cache with fresh response
+        const responseClone = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
+        return response;
+      })
+      .catch(function() {
+        // Only fall back to cache when offline
+        return caches.match(event.request);
+      })
   );
 });
 
@@ -43,4 +50,5 @@ self.addEventListener('activate', function(event) {
       );
     })
   );
+  self.clients.claim(); // Take control immediately
 });
