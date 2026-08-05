@@ -433,7 +433,7 @@
       document.getElementById('action-grid').classList.remove('hidden');
 
       // Show memo if set
-      console.log("Memo from server:", JSON.stringify(res.memo), "length:", res.memo ? res.memo.length : 0);
+      //console.log("Memo from server:", JSON.stringify(res.memo), "length:", res.memo ? res.memo.length : 0);
       const memoBlock = document.getElementById('memo-block');
       const memoText = String(res.memo || '').trim();
       if (memoText) {
@@ -448,7 +448,7 @@
           '<div>' + memoText.replace(/\n/g, '<br>') + '</div>' + byLine;
         memoBlock.style.display = 'block';
       } else {
-        console.log("Memo text empty after trim, not showing block");
+        //console.log("Memo text empty after trim, not showing block");
       }
 
       // Pre-populate memo editor for admins
