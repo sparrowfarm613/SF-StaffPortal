@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Driver Dispatch — Sparrow Farms</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    :root {
+      --green:      #008060;
+      --green-dark: #004c3f;
+      --dark:       #202223;
+      --mid:        #5c5f62;
+      --border:     #c4cdd5;
+      --bg:         #f6f6f7;
+      --white:      #ffffff;
+      --radius:     8px;
+      --shadow:     0 1px 4px rgba(0,0,0,.12);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--dark);
+      margin: 0;
+      padding: 12px 16px env(safe-area-inset-bottom, 16px);
+      max-width: 620px;
+      margin-inline: auto;
+    }
+
+    h1 { font-size: 1.2rem; margin: 12px 0 16px; }
+    h3 { margin: 0 0 4px; font-size: 1rem; }
+
+    /* ---- Cards ---- */
+    .card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px 16px;
+      margin-bottom: 12px;
+    }
+
+    /* ---- Buttons ---- */
+    button {
+      display: block;
+      width: 100%;
+      padding: 11px 16px;
+      margin-top: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background: var(--green);
+      color: var(--white);
+      text-align: center;
+    }
+    button:active { opacity: .85; }
+    button.secondary  { background: var(--dark); }
+    button.outline    { background: transparent; color: var(--green); border: 1.5px solid var(--green); }
+    button:disabled   { opacity: .5; cursor: default; }
+
+    /* ---- Inputs ---- */
+    label     { font-size: 13px; font-weight: 600; display: block; margin-bottom: 4px; }
+    input[type="text"] {
+      width: 100%; padding: 10px;
+      border: 1px solid var(--border); border-radius: 6px;
+      font-size: 14px; color: var(--dark);
+    }
+
+    /* ---- Order cards ---- */
+    .order-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 4px; }
+    .time-badge   { font-size: 11px; font-weight: normal; background: var(--bg); color: var(--mid); padding: 2px 7px; border-radius: 20px; white-space: nowrap; }
+    .address      { color: #006fe6; font-weight: 600; margin: 6px 0 2px; font-size: 14px; }
+    .items        { font-size: 13px; color: var(--mid); margin: 2px 0 8px; }
+    .phone        { font-size: 13px; color: var(--mid); }
+
+    .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+    .btn-row button { margin-top: 0; font-size: 13px; padding: 10px 8px; }
+
+    /* ---- Status badges ---- */
+    .status {
+      display: inline-block; font-size: 12px;
+      padding: 3px 9px; border-radius: 20px; margin-top: 8px;
+    }
+    .status.ok     { background: #e3f1df; color: #0a4020; }
+    .status.error  { background: #fce8e6; color: #c5221f; }
+    .status.info   { background: #f0f4ff; color: #1a3a8a; }
+
+    /* ---- Config toggle ---- */
+    details summary { cursor: pointer; font-size: 13px; color: var(--mid); margin-bottom: 4px; }
+    details[open] summary { margin-bottom: 10px; }
+
+    /* ---- Divider ---- */
+    hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+
+    /* ---- Empty / loading ---- */
+    .message { text-align: center; color: var(--mid); padding: 24px 0; font-size: 15px; }
+  </style>
+</head>
+<body>
+
+<h1>🚚 Driver Dispatch — Sparrow Farms</h1>
+
+<!-- Config panel (collapses once URL is saved) -->
+<div class="card" id="config-card">
+  <details id="config-details">
+    <summary id="config-summary">⚙️ Backend configuration</summary>
+    <label for="backend-url">Google Apps Script Web App URL</label>
+    <input type="text" id="backend-url"
+           placeholder="https://script.google.com/macros/s/AKfycbyLizpr8j02ogxW29XaMV5AYztazluMV7MwLI-1uQUlVXVYV1zLDhqaOxP36WLsjKZH/exec"
+           autocomplete="off" autocorrect="off" spellcheck="false">
+    <button onclick="saveConfig()">Save &amp; Load Orders</button>
+  </details>
+</div>
+
+<button class="outline" onclick="loadOrders()" id="refresh-btn">↻ Refresh Orders</button>
+
+<div id="route-bar" style="display:none; margin-top:10px;"></div>
+<div id="order-list"  style="margin-top:12px;"></div>
+
+<script>
+// ---------------------------------------------------------------
+//  Utility: HTML-escape to prevent XSS when inserting API data
+// ---------------------------------------------------------------
+function esc(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+
+// ---------------------------------------------------------------
+//  Config — stored in localStorage (just a URL, not a secret)
+// ---------------------------------------------------------------
+const STORAGE_KEY = 'sparrow_driver_backend_url';
+
+function savedUrl()  { return localStorage.getItem(STORAGE_KEY) || ''; }
+
+function saveConfig() {
+  const url = document.getElementById('backend-url').value.trim();
+  if (!url.startsWith('https://script.google.com/')) {
+    alert('That doesn\'t look like an Apps Script URL. Please check and try again.');
+    return;
+  }
+  localStorage.setItem(STORAGE_KEY, url);
+  collapseConfig();
+  loadOrders();
+}
+
+function collapseConfig() {
+  const details = document.getElementById('config-details');
+  const summary = document.getElementById('config-summary');
+  details.removeAttribute('open');
+  summary.textContent = '⚙️ Backend configured — tap to change';
+}
+
+// ---------------------------------------------------------------
+//  Boot
+// ---------------------------------------------------------------
+window.addEventListener('DOMContentLoaded', () => {
+  const url = savedUrl();
+  if (url) {
+    document.getElementById('backend-url').value = url;
+    collapseConfig();
+    loadOrders();
+  } else {
+    document.getElementById('config-details').setAttribute('open', '');
+    document.getElementById('order-list').innerHTML =
+      '<p class="message">Enter your Apps Script URL above to get started.</p>';
+    document.getElementById('refresh-btn').style.display = 'none';
+  }
+});
+
+// ---------------------------------------------------------------
+//  Fetch orders
+// ---------------------------------------------------------------
+let currentOrders = [];
+
+async function loadOrders() {
+  const backend = savedUrl();
+  const list    = document.getElementById('order-list');
+  const bar     = document.getElementById('route-bar');
+
+  if (!backend) return;
+
+  list.innerHTML = '<p class="message">Loading orders…</p>';
+  bar.style.display = 'none';
+  document.getElementById('refresh-btn').disabled = true;
+
+  try {
+    const res  = await fetch(backend + '?action=getOrders');
+    const data = await res.json();
+
+    if (!data.success) {
+      list.innerHTML = `<p class="message" style="color:#c5221f;">Error: ${esc(data.error || 'Unknown error')}</p>`;
+      return;
+    }
+
+    currentOrders = data.orders || [];
+
+    if (currentOrders.length === 0) {
+      list.innerHTML = '<p class="message">✓ No unfulfilled orders — all caught up!</p>';
+      return;
+    }
+
+    // Route bar
+    bar.innerHTML = `
+      <button class="secondary" onclick="openAllStops()">
+        🗺 Navigate All ${currentOrders.length} Stop${currentOrders.length > 1 ? 's' : ''} (Google Maps)
+      </button>`;
+    bar.style.display = 'block';
+
+    // Order cards
+    list.innerHTML = currentOrders.map(o => orderCard(o)).join('');
+
+  } catch (err) {
+    list.innerHTML = `<p class="message" style="color:#c5221f;">Connection failed: ${esc(err.message)}</p>`;
+  } finally {
+    document.getElementById('refresh-btn').disabled = false;
+  }
+}
+
+// ---------------------------------------------------------------
+//  Render one order card
+// ---------------------------------------------------------------
+function orderCard(o) {
+  const phoneLink = o.phone
+    ? `<p class="phone">📞 <a href="tel:${esc(o.phone)}">${esc(o.phone)}</a></p>`
+    : '';
+
+  return `
+  <div class="card" id="card-${esc(o.id)}">
+    <div class="order-header">
+      <h3>${esc(o.name)} — ${esc(o.customer)}</h3>
+      <span class="time-badge">${esc(o.timeLabel)}</span>
+    </div>
+    <div class="address">${esc(o.address)}</div>
+    <p class="items">${esc(o.items)}</p>
+    ${phoneLink}
+    <div class="btn-row">
+      <button class="secondary" onclick="navigateTo(${esc(JSON.stringify(o.address))})">📍 Navigate</button>
+      <a href="${esc(o.adminUrl)}" target="_blank" style="display:contents;">
+        <button>Open in Shopify</button>
+      </a>
+    </div>
+    <button class="outline" onclick="logDelivery('${esc(o.id)}', '${esc(o.name)}', '${esc(o.customer)}', '${esc(o.address)}')">
+      ✓ Log as Delivered
+    </button>
+    <div id="status-${esc(o.id)}"></div>
+  </div>`;
+}
+
+// ---------------------------------------------------------------
+//  Navigation helpers
+// ---------------------------------------------------------------
+function navigateTo(address) {
+  window.open('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(address), '_blank');
+}
+
+function openAllStops() {
+  if (!currentOrders.length) return;
+  const last      = currentOrders[currentOrders.length - 1];
+  const waypoints = currentOrders.slice(0, -1).map(o => encodeURIComponent(o.address)).join('|');
+  let url         = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(last.address);
+  if (waypoints) url += '&waypoints=' + waypoints;
+  window.open(url, '_blank');
+}
+
+// ---------------------------------------------------------------
+//  Log delivery to sheet
+//  Uses mode:'no-cors' + text/plain body — Apps Script quirk for
+//  cross-origin POST. The script still runs; we just can't read
+//  the response, so we show optimistic success.
+// ---------------------------------------------------------------
+async function logDelivery(orderId, orderName, customer, address) {
+  const backend   = savedUrl();
+  const statusDiv = document.getElementById('status-' + orderId);
+
+  statusDiv.innerHTML = '<span class="status info">Logging…</span>';
+
+  // Find the button and disable it to prevent double-logging
+  const card = document.getElementById('card-' + orderId);
+  const logBtn = card ? card.querySelector('button.outline') : null;
+  if (logBtn) logBtn.disabled = true;
+
+  try {
+    await fetch(backend, {
+      method: 'POST',
+      mode:   'no-cors',       // required for Apps Script cross-origin POST
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        action:    'logDelivery',
+        orderId:   orderId,
+        orderName: orderName,
+        customer:  customer,
+        address:   address,
+        timestamp: new Date().toISOString()
+      })
+    });
+    // no-cors means we can't read the response; assume success
+    statusDiv.innerHTML = '<span class="status ok">✓ Logged to sheet</span>';
+  } catch (err) {
+    statusDiv.innerHTML = '<span class="status error">⚠ Logging failed — note manually</span>';
+    if (logBtn) logBtn.disabled = false;
+  }
+}
+</script>
+</body>
+</html>
