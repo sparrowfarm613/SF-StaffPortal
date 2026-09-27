@@ -109,8 +109,7 @@
     <summary id="config-summary">⚙️ Backend configuration</summary>
     <label for="backend-url">Google Apps Script Web App URL</label>
     <input type="text" id="backend-url"
-           placeholder="https://script.google.com/macros/s/AKfycbyLizpr8j02ogxW29XaMV5AYztazluMV7MwLI-1uQUlVXVYV1zLDhqaOxP36WLsjKZH/exec"
-           autocomplete="off" autocorrect="off" spellcheck="false">
+        placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off" autocorrect="off" spellcheck="false">
     <button onclick="saveConfig()">Save &amp; Load Orders</button>
   </details>
 </div>
@@ -138,8 +137,11 @@ function esc(str) {
 //  Config — stored in localStorage (just a URL, not a secret)
 // ---------------------------------------------------------------
 const STORAGE_KEY = 'sparrow_driver_backend_url';
+const HARDCODED_URL = 'https://script.google.com/macros/s/AKfycbyLizpr8j02ogxW29XaMV5AYztazluMV7MwLI-1uQUlVXVYV1zLDhqaOxP36WLsjKZH/exec';
 
-function savedUrl()  { return localStorage.getItem(STORAGE_KEY) || ''; }
+function savedUrl() {
+  return localStorage.getItem(STORAGE_KEY) || HARDCODED_URL;
+}
 
 function saveConfig() {
   const url = document.getElementById('backend-url').value.trim();
