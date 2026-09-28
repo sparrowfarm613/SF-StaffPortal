@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Sparrow Farms — Driver</title>
+<style>
+  :root{--green:#004c3f;--green2:#0a6b5a;--amber:#f5a623;--red:#c0392b;--bg:#f4f5f4;--card:#fff;--txt:#1d2a27;--mut:#6b7a76;--line:#e1e5e3}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--txt);padding-bottom:env(safe-area-inset-bottom)}
+  header{background:var(--green);color:#fff;padding:14px 16px;position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:10px;justify-content:space-between}
+  header h1{font-size:17px;margin:0;font-weight:700}
+  header .sub{font-size:12px;opacity:.85}
+  main{padding:14px;max-width:640px;margin:0 auto}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+  label{display:block;font-size:12px;font-weight:600;color:var(--mut);margin:10px 0 4px}
+  input,textarea{width:100%;padding:12px;border:1px solid #c9d1ce;border-radius:8px;font-size:16px;font-family:inherit}
+  textarea{min-height:80px;resize:vertical}
+  button{font-family:inherit;font-size:16px;font-weight:700;border:0;border-radius:10px;padding:14px 16px;cursor:pointer;background:var(--green);color:#fff;width:100%}
+  button.sec{background:#e8eeec;color:var(--green)}
+  button.warn{background:var(--amber);color:#3a2a00}
+  button.link{background:none;color:var(--mut);font-weight:500;text-decoration:underline;padding:8px}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  .row{display:flex;gap:8px}.row>*{flex:1}
+  .hidden{display:none!important}
+  .err{color:var(--red);font-size:14px;margin:8px 0}
+  .finish{font-size:22px;font-weight:800;text-align:center;padding:12px;border-radius:10px;margin:10px 0}
+  .g{background:#e3f4ea;color:#166534}.a{background:#fff3d6;color:#8a5a00}.r{background:#fbe4e1;color:#9b2c1f}
+  .stop{display:flex;gap:10px;align-items:flex-start}
+  .num{width:54px;flex:none;text-align:center;font-weight:800;padding:10px 4px}
+  .stop .body{flex:1;min-width:0}
+  .stop .t{font-weight:700}.stop .m{font-size:13px;color:var(--mut)}
+  .badge{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;margin-right:4px;background:#eef2f0}
+  .badge.d{background:#dff3e7;color:#166534}
+  .stop.done{opacity:.55}
+  .big{font-size:22px;font-weight:800;margin:4px 0}
+  .chk{display:flex;gap:10px;align-items:center;padding:12px 4px;border-bottom:1px solid var(--line);font-size:17px}
+  .chk input{width:24px;height:24px;flex:none}
+  .chk.on span{text-decoration:line-through;color:var(--mut)}
+  .note{background:#fff3d6;border-left:4px solid var(--amber);padding:10px 12px;border-radius:6px;margin:10px 0}
+  a.tap{color:var(--green2);font-weight:600;text-decoration:none}
+  img.prev{width:100%;border-radius:10px;margin:10px 0}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:99px;font-size:14px;z-index:99}
+  .spin{display:inline-block;width:16px;height:16px;border:3px solid #fff5;border-top-color:#fff;border-radius:50%;animation:s .8s linear infinite;vertical-align:-3px;margin-right:6px}
+  @keyframes s{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>🚚 Sparrow Farms</h1><div class="sub" id="hdrSub">Driver</div></div>
+  <button id="logoutBtn" class="sec hidden" style="width:auto;padding:8px 12px;font-size:13px">Log out</button>
+</header>
+<main id="app"></main>
+
+<script>
+// ───────── CONFIG ─────────
+// Not a secret: every action is protected by login/session tokens on the server.
+const API = 'https://script.google.com/macros/s/AKfycby1SeWCYfqrBC87LLp5iEtvcGSRb2aBk_k6F4bqLvrPzu_5JkZa-ZVigcQTAh-5xlaL/exec';
+const FARM = "2029 O'Toole Road, Cumberland, ON K4C 1N4";
+
+// ───────── STATE ─────────
+const S = {
+  session: sessionStorage.getItem('sf_s') || '',   // cleared when tab closes
+  driver: sessionStorage.getItem('sf_n') || '',
+  stops: [],            // {id,name,customer,firstName,email,phone,address,items,checked:[],etaStart,etaEnd,notified,delivered,note,photo}
+  finish: null, cur: 0, startAddr: FARM, endAddr: FARM, startTime: '', perStop: 7,
+  busy: false, poll: null
+};
+
+const $ = (s, r=document) => r.querySelector(s);
+function el(tag, attrs={}, ...kids){
+  const e = document.createElement(tag);
+  for (const [k,v] of Object.entries(attrs)){
+    if (k==='class') e.className=v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else if (v!==false && v!=null) e.setAttribute(k,v);
+  }
+  kids.flat().forEach(c => e.append(c instanceof Node ? c : document.createTextNode(c ?? '')));
+  return e;   // all text goes through text nodes → no HTML injection
+}
+function toast(msg){ const t=el('div',{class:'toast'},msg); document.body.append(t); setTimeout(()=>t.remove(),2600); }
+// Finish-time colour: green before 8 pm, amber until 9 pm, red after (local time)
+const FINISH_GREEN_BEFORE = 20, FINISH_AMBER_BEFORE = 21;
+function finishClass(iso){
+  const d = new Date(iso), h = d.getHours() + d.getMinutes()/60;
+  return h < FINISH_GREEN_BEFORE ? 'g' : h < FINISH_AMBER_BEFORE ? 'a' : 'r';
+}
+function fmt(iso){ return iso ? new Date(iso).toLocaleTimeString('en-CA',{hour:'numeric',minute:'2-digit'}) : ''; }
+
+// ───────── API ─────────
+async function get(params){
+  const u = new URL(API);
+  Object.entries(params).forEach(([k,v]) => u.searchParams.set(k, v));
+  const r = await fetch(u, {redirect:'follow'});
+  return handle(await r.json());
+}
+async function post(action, data){
+  // text/plain avoids a CORS preflight (Apps Script can't answer OPTIONS)
+  const r = await fetch(API, {method:'POST', redirect:'follow',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify({action, s:S.session, data})});
+  return handle(await r.json());
+}
+function handle(j){
+  if (!j.ok && j.error==='UNAUTHORIZED'){ logout(true); throw new Error('Session expired — please log in again'); }
+  if (!j.ok) throw new Error(j.error || 'Request failed');
+  return j;
+}
+
+// ───────── AUTH ─────────
+function logout(expired){
+  sessionStorage.clear(); S.session=''; S.driver=''; clearInterval(S.poll);
+  render(); if (expired) toast('Session expired');
+}
+$('#logoutBtn').addEventListener('click', () => {
+  if (S.stops.some(s=>!s.delivered) && !confirm('You have undelivered stops. Log out anyway? Route setup will be lost.')) return;
+  S.stops=[]; logout(false);
+});
+
+function viewLogin(){
+  const err = el('div',{class:'err hidden'});
+  const phone = el('input',{type:'tel',autocomplete:'off',inputmode:'tel',placeholder:'613-555-1234'});
+  const email = el('input',{type:'email',autocomplete:'off',placeholder:'you@example.com'});
+  const btn = el('button',{onclick: async () => {
+    err.classList.add('hidden'); btn.disabled=true; btn.textContent='Checking…';
+    try{
+      const j = await get({action:'login', phone:phone.value, email:email.value});
+      S.session=j.session; S.driver=j.name;
+      sessionStorage.setItem('sf_s', j.session); sessionStorage.setItem('sf_n', j.name);
+      phone.value=''; email.value='';       // don't leave credentials in the DOM
+      render();
+    }catch(e){
+      err.textContent = e.message==='RATE_LIMITED' ? 'Too many attempts. Try again in 15 minutes.' : 'Login failed. Check your details.';
+      err.classList.remove('hidden'); btn.disabled=false; btn.textContent='Log in';
+    }
+  }}, 'Log in');
+  return el('div',{class:'card'},
+    el('h2',{style:'margin:0 0 4px'},'Driver login'),
+    el('div',{class:'m',style:'color:#6b7a76;font-size:14px'},'Enter the phone and email you registered with.'),
+    el('label',{},'Phone'), phone, el('label',{},'Email'), email, err, el('div',{style:'height:12px'}), btn);
+}
+
+// ───────── SCREEN 1: ROUTE SETUP ─────────
+function viewSetup(){
+  const now = new Date(); now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
+  if (!S.startTime) S.startTime = now.toISOString().slice(0,16);
+  const wrap = el('div');
+
+  const start = el('input',{value:S.startAddr, onchange:e=>S.startAddr=e.target.value});
+  const end   = el('input',{value:S.endAddr,   onchange:e=>S.endAddr=e.target.value});
+  const time  = el('input',{type:'datetime-local', value:S.startTime, onchange:e=>S.startTime=e.target.value});
+  const per   = el('input',{type:'number',min:1,max:60,value:S.perStop, onchange:e=>S.perStop=Number(e.target.value)||7});
+  const status = el('div',{class:'err hidden'});
+
+  const loadBtn = el('button',{onclick: async () => {
+    loadBtn.disabled=true; loadBtn.replaceChildren(el('span',{class:'spin'}),'Loading…'); status.classList.add('hidden');
+    try{
+      const j = await get({action:'getOrders', s:S.session});
+      S.stops = j.orders.map(o => ({
+        id:o.id, name:o.name, customer:o.customerName.trim(), firstName:o.firstName, email:o.email,
+        phone:o.phone, address:o.address, items:o.items, note:o.note,
+        checked:[], notified:false, delivered:false, customerNote:''
+      }));
+      S.finish=null; renderKeep();
+    }catch(e){ status.textContent=e.message; status.classList.remove('hidden'); }
+    loadBtn.disabled=false; loadBtn.textContent='Load Orders';
+  }},'Load Orders');
+
+  wrap.append(el('div',{class:'card'},
+    el('h2',{style:'margin:0 0 6px'},'Route Setup'),
+    el('label',{},'Start address'), start, el('label',{},'End address'), end,
+    el('div',{class:'row'}, el('div',{},el('label',{},'Departure time'),time), el('div',{},el('label',{},'Min per stop'),per)),
+    el('div',{style:'height:12px'}), loadBtn, status));
+
+  if (S.stops.length){
+    const calc = el('button',{class:'sec',onclick: async () => {
+      calc.disabled=true; calc.replaceChildren(el('span',{class:'spin',style:'border-top-color:#004c3f'}),'Calculating…');
+      try{
+        const j = await get({action:'calculateETAs', s:S.session, payload: JSON.stringify({
+          stops:S.stops.map(s=>({id:s.id,address:s.address})), startAddress:S.startAddr, endAddress:S.endAddr,
+          startTime:new Date(S.startTime).toISOString(), perStopMinutes:S.perStop})});
+        j.etas.forEach((e,i)=>{ S.stops[i].etaStart=e.etaStart; S.stops[i].etaEnd=e.etaEnd; });
+        S.finish=j.finishTime; renderKeep();
+      }catch(e){ toast(e.message); }
+      calc.disabled=false; calc.textContent='Calculate ETAs';
+    }},'Calculate ETAs');
+    wrap.append(calc, el('div',{style:'height:10px'}));
+
+    if (S.finish){
+      wrap.append(el('div',{class:'finish '+finishClass(S.finish)},'Est. finish: '+fmt(S.finish)));
+    }
+    S.stops.forEach((s,i) => wrap.append(stopSetupCard(s,i)));
+    wrap.append(el('button',{disabled:!S.finish, onclick:()=>{ S.mode='route'; S.cur=0; render(); }}, S.finish?'Start Route':'Calculate ETAs to start'));
+  }
+  return wrap;
+}
+
+function stopSetupCard(s,i){
+  const n = el('input',{class:'num',type:'number',inputmode:'numeric',min:1,max:S.stops.length,value:i+1});
+  const move = () => {
+    let to = Math.min(Math.max(parseInt(n.value,10)||i+1,1),S.stops.length)-1;
+    if (to===i) return;
+    S.stops.splice(to,0,S.stops.splice(i,1)[0]);
+    S.finish=null; S.stops.forEach(x=>{x.etaStart=x.etaEnd=null}); renderKeep();   // ETAs are stale after reorder
+  };
+  n.addEventListener('change', move);
+  n.addEventListener('keydown', e => { if(e.key==='Enter') n.blur(); });
+  return el('div',{class:'card stop'}, n,
+    el('div',{class:'body'},
+      el('div',{class:'t'}, s.name+' · '+s.customer),
+      el('div',{class:'m'}, s.address||'(no address)'),
+      el('div',{class:'m'}, s.items.reduce((a,b)=>a+b.qty,0)+' items'+(s.etaStart?' · ETA '+fmt(s.etaStart):''))),
+    el('button',{class:'sec',style:'width:auto;padding:8px 10px;font-size:13px',onclick:()=>{
+      if(confirm('Remove '+s.name+' from this run?')){ S.stops.splice(i,1); S.finish=null; renderKeep(); }
+    }},'✕'));
+}
+
+// ───────── SCREEN 2: ACTIVE ROUTE ─────────
+function viewRoute(){
+  const wrap = el('div');
+  const remaining = S.stops.filter(s=>!s.delivered);
+  let fin = S.finish;
+  if (fin){
+    wrap.append(el('div',{class:'finish '+finishClass(fin)}, remaining.length ? 'Est. finish: '+fmt(fin) : '🎉 All done!')); }
+
+  // Recalculate ETAs for undelivered stops, departing now from the driver's chosen departure/start point
+  if (remaining.length){
+    const rc = el('button',{class:'sec',style:'margin-bottom:10px',onclick: async () => {
+      rc.disabled=true; rc.replaceChildren(el('span',{class:'spin',style:'border-top-color:#004c3f'}),'Recalculating…');
+      try{
+        // Start point: use the last delivered stop's address if any, otherwise the route start
+        const lastDone = [...S.stops].reverse().find(s=>s.delivered);
+        const from = lastDone ? lastDone.address : S.startAddr;
+        const j = await get({action:'calculateETAs', s:S.session, payload: JSON.stringify({
+          stops:remaining.map(s=>({id:s.id,address:s.address})), startAddress:from, endAddress:S.endAddr,
+          startTime:new Date().toISOString(), perStopMinutes:S.perStop})});
+        j.etas.forEach(e => { const s=S.stops.find(x=>x.id===e.id); if(s){ s.etaStart=e.etaStart; s.etaEnd=e.etaEnd; } });
+        S.finish = j.finishTime; toast('ETAs updated');
+      }catch(e){ toast(e.message); }
+      renderKeep();
+    }}, '🔄 Recalculate ETAs from now');
+    wrap.append(rc);
+  }
+
+  // Batch notify: next 3 hours of ETAs that haven't been notified
+  const batch = () => {
+    const cutoff = Date.now() + 3*3600*1000;
+    return S.stops.filter(s=>!s.delivered && !s.notified && s.email && s.etaStart && new Date(s.etaStart).getTime() <= cutoff);
+  };
+  const b = batch();
+  const nb = el('button',{class:'warn',disabled:!b.length, onclick: async () => {
+    const list = batch(); if(!list.length) return;
+    const nums = list.map(s=>S.stops.indexOf(s)+1);
+    if(!confirm(`Notify ${list.length} customer(s)?\nStops ${Math.min(...nums)}–${Math.max(...nums)}, ETA ${fmt(list[0].etaStart)}–${fmt(list[list.length-1].etaStart)}`)) return;
+    nb.disabled=true; nb.replaceChildren(el('span',{class:'spin'}),'Sending…');
+    try{ await notify(list); toast('Notified '+list.length+' customer(s)'); }catch(e){ toast(e.message); }
+    renderKeep();
+  }}, b.length ? `📧 Send Next Batch (${b.length})` : '📧 No one due for notification');
+  wrap.append(nb, el('div',{style:'height:10px'}));
+
+  S.stops.forEach((s,i) => {
+    const c = el('div',{class:'card stop'+(s.delivered?' done':''), style:'cursor:pointer', onclick:()=>{S.cur=i; S.mode='deliver'; render();}},
+      el('div',{class:'num',style:'padding:10px 0'}, String(i+1)),
+      el('div',{class:'body'},
+        el('div',{class:'t'}, s.name+' · '+s.customer),
+        el('div',{class:'m'}, s.address),
+        el('div',{class:'m'}, s.etaStart ? fmt(s.etaStart)+' – '+fmt(s.etaEnd) : ''),
+        el('div',{}, s.notified?el('span',{class:'badge'},'📧 notified'):'', s.delivered?el('span',{class:'badge d'},'✓ delivered'):'')));
+    wrap.append(c);
+  });
+
+  const addrs = remaining.map(s=>s.address).filter(Boolean);
+  if (addrs.length){
+    const nav = () => {
+      const u = new URL('https://www.google.com/maps/dir/');
+      u.searchParams.set('api','1'); u.searchParams.set('origin','Current Location');
+      u.searchParams.set('destination', S.endAddr);
+      u.searchParams.set('waypoints', addrs.slice(0,9).join('|'));   // Maps URL limit is 9 waypoints
+      window.open(u.toString(),'_blank','noopener');
+    };
+    const n = Math.min(addrs.length, 9);
+    wrap.append(el('button',{class:'sec',onclick:nav}, '🗺️ Navigate next '+n+' stop'+(n===1?'':'s')));
+    if (addrs.length>9) wrap.append(el('div',{class:'m',style:'text-align:center;color:#6b7a76;font-size:13px;margin-top:6px'},
+      'Google Maps allows 9 stops per link. Tap again after delivering to load the next ones.'));
+  }
+  return wrap;
+}
+
+async function notify(list){
+  const j = await post('sendOFDBatch', list.map(s=>({
+    orderId:s.id, orderName:s.name, customerEmail:s.email, customerName:s.customer,
+    items:s.items, etaStart:s.etaStart, etaEnd:s.etaEnd})));
+  j.results.forEach(r => { if(r.ok){ const s=S.stops.find(x=>x.id===r.orderId); if(s){s.notified=true;} } });
+  const failed = j.results.filter(r=>!r.ok).length;
+  if (failed) toast(failed+' email(s) failed — try again');
+}
+
+// ───────── SCREEN 3: DELIVERY MODE ─────────
+function viewDeliver(){
+  const s = S.stops[S.cur];
+  const wrap = el('div');
+  const total = S.stops.length;
+
+  wrap.append(el('div',{class:'row',style:'margin-bottom:10px'},
+    el('button',{class:'sec',onclick:()=>{S.mode='route';render();}},'← Route'),
+    el('button',{class:'sec',disabled:S.cur===0,onclick:()=>{S.cur--;render();}},'‹ Prev'),
+    el('button',{class:'sec',disabled:S.cur>=total-1,onclick:()=>{S.cur++;render();}},'Next ›')));
+
+  const card = el('div',{class:'card'});
+  card.append(
+    el('div',{class:'m',style:'color:#6b7a76'},`Stop ${S.cur+1} of ${total}`),
+    el('div',{class:'big'}, s.name), el('div',{style:'font-size:18px;font-weight:600'}, s.customer),
+    s.etaStart ? el('div',{class:'m',style:'color:#6b7a76;margin:4px 0'},'ETA '+fmt(s.etaStart)+' – '+fmt(s.etaEnd)) : '');
+
+  if (s.address){
+    const u = new URL('https://www.google.com/maps/dir/'); u.searchParams.set('api','1'); u.searchParams.set('destination',s.address);
+    card.append(el('div',{style:'margin:8px 0'}, el('a',{class:'tap',href:u.toString(),target:'_blank',rel:'noopener'},'📍 '+s.address)));
+  }
+  if (s.phone){
+    const digits = s.phone.replace(/[^\d+]/g,'');
+    card.append(el('div',{style:'margin:8px 0'}, el('a',{class:'tap',href:'tel:'+digits},'📞 '+s.phone)));
+  }
+  if (s.note) card.append(el('div',{class:'note'},'Order note: '+s.note));
+
+  // Notify this stop only
+  if (!s.delivered && !s.notified && s.email){
+    const nb = el('button',{class:'warn',style:'margin:8px 0',onclick: async () => {
+      nb.disabled=true; nb.textContent='Sending…';
+      try{ await notify([s]); toast('Customer notified'); }catch(e){ toast(e.message); }
+      render();
+    }},'📧 Notify this customer');
+    card.append(nb);
+  } else if (s.notified) card.append(el('span',{class:'badge'},'📧 customer notified'));
+
+  const noteBox = el('div',{class:'note hidden'});
+  card.append(noteBox);
+  const showNote = () => { if(s.customerNote){ noteBox.textContent='🔔 Customer says: '+s.customerNote; noteBox.classList.remove('hidden'); } };
+  showNote();
+
+  card.append(el('h3',{style:'margin:14px 0 4px'},'Items'));
+  s.items.forEach((it,i) => {
+    const cb = el('input',{type:'checkbox'}); cb.checked = !!s.checked[i];
+    const row = el('label',{class:'chk'+(cb.checked?' on':''),style:'margin:0;color:inherit;font-weight:400'}, cb, el('span',{}, it.qty+' × '+it.title));
+    cb.addEventListener('change',()=>{ s.checked[i]=cb.checked; row.classList.toggle('on',cb.checked); });
+    card.append(row);
+  });
+
+  const drvNote = el('textarea',{maxlength:500,placeholder:'Driver notes (left at door, etc.)'}); drvNote.value = s.driverNote||'';
+  drvNote.addEventListener('input',()=>s.driverNote=drvNote.value);
+  card.append(el('label',{},'Driver notes'), drvNote);
+
+  // Photo
+  const prev = el('div');
+  const draw = () => { prev.replaceChildren(); if(s.photo) prev.append(el('img',{class:'prev',src:s.photo,alt:'Delivery photo'}), el('button',{class:'sec',onclick:()=>{s.photo='';draw();upd();}},'Retake / remove')); };
+  const cam = el('input',{type:'file',accept:'image/*',capture:'environment',class:'hidden'});
+  cam.addEventListener('change', async () => {
+    const f = cam.files[0]; if(!f) return;
+    if (!f.type.startsWith('image/')) return toast('Please choose an image');
+    s.photo = await resize(f); cam.value=''; draw(); upd();
+  });
+  card.append(el('label',{},'Proof of delivery'), el('button',{class:'sec',onclick:()=>cam.click()},'📷 Take photo'), cam, prev);
+  draw();
+
+  const done = el('button',{style:'margin-top:12px',onclick:()=>deliver(s,done,false)},'Mark as Delivered');
+  const skip = el('button',{class:'link',onclick:()=>{ if(confirm('Mark delivered without a photo?')) deliver(s,done,true); }},'Skip photo & mark delivered');
+  const upd = () => { done.disabled = s.delivered || !s.photo; skip.classList.toggle('hidden', s.delivered || !!s.photo); };
+  upd();
+  if (s.delivered){ done.textContent='✓ Delivered'; done.disabled=true; }
+  card.append(done, skip);
+  wrap.append(card);
+
+  // Poll for customer notes while this screen is open (tracking page → driver)
+  clearInterval(S.poll);
+  if (s.notified && !s.delivered){
+    S.poll = setInterval(async () => {
+      if (document.hidden) return;
+      try{ const j = await get({action:'getCustomerNote', s:S.session, order:s.name});
+        if (j.note && j.note!==s.customerNote){ s.customerNote=j.note; showNote(); if(navigator.vibrate) navigator.vibrate(200); toast('🔔 New customer note'); }
+      }catch(_){}
+    }, 30000);
+  }
+  return wrap;
+}
+
+async function deliver(s, btn, noPhoto){
+  if (S.busy) return; S.busy = true;
+  btn.disabled = true; btn.replaceChildren(el('span',{class:'spin'}),'Saving…');
+  try{
+    const j = await post('fulfillOrder', {
+      orderId:s.id, orderName:s.name, customerEmail:s.email, customerName:s.customer, items:s.items,
+      photoBase64: noPhoto ? '' : s.photo, driverNote:s.driverNote||'', driverName:S.driver});
+    s.delivered = true; s.photo = '';           // free the memory
+    btn.textContent = '✓ Delivered!';
+    setTimeout(()=>{
+      const next = S.stops.findIndex((x,i)=>!x.delivered && i>S.cur) ;
+      const any  = next>=0 ? next : S.stops.findIndex(x=>!x.delivered);
+      if (any>=0) S.cur=any; else S.mode='route';
+      S.busy=false; render();
+    }, 1800);
+  }catch(e){
+    S.busy=false; btn.disabled=false; btn.textContent='Mark as Delivered'; toast(e.message);
+  }
+}
+
+// Resize to max 1200px, JPEG 0.78 — keeps upload small on rural connections
+function resize(file){
+  return new Promise((res, rej) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      const r = Math.min(1, 1200/Math.max(img.width,img.height));
+      const c = document.createElement('canvas'); c.width=Math.round(img.width*r); c.height=Math.round(img.height*r);
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      URL.revokeObjectURL(url); res(c.toDataURL('image/jpeg',0.78));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('Bad image')); };
+    img.src = url;
+  });
+}
+
+// ───────── ROUTER ─────────
+function render(){
+  clearInterval(S.poll);
+  const app = $('#app'); app.replaceChildren();
+  $('#logoutBtn').classList.toggle('hidden', !S.session);
+  $('#hdrSub').textContent = S.session ? ('Driver: '+S.driver) : 'Driver';
+  if (!S.session) return app.append(viewLogin());
+  if (S.mode==='deliver' && S.stops[S.cur]) return app.append(viewDeliver());
+  if (S.mode==='route') return app.append(viewRoute());
+  app.append(viewSetup());
+}
+function renderKeep(){ const y=scrollY; render(); scrollTo(0,y); }
+
+// Warn before leaving mid-route (state is in memory only)
+addEventListener('beforeunload', e => { if (S.stops.some(s=>!s.delivered) && S.mode) { e.preventDefault(); e.returnValue=''; } });
+render();
+</script>
+</body>
+</html>
