@@ -10,9 +10,10 @@
   :root{--green:#004c3f;--green2:#0a6b5a;--amber:#f5a623;--red:#c0392b;--bg:#f4f5f4;--card:#fff;--txt:#1d2a27;--mut:#6b7a76;--line:#e1e5e3}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--txt);padding-bottom:env(safe-area-inset-bottom)}
-  header{background:var(--green);color:#fff;padding:14px 16px;position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:10px;justify-content:space-between}
-  header h1{font-size:17px;margin:0;font-weight:700}
-  header .sub{font-size:12px;opacity:.85}
+  header{background:#fff;color:var(--green);padding:8px 16px;position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:10px;justify-content:space-between;border-bottom:3px solid var(--green)}
+  header .brand{display:flex;align-items:center;gap:10px;min-width:0}
+  header img.logo{height:48px;width:auto;display:block}
+  header .sub{font-size:13px;font-weight:600;color:var(--mut)}
   main{padding:14px;max-width:640px;margin:0 auto}
   .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
   label{display:block;font-size:12px;font-weight:600;color:var(--mut);margin:10px 0 4px}
@@ -42,6 +43,13 @@
   .note{background:#fff3d6;border-left:4px solid var(--amber);padding:10px 12px;border-radius:6px;margin:10px 0}
   a.tap{color:var(--green2);font-weight:600;text-decoration:none}
   img.prev{width:100%;border-radius:10px;margin:10px 0}
+  #map{width:100%;height:320px;border-radius:12px;border:1px solid var(--line);margin-bottom:12px;background:#e8eeec}
+  .mapmsg{padding:14px;color:var(--mut);font-size:14px}
+  .items{margin:6px 0 0;padding-left:18px;font-size:14px}
+  .items li{margin:2px 0}
+  .loadrow{display:flex;justify-content:space-between;gap:12px;padding:12px 4px;border-bottom:1px solid var(--line);font-size:17px}
+  .loadrow .q{font-weight:800;font-size:20px;min-width:44px;text-align:right}
+  .loadrow .sk{font-size:12px;color:var(--mut)}
   .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:99px;font-size:14px;z-index:99}
   .spin{display:inline-block;width:16px;height:16px;border:3px solid #fff5;border-top-color:#fff;border-radius:50%;animation:s .8s linear infinite;vertical-align:-3px;margin-right:6px}
   @keyframes s{to{transform:rotate(360deg)}}
@@ -49,7 +57,7 @@
 </head>
 <body>
 <header>
-  <div><h1>🚚 Sparrow Farms</h1><div class="sub" id="hdrSub">Driver</div></div>
+  <div class="brand"><img src="https://sparrowfarms.ca/cdn/shop/files/Transparent_-_Web_Sparrow_Farms_Logo_1500_x_1500_px.png?v=1737389483&width=375" class="logo" alt="Sparrow Farms"><div class="sub" id="hdrSub">Driver</div></div>
   <button id="logoutBtn" class="sec hidden" style="width:auto;padding:8px 12px;font-size:13px">Log out</button>
 </header>
 <main id="app"></main>
@@ -59,6 +67,8 @@
 // Not a secret: every action is protected by login/session tokens on the server.
 const API = 'https://script.google.com/macros/s/AKfycby1SeWCYfqrBC87LLp5iEtvcGSRb2aBk_k6F4bqLvrPzu_5JkZa-ZVigcQTAh-5xlaL/exec';
 const FARM = "2029 O'Toole Road, Cumberland, ON K4C 1N4";
+// Public by design; it MUST be restricted in Google Cloud to https://clock.sparrowfarms.ca/* and the Maps JavaScript API only.
+const MAPS_KEY = 'PASTE_RESTRICTED_MAPS_KEY_HERE';
 
 // ───────── STATE ─────────
 const S = {
@@ -160,7 +170,7 @@ function viewSetup(){
       const j = await get({action:'getOrders', s:S.session});
       S.stops = j.orders.map(o => ({
         id:o.id, name:o.name, customer:o.customerName.trim(), firstName:o.firstName, email:o.email,
-        phone:o.phone, address:o.address, items:o.items, note:o.note,
+        phone:o.phone, address:o.address, lat:o.lat, lng:o.lng, items:o.items, note:o.note,
         checked:[], notified:false, delivered:false, customerNote:''
       }));
       S.finish=null; renderKeep();
@@ -191,8 +201,11 @@ function viewSetup(){
     if (S.finish){
       wrap.append(el('div',{class:'finish '+finishClass(S.finish)},'Est. finish: '+fmt(S.finish)));
     }
+    wrap.append(el('div',{id:'map'}, el('div',{class:'mapmsg'},'Loading map…')));
+    wrap.append(el('button',{class:'sec',style:'margin-bottom:10px',onclick:()=>{S.mode='load';render();}},'📦 Loading list (totals by item)'));
     S.stops.forEach((s,i) => wrap.append(stopSetupCard(s,i)));
-    wrap.append(el('button',{disabled:!S.finish, onclick:()=>{ S.mode='route'; S.cur=0; render(); }}, S.finish?'Start Route':'Calculate ETAs to start'));
+    wrap.append(el('button',{disabled:!S.finish, onclick:()=>{ S.mode='load'; S.fromStart=true; render(); }}, S.finish?'Continue to Loading':'Calculate ETAs to continue'));
+    setTimeout(drawMap, 0);
   }
   return wrap;
 }
@@ -211,10 +224,81 @@ function stopSetupCard(s,i){
     el('div',{class:'body'},
       el('div',{class:'t'}, s.name+' · '+s.customer),
       el('div',{class:'m'}, s.address||'(no address)'),
-      el('div',{class:'m'}, s.items.reduce((a,b)=>a+b.qty,0)+' items'+(s.etaStart?' · ETA '+fmt(s.etaStart):''))),
+      el('div',{class:'m'}, s.items.reduce((a,b)=>a+b.qty,0)+' items'+(s.etaStart?' · ETA '+fmt(s.etaStart):'')),
+      el('ul',{class:'items'}, s.items.map(it => el('li',{}, it.qty+' × '+it.title+(it.variant?' — '+it.variant:''))))),
     el('button',{class:'sec',style:'width:auto;padding:8px 10px;font-size:13px',onclick:()=>{
       if(confirm('Remove '+s.name+' from this run?')){ S.stops.splice(i,1); S.finish=null; renderKeep(); }
     }},'✕'));
+}
+
+// ───────── MAP ─────────
+let gmapsPromise = null;
+function loadMaps(){
+  if (window.google && google.maps) return Promise.resolve();
+  if (!MAPS_KEY || MAPS_KEY.startsWith('PASTE_')) return Promise.reject(new Error('no key'));
+  if (!gmapsPromise) gmapsPromise = new Promise((res, rej) => {
+    window.__gm = () => res();
+    const sc = document.createElement('script');
+    sc.src = 'https://maps.googleapis.com/maps/api/js?key='+encodeURIComponent(MAPS_KEY)+'&callback=__gm&loading=async';
+    sc.async = true; sc.onerror = () => rej(new Error('maps load failed'));
+    document.head.append(sc);
+  });
+  return gmapsPromise;
+}
+let mapObj = null, mapMarkers = [];
+async function drawMap(){
+  const box = $('#map'); if (!box) return;
+  const say = t => box.replaceChildren(el('div',{class:'mapmsg'},t));
+  try{ await loadMaps(); }catch(e){ return say('Map unavailable — add the Maps key to enable it. Stops are still listed below.'); }
+  const pts = S.stops.map((s,i)=>({s,i})).filter(x=>typeof x.s.lat==='number' && typeof x.s.lng==='number');
+  if (!pts.length) return say('No stop locations could be found on the map.');
+  box.replaceChildren();
+  mapObj = new google.maps.Map(box,{mapTypeControl:false,streetViewControl:false,fullscreenControl:true});
+  mapMarkers.forEach(m=>m.setMap(null)); mapMarkers=[];
+  const bounds = new google.maps.LatLngBounds();
+  pts.forEach(({s,i}) => {
+    const pos = {lat:s.lat, lng:s.lng}; bounds.extend(pos);
+    const m = new google.maps.Marker({position:pos, map:mapObj, label:{text:String(i+1),color:'#fff',fontWeight:'700'},
+      title:s.name+' — '+s.customer});
+    const iw = new google.maps.InfoWindow({content: (()=>{ const d=document.createElement('div');
+      d.textContent = 'Stop '+(i+1)+': '+s.name+' · '+s.customer+' — '+s.address; return d; })()});
+    m.addListener('click',()=>iw.open({map:mapObj,anchor:m}));
+    mapMarkers.push(m);
+  });
+  mapObj.fitBounds(bounds, 40);
+  if (pts.length===1) mapObj.setZoom(13);
+  const miss = S.stops.length - pts.length;
+  if (miss) toast(miss+' stop(s) could not be placed on the map');
+}
+
+// ───────── LOADING VIEW (totals by SKU) ─────────
+function loadTotals(){
+  const map = new Map();
+  S.stops.filter(s=>!s.delivered).forEach(s => s.items.forEach(it => {
+    const key = it.sku ? 'sku:'+it.sku : 'title:'+it.title+'|'+(it.variant||'');
+    const e = map.get(key) || {sku:it.sku, title:it.title, variant:it.variant, qty:0, stops:0};
+    e.qty += it.qty; e.stops += 1; map.set(key,e);
+  }));
+  return [...map.values()].sort((a,b)=> (a.title+a.variant).localeCompare(b.title+b.variant));
+}
+function viewLoad(){
+  const wrap = el('div');
+  const rows = loadTotals();
+  const units = rows.reduce((a,r)=>a+r.qty,0);
+  wrap.append(el('div',{class:'card'},
+    el('h2',{style:'margin:0'},'📦 Load the truck'),
+    el('div',{class:'mut',style:'color:#6b7a76;font-size:14px'},
+      S.stops.filter(s=>!s.delivered).length+' stops · '+rows.length+' item types · '+units+' units total')));
+  const list = el('div',{class:'card'});
+  if (!rows.length) list.append(el('div',{class:'mapmsg'},'Nothing to load.'));
+  rows.forEach(r => list.append(el('div',{class:'loadrow'},
+    el('div',{}, el('div',{}, r.title+(r.variant?' — '+r.variant:'')),
+      el('div',{class:'sk'}, (r.sku?'SKU '+r.sku:'No SKU')+' · '+r.stops+' order'+(r.stops===1?'':'s'))),
+    el('div',{class:'q'}, '× '+r.qty))));
+  wrap.append(list);
+  wrap.append(el('button',{class:'sec',style:'margin-bottom:10px',onclick:()=>{S.mode=null;render();}},'← Back to route setup (add/remove stops)'));
+  wrap.append(el('button',{disabled:!S.finish,onclick:()=>{S.mode='route';S.cur=0;render();}},'✓ Loaded — Start Route'));
+  return wrap;
 }
 
 // ───────── SCREEN 2: ACTIVE ROUTE ─────────
@@ -427,6 +511,7 @@ function render(){
   $('#hdrSub').textContent = S.session ? ('Driver: '+S.driver) : 'Driver';
   if (!S.session) return app.append(viewLogin());
   if (S.mode==='deliver' && S.stops[S.cur]) return app.append(viewDeliver());
+  if (S.mode==='load') return app.append(viewLoad());
   if (S.mode==='route') return app.append(viewRoute());
   app.append(viewSetup());
 }
