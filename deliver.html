@@ -402,6 +402,10 @@ function viewBuilder(){
     }},'Calculate ETAs');
     wrap.append(calc, el('div',{class:'gap'}));
     if (S.finish) wrap.append(el('div',{class:'finish '+finishClass(S.finish)},'Est. finish: '+fmt(S.finish)));
+    const opt = el('button',{class:'sec',style:'margin-bottom:10px',onclick: async () => {
+      if (await optimizeStops(opt,'🧭 Optimize stop order')){ S.dirty = true; renderKeep(); }
+    }},'🧭 Optimize stop order');
+    wrap.append(opt);
     wrap.append(el('div',{id:'map'}, el('div',{class:'mapmsg'},'Loading map…')));
     wrap.append(el('button',{class:'sec',style:'margin-bottom:10px',onclick:()=>{S.loadFrom='builder';S.mode='load';render();}},'📦 Preview loading list'));
     S.stops.forEach((s,i) => wrap.append(stopSetupCard(s,i)));
@@ -458,6 +462,31 @@ function queueReorderSave(){
   reorderTimer = setTimeout(() => {
     routeOp({op:'reorder', orderIds: S.stops.map(x => x.id)}, 'Order saved — tap Recalculate ETAs to refresh times');
   }, 900);
+}
+
+// Ask the server for the best visiting order. Delivered stops keep their place.
+async function optimizeStops(btn, label){
+  const movable = S.stops.filter(s => !s.delivered);
+  if (movable.length < 3) return toast('Need at least 3 stops to optimize');
+  const old = btn.textContent;
+  btn.disabled = true; btn.replaceChildren(el('span',{class:'spin',style:'border-top-color:#004c3f'}),'Optimizing…');
+  try{
+    const j = await post('optimizeOrder', {
+      stops: movable.map(s => ({id:s.id, address:s.address, lat:s.lat, lng:s.lng})),
+      startAddress: S.startAddr || (S.route && S.route.startAddr) || '',
+      endAddress: S.endAddr || (S.route && S.route.endAddr) || ''
+    });
+    const byId = new Map(S.stops.map(s => [String(s.id), s]));
+    const queue = j.order.map(id => byId.get(String(id))).filter(Boolean);
+    if (queue.length !== movable.length) throw new Error('Optimizer returned an unexpected result');
+    // Rebuild the list: delivered stops stay exactly where they are
+    let qi = 0;
+    S.stops = S.stops.map(s => s.delivered ? s : queue[qi++]);
+    clearEtas();
+    toast(j.method === 'google' ? 'Route optimized by drive time' : 'Route optimized by distance');
+    return true;
+  }catch(e){ toast(e.message || 'Could not optimize'); return false; }
+  finally{ btn.disabled = false; btn.textContent = old || label; }
 }
 
 function moveStop(i, to){
@@ -573,6 +602,16 @@ function viewRoute(){
       await routeOp({op:'recalc'}, 'ETAs updated');      // the server works out ETAs from your saved route
     }}, '🔄 Recalculate ETAs from now');
     wrap.append(rc);
+    if (remaining.length >= 3){
+      const ro = el('button',{class:'sec',style:'margin-bottom:10px',onclick: async () => {
+        if (!confirm('Reorder the remaining '+remaining.length+' stops into the most efficient order?')) return;
+        if (await optimizeStops(ro,'🧭 Optimize remaining stops')){
+          renderKeep();
+          await routeOp({op:'reorder', orderIds:S.stops.map(x=>x.id)}, 'New order saved — tap Recalculate ETAs');
+        }
+      }},'🧭 Optimize remaining stops');
+      wrap.append(ro);
+    }
     wrap.append(el('button',{class:'sec',style:'margin-bottom:10px',onclick:()=>{S.loadFrom='route';S.mode='load';render();}},'📦 Loading list'));
   }
 
