@@ -550,7 +550,14 @@ async function drawMap(){
     try{
       const j = await post('geocodeEnds', {startAddress:sAddr, endAddress:eAddr});
       S.ends = {start:j.start, end:j.end}; S.endsKey = endsKey;
-    }catch(_){ S.ends = S.ends || {}; }
+      if (!j.start && !j.end) toast('Start/end address could not be located');
+    }catch(err){
+      S.ends = S.ends || {};
+      // Most likely the backend predates this feature — say so instead of failing silently
+      toast(/unknown action/i.test(err.message || '')
+        ? 'Redeploy Code.gs to show start/end on the map'
+        : 'Could not load start/end markers');
+    }
   }
   const pts = S.stops.map((s,i)=>({s,i})).filter(x=>typeof x.s.lat==='number' && typeof x.s.lng==='number');
   if (!pts.length) return say('No stop locations could be found on the map.');
@@ -568,17 +575,28 @@ async function drawMap(){
     mapMarkers.push(m);
   });
   // Bigger endpoint pins: black = start, green = end
+  // Teardrop drawn with curves only — Google's symbol parser doesn't handle SVG arc (A) commands,
+  // and an unparseable path renders as nothing at all.
+  const PIN_PATH = 'M 0,0 C -4,-11 -13,-15 -13,-24 C -13,-33 -7,-38 0,-38 C 7,-38 13,-33 13,-24 C 13,-15 4,-11 0,0 z';
   const endPin = (color) => ({
-    path: 'M 0,0 C -2,-20 -14,-24 -14,-34 A 14,14 0 1,1 14,-34 C 14,-24 2,-20 0,0 z',
-    fillColor: color, fillOpacity: 1, strokeColor: '#ffffff', strokeWeight: 2.5, scale: 1.35,
-    labelOrigin: new google.maps.Point(0, -34)
+    path: PIN_PATH, fillColor: color, fillOpacity: 1, strokeColor: '#ffffff', strokeWeight: 2.5,
+    scale: 1.25, labelOrigin: new google.maps.Point(0, -25)
+  });
+  const endPinFallback = (color) => ({
+    path: google.maps.SymbolPath.CIRCLE, fillColor: color, fillOpacity: 1,
+    strokeColor: '#ffffff', strokeWeight: 3, scale: 17
   });
   const addEnd = (pt, color, letter, title) => {
     if (!pt || typeof pt.lat !== 'number' || typeof pt.lng !== 'number') return;
     const pos = {lat: pt.lat, lng: pt.lng};
     bounds.extend(pos);
-    const m = new google.maps.Marker({position: pos, map: mapObj, icon: endPin(color), zIndex: 999,
-      label: {text: letter, color: '#fff', fontWeight: '800', fontSize: '15px'}, title: title});
+    const label = {text: letter, color: '#fff', fontWeight: '800', fontSize: '15px'};
+    let m;
+    try{
+      m = new google.maps.Marker({position: pos, map: mapObj, icon: endPin(color), zIndex: 999, label, title});
+    }catch(_){
+      m = new google.maps.Marker({position: pos, map: mapObj, icon: endPinFallback(color), zIndex: 999, label, title});
+    }
     const iw = new google.maps.InfoWindow({content: (() => { const d = document.createElement('div'); d.textContent = title; return d; })()});
     m.addListener('click', () => iw.open({map: mapObj, anchor: m}));
     mapMarkers.push(m);
