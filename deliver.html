@@ -69,6 +69,10 @@
   .loadrow{display:flex;justify-content:space-between;gap:12px;padding:12px 4px;border-bottom:1px solid var(--line);font-size:17px}
   .loadrow .q{font-weight:800;font-size:20px;min-width:44px;text-align:right}
   .loadrow .sk{font-size:12px;color:var(--mut)}
+  .busy{position:fixed;inset:0;z-index:9999;background:rgba(29,42,39,.38);display:flex;align-items:center;justify-content:center}
+  .busybox{background:#fff;border-radius:14px;padding:22px 28px;text-align:center;box-shadow:0 8px 28px rgba(0,0,0,.22);min-width:160px}
+  .busyspin{width:38px;height:38px;margin:0 auto 10px;border:4px solid #d8e2de;border-top-color:var(--green);border-radius:50%;animation:s .8s linear infinite}
+  .busytxt{font-weight:700;color:var(--green);font-size:15px}
   .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:99px;font-size:14px;z-index:99;max-width:90vw;text-align:center}
   .spin{display:inline-block;width:16px;height:16px;border:3px solid #fff5;border-top-color:#fff;border-radius:50%;animation:s .8s linear infinite;vertical-align:-3px;margin-right:6px}
   @keyframes s{to{transform:rotate(360deg)}}
@@ -80,6 +84,9 @@
   <button id="logoutBtn" class="sec hidden" style="width:auto;padding:8px 12px;font-size:13px">Log out</button>
 </header>
 <main id="app"></main>
+<div id="busy" class="busy hidden" aria-live="polite" aria-busy="true">
+  <div class="busybox"><div class="busyspin"></div><div class="busytxt" id="busytxt">Working…</div></div>
+</div>
 
 <script>
 // ───────── CONFIG ─────────
@@ -166,19 +173,59 @@ function todayLocal(){ return toLocalInput('').slice(0,10); }
 const STATUS = { DRAFT:['Draft',''], READY:['Ready','b'], IN_PROGRESS:['In progress','p'], COMPLETE:['Complete','d'] };
 
 // ───────── API ─────────
-async function get(params){
+// Every network call raises the overlay, which also swallows extra taps —
+// so a double- (or quintuple-) click can't fire the same action twice.
+let busyCount = 0;
+function setBusy(on, label){
+  busyCount = Math.max(0, busyCount + (on ? 1 : -1));
+  const box = $('#busy');
+  if (!box) return;
+  if (busyCount > 0){
+    if (label) $('#busytxt').textContent = label;
+    box.classList.remove('hidden');
+  } else {
+    box.classList.add('hidden');
+    $('#busytxt').textContent = 'Working…';
+  }
+}
+
+async function get(params, opts = {}){
   const u = new URL(API);
   Object.entries(params).forEach(([k,v]) => u.searchParams.set(k, v));
-  const r = await fetch(u, {redirect:'follow'});
-  return handle(await r.json());
+  if (!opts.quiet) setBusy(true, opts.label || BUSY_LABEL[params.action]);
+  try{
+    const r = await fetch(u, {redirect:'follow'});
+    return handle(await r.json());
+  } finally { if (!opts.quiet) setBusy(false); }
 }
-async function post(action, data){
+async function post(action, data, opts = {}){
   // text/plain avoids a CORS preflight (Apps Script can't answer OPTIONS)
-  const r = await fetch(API, {method:'POST', redirect:'follow',
-    headers:{'Content-Type':'text/plain;charset=utf-8'},
-    body: JSON.stringify({action, s:S.session, data})});
-  return handle(await r.json());
+  if (!opts.quiet) setBusy(true, opts.label || BUSY_LABEL[action]);
+  try{
+    const r = await fetch(API, {method:'POST', redirect:'follow',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({action, s:S.session, data})});
+    return handle(await r.json());
+  } finally { if (!opts.quiet) setBusy(false); }
 }
+
+// Plain-language labels so the driver knows what is happening
+const BUSY_LABEL = {
+  login:           'Signing in…',
+  getOrders:       'Loading orders…',
+  getRoutes:       'Loading routes…',
+  calculateETAs:   'Calculating ETAs…',
+  optimizeOrder:   'Optimizing route…',
+  geocodeEnds:     'Locating start & end…',
+  saveRoute:       'Saving route…',
+  deleteRoute:     'Deleting route…',
+  routeUpdate:     'Updating route…',
+  fulfillOrder:    'Recording delivery…',
+  sendOFDBatch:    'Sending emails…',
+  saveLocation:    'Saving address…',
+  getLocations:    'Loading addresses…',
+  purgeOldRoutes:  'Clearing old routes…'
+};
 function handle(j){
   if (!j.ok && j.error==='UNAUTHORIZED'){ logout(true); throw new Error('Session expired — please log in again'); }
   if (!j.ok && j.error==='FORBIDDEN') throw new Error('You do not have permission to do that');
@@ -414,7 +461,7 @@ function viewBuilder(){
           startTime: isNaN(dt) ? new Date().toISOString() : dt.toISOString(), perStopMinutes:D.perStop});
         j.etas.forEach(e=>{ const s=S.stops.find(x=>x.id===e.id); if(s){ s.etaStart=e.etaStart; s.etaEnd=e.etaEnd; } });
         S.finish=j.finishTime; S.dirty=true;
-        post('touchLocations',[D.startAddr,D.endAddr]).catch(()=>{});
+        post('touchLocations',[D.startAddr,D.endAddr],{quiet:true}).catch(()=>{});
         renderKeep(); return;
       }catch(e){ toast(e.message); }
       calc.disabled=false; calc.textContent='Calculate ETAs';
@@ -556,7 +603,7 @@ async function drawMap(){
   const endsKey = sAddr + '|' + eAddr;
   if (endsKey.trim() !== '|' && S.endsKey !== endsKey){
     try{
-      const j = await post('geocodeEnds', {startAddress:sAddr, endAddress:eAddr});
+      const j = await post('geocodeEnds', {startAddress:sAddr, endAddress:eAddr}, {quiet:true});
       S.ends = {start:j.start, end:j.end};
       // Cache only a successful lookup, so a transient geocode failure retries on the next redraw
       S.endsKey = (j.start || j.end) ? endsKey : null;
@@ -829,7 +876,7 @@ function viewDeliver(){
   if (s.notified && !s.delivered){
     S.poll = setInterval(async () => {
       if (document.hidden) return;
-      try{ const j = await get({action:'getCustomerNote', s:S.session, route:S.route.routeId, orderId:s.id});
+      try{ const j = await get({action:'getCustomerNote', s:S.session, route:S.route.routeId, orderId:s.id}, {quiet:true});
         if (j.note && j.note!==s.customerNote){ s.customerNote=j.note; showNote(); if(navigator.vibrate) navigator.vibrate(200); toast('🔔 New customer note'); }
       }catch(_){}
     }, 30000);
