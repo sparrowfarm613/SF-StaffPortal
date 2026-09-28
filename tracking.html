@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Track your Sparrow Farms delivery</title>
+<style>
+  :root{--green:#004c3f;--amber:#f5a623;--bg:#f4f5f4;--txt:#1d2a27;--mut:#6b7a76;--line:#e1e5e3}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--txt)}
+  header{background:var(--green);color:#fff;padding:18px 20px;font-size:20px;font-weight:700;text-align:center}
+  main{max-width:560px;margin:0 auto;padding:16px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:14px}
+  h2{margin:0 0 4px;font-size:20px}
+  .mut{color:var(--mut);font-size:14px}
+  .badge{display:inline-block;padding:8px 16px;border-radius:99px;font-weight:700;font-size:16px;margin:12px 0}
+  .ofd{background:#fff3d6;color:#8a5a00}
+  .del{background:#dff3e7;color:#166534}
+  .eta{font-size:22px;font-weight:800;margin:6px 0}
+  ul{padding-left:20px;margin:8px 0}
+  li{margin:4px 0}
+  .note{background:#f6f6f6;border-left:4px solid var(--green);padding:10px 12px;border-radius:6px;margin:10px 0}
+  a.btn,button{display:block;width:100%;text-align:center;background:var(--green);color:#fff;text-decoration:none;
+    font-family:inherit;font-size:16px;font-weight:700;padding:14px;border:0;border-radius:10px;cursor:pointer;margin-top:10px}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  textarea{width:100%;min-height:80px;padding:12px;border:1px solid #c9d1ce;border-radius:8px;font-size:16px;font-family:inherit;resize:vertical}
+  .ok{color:#166534;font-weight:600;margin-top:8px}
+  .err{color:#c0392b;margin-top:8px}
+  footer{text-align:center;color:var(--mut);font-size:13px;padding:8px 16px 32px}
+  footer a{color:var(--green)}
+  .hidden{display:none!important}
+  .cnt{font-size:12px;color:var(--mut);text-align:right}
+</style>
+</head>
+<body>
+<header>🌾 Sparrow Farms</header>
+<main id="app"><div class="card"><p class="mut">Loading your delivery…</p></div></main>
+<footer>Questions? Contact <a href="mailto:info@sparrowfarms.ca">info@sparrowfarms.ca</a></footer>
+
+<script>
+// Not a secret: the server only answers when the order + token in your link match.
+const API = 'https://script.google.com/macros/s/AKfycby1SeWCYfqrBC87LLp5iEtvcGSRb2aBk_k6F4bqLvrPzu_5JkZa-ZVigcQTAh-5xlaL/exec';
+const MAX_NOTE = 500;
+
+const qs = new URLSearchParams(location.search);
+const ORDER = (qs.get('order') || '').trim();
+const TOKEN = (qs.get('t') || '').trim();
+
+const app = document.getElementById('app');
+
+// Build DOM with text nodes only, so nothing from the server can inject HTML/script
+function el(tag, attrs = {}, ...kids){
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)){
+    if (k === 'class') e.className = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else if (v !== false && v != null) e.setAttribute(k, v);
+  }
+  kids.flat().forEach(c => e.append(c instanceof Node ? c : document.createTextNode(c ?? '')));
+  return e;
+}
+const fmtTime = iso => new Date(iso).toLocaleTimeString('en-CA', {hour:'numeric', minute:'2-digit'});
+const fmtDate = iso => new Date(iso).toLocaleDateString('en-CA', {weekday:'long', month:'long', day:'numeric'});
+
+// Only allow a Drive link on the photo button (blocks javascript:, data:, other sites)
+function safeDriveUrl(u){
+  try{
+    const x = new URL(u);
+    return x.protocol === 'https:' && (x.hostname === 'drive.google.com' || x.hostname === 'docs.google.com') ? x.toString() : '';
+  }catch(_){ return ''; }
+}
+
+async function fetchData(){
+  const u = new URL(API);
+  u.searchParams.set('action', 'getTrackingData');
+  u.searchParams.set('order', ORDER);
+  u.searchParams.set('t', TOKEN);
+  const r = await fetch(u, {redirect: 'follow'});
+  return r.json();
+}
+
+function notFound(){
+  app.replaceChildren(el('div', {class:'card'},
+    el('h2', {}, 'Tracking information not found'),
+    el('p', {class:'mut'}, 'This link may be incomplete or out of date. Please use the link from your most recent Sparrow Farms email, or contact info@sparrowfarms.ca.')));
+}
+
+// Keep the note box (and whatever the customer is typing) across the 30s refreshes
+let noteBox = null, noteMsg = null;
+function buildNoteSection(existing){
+  if (!noteBox){
+    noteBox = el('textarea', {maxlength: MAX_NOTE, placeholder: 'e.g. Gate code 1234, or please leave at the side door'});
+    noteMsg = el('div');
+  }
+  if (existing && !noteBox.value && !noteBox.dataset.touched) noteBox.value = existing;
+  noteBox.oninput = () => { noteBox.dataset.touched = '1'; count.textContent = noteBox.value.length + '/' + MAX_NOTE; };
+  const count = el('div', {class:'cnt'}, noteBox.value.length + '/' + MAX_NOTE);
+  const send = el('button', {onclick: async () => {
+    const text = noteBox.value.trim();
+    if (!text) return;
+    send.disabled = true; noteMsg.className = ''; noteMsg.textContent = 'Sending…';
+    try{
+      const u = new URL(API);
+      u.searchParams.set('action', 'addCustomerNote');
+      u.searchParams.set('order', ORDER); u.searchParams.set('t', TOKEN);
+      u.searchParams.set('note', text.slice(0, MAX_NOTE));
+      const j = await (await fetch(u, {redirect:'follow'})).json();
+      if (j.ok){ noteMsg.className = 'ok'; noteMsg.textContent = '✓ Note sent to your driver'; }
+      else { noteMsg.className = 'err'; noteMsg.textContent = 'Could not send your note. Please try again.'; }
+    }catch(_){ noteMsg.className = 'err'; noteMsg.textContent = 'Could not send your note. Please try again.'; }
+    send.disabled = false;
+  }}, 'Send to Driver');
+  return el('div', {class:'card'},
+    el('h3', {style:'margin:0 0 8px'}, 'Note for your driver'),
+    el('div', {class:'mut', style:'margin-bottom:8px'}, 'Gate codes, where to leave your order, or anything that helps.'),
+    noteBox, count, send, noteMsg);
+}
+
+function render(d){
+  const delivered = d.status === 'DELIVERED';
+  const card = el('div', {class:'card'},
+    el('h2', {}, 'Order ' + d.orderName),
+    el('div', {class:'mut'}, d.firstName ? 'Hi ' + d.firstName + '!' : ''),
+    el('div', {class:'badge ' + (delivered ? 'del' : 'ofd')}, delivered ? '✅ Delivered' : '🚚 Out for Delivery'));
+
+  if (delivered && d.deliveredAt){
+    card.append(el('div', {}, 'Delivered on ' + fmtDate(d.deliveredAt) + ' at ' + fmtTime(d.deliveredAt)));
+  } else if (d.etaStart && d.etaEnd){
+    card.append(el('div', {class:'mut'}, 'Estimated arrival'),
+      el('div', {class:'eta'}, fmtTime(d.etaStart) + ' – ' + fmtTime(d.etaEnd)));
+  }
+
+  if (Array.isArray(d.items) && d.items.length){
+    card.append(el('h3', {style:'margin:16px 0 4px'}, 'Your items'),
+      el('ul', {}, d.items.map(i => el('li', {}, (i.qty ?? '') + ' × ' + (i.title ?? '')))));
+  }
+  if (d.driverNote) card.append(el('div', {class:'note'}, 'Driver note: ' + d.driverNote));
+
+  const photo = delivered ? safeDriveUrl(d.photoUrl) : '';
+  if (photo) card.append(el('a', {class:'btn', href: photo, target:'_blank', rel:'noopener noreferrer'}, 'View Delivery Photo'));
+
+  const kids = [card];
+  if (!delivered) kids.push(buildNoteSection(d.customerNote));
+  app.replaceChildren(...kids);
+}
+
+async function load(){
+  if (!ORDER || !TOKEN) return notFound();
+  try{
+    const j = await fetchData();
+    if (!j.ok) return notFound();
+    render(j);
+    return j.status;
+  }catch(_){
+    if (!app.children.length || app.textContent.includes('Loading')){
+      app.replaceChildren(el('div', {class:'card'}, el('p', {class:'mut'}, 'We couldn\u2019t load your delivery right now. Please try again shortly.')));
+    }
+  }
+}
+
+// Initial load, then refresh every 30s until delivered (skips while the tab is hidden)
+(async () => {
+  const status = await load();
+  if (status === 'DELIVERED' || !ORDER || !TOKEN) return;
+  const timer = setInterval(async () => {
+    if (document.hidden) return;
+    const s = await load();
+    if (s === 'DELIVERED') clearInterval(timer);
+  }, 30000);
+})();
+</script>
+</body>
+</html>
