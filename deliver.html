@@ -45,7 +45,10 @@
   .route{cursor:pointer}
   .route .t{font-size:18px;font-weight:800}
   .did{font-size:13px;color:var(--txt);margin-top:2px;word-break:break-all}
-  .odate{color:#1a56db;font-weight:600;font-size:13px}
+  .odate{color:#1a56db;font-weight:600;font-size:13px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .odate.old{color:#c0392b}
+  .agebadge{display:inline-block;background:#e7edfb;color:#1a56db;border-radius:99px;padding:1px 8px;font-size:12px;font-weight:700;white-space:nowrap}
+  .odate.old .agebadge{background:#fbe4e1;color:#c0392b}
   .big{font-size:22px;font-weight:800;margin:4px 0}
   .chk{display:flex;gap:10px;align-items:center;padding:12px 4px;border-bottom:1px solid var(--line);font-size:17px}
   .chk input{width:24px;height:24px;flex:none}
@@ -119,7 +122,21 @@ function fmtOrderDate(iso){
   const d = new Date(iso); if (isNaN(d)) return '';
   return d.toLocaleString('en-CA',{timeZone:'America/Toronto',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
 }
-function orderDateEl(s){ return s.createdAt ? el('div',{class:'odate'},'Ordered '+fmtOrderDate(s.createdAt)) : ''; }
+// Whole calendar days between the order date and today, in Eastern time (order date = day 0).
+const STALE_DAYS = 6;   // red at 6+ days, i.e. "more than 5 days ago"
+function orderAgeDays(iso){
+  if (!iso) return null;
+  const d = new Date(iso); if (isNaN(d)) return null;
+  const key = x => { const p = new Intl.DateTimeFormat('en-CA',{timeZone:'America/Toronto',year:'numeric',month:'2-digit',day:'2-digit'}).format(x); return Date.UTC(+p.slice(0,4), +p.slice(5,7)-1, +p.slice(8,10)); };
+  return Math.max(0, Math.round((key(new Date()) - key(d)) / 86400000));
+}
+function orderDateEl(s){
+  if (!s.createdAt) return '';
+  const n = orderAgeDays(s.createdAt);
+  const wrap = el('div',{class:'odate'+(n !== null && n >= STALE_DAYS ? ' old' : '')}, 'Ordered '+fmtOrderDate(s.createdAt));
+  if (n !== null) wrap.append(el('span',{class:'agebadge'}, n === 0 ? 'today' : n === 1 ? '1 day ago' : n+' days ago'));
+  return wrap;
+}
 function fmt(iso){ return iso ? new Date(iso).toLocaleTimeString('en-CA',{hour:'numeric',minute:'2-digit'}) : ''; }
 function fmtRouteDate(ymd){
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(ymd||''); if(!m) return ymd||'';
