@@ -300,6 +300,8 @@ async function loadLocations(){
   catch(e){ if (e.message && e.message.includes('expired')) throw e; S.locations = []; }
 }
 const NEW_OPT = '__new__';
+// Start/end changed — drop the cached coordinates and redraw so the S/E pins follow.
+function refreshEndpoints(){ S.endsKey = null; if ($('#map')) drawMap(); }
 // Dropdown of saved locations + "Enter a different address…". `key` is 'startAddr' or 'endAddr' on the draft.
 function locPicker(key, label){
   const D = S.draft;
@@ -315,8 +317,13 @@ function locPicker(key, label){
     if (sel.value === NEW_OPT){ box.classList.remove('hidden'); box.focus(); D[key] = box.value.trim(); }
     else { box.classList.add('hidden'); D[key] = sel.value; }
     S.dirty = true;
+    refreshEndpoints();
   });
-  box.addEventListener('input', () => { D[key] = box.value.trim(); S.dirty = true; });
+  let typeTimer = null;
+  box.addEventListener('input', () => {
+    D[key] = box.value.trim(); S.dirty = true;
+    clearTimeout(typeTimer); typeTimer = setTimeout(refreshEndpoints, 900);   // wait for typing to stop
+  });
   return el('div',{}, el('label',{},label), sel, el('div',{style:'height:6px'}), box);
 }
 // Save any typed address that isn't already in the list (server verifies it first)
@@ -543,18 +550,18 @@ async function drawMap(){
   const say = t => box.replaceChildren(el('div',{class:'mapmsg'},t));
   try{ await loadMaps(); }catch(e){ return say('Map unavailable — add the Maps key to enable it. Stops are still listed below.'); }
   // Start/end coordinates (server-geocoded, cached there)
-  const sAddr = S.startAddr || (S.route && S.route.startAddr) || '';
-  const eAddr = S.endAddr   || (S.route && S.route.endAddr)   || '';
+  // On the builder screen the addresses live in the draft; on an active route, in S.route.
+  const sAddr = (S.draft && S.draft.startAddr) || S.startAddr || (S.route && S.route.startAddr) || '';
+  const eAddr = (S.draft && S.draft.endAddr)   || S.endAddr   || (S.route && S.route.endAddr)   || '';
   const endsKey = sAddr + '|' + eAddr;
   if (endsKey.trim() !== '|' && S.endsKey !== endsKey){
     try{
       const j = await post('geocodeEnds', {startAddress:sAddr, endAddress:eAddr});
-      console.log('[SF] geocodeEnds request:', {startAddress:sAddr, endAddress:eAddr});
-      console.log('[SF] geocodeEnds response:', j);
-      S.ends = {start:j.start, end:j.end}; S.endsKey = endsKey;
+      S.ends = {start:j.start, end:j.end};
+      // Cache only a successful lookup, so a transient geocode failure retries on the next redraw
+      S.endsKey = (j.start || j.end) ? endsKey : null;
       if (!j.start && !j.end) toast('Start/end address could not be located');
     }catch(err){
-      console.error('[SF] geocodeEnds failed:', err);
       S.ends = S.ends || {};
       // Most likely the backend predates this feature — say so instead of failing silently
       toast(/unknown action/i.test(err.message || '')
@@ -565,7 +572,6 @@ async function drawMap(){
   const pts = S.stops.map((s,i)=>({s,i})).filter(x=>typeof x.s.lat==='number' && typeof x.s.lng==='number');
   if (!pts.length) return say('No stop locations could be found on the map.');
   box.replaceChildren();
-  const oldDiag = $('#endsdiag'); if (oldDiag) oldDiag.remove();
   mapObj = new google.maps.Map(box,{mapTypeControl:false,streetViewControl:false,fullscreenControl:true});
   mapMarkers.forEach(m=>m.setMap(null)); mapMarkers=[];
   const bounds = new google.maps.LatLngBounds();
@@ -595,13 +601,8 @@ async function drawMap(){
       anchor: new google.maps.Point(23, 58)
     };
   };
-  let endsDrawn = 0;
   const addEnd = (pt, fill, letter, title) => {
-    if (!pt || typeof pt.lat !== 'number' || typeof pt.lng !== 'number'){
-      console.warn('[SF] endpoint "' + letter + '" skipped — coordinates were:', pt);
-      return;
-    }
-    endsDrawn++;
+    if (!pt || typeof pt.lat !== 'number' || typeof pt.lng !== 'number') return;
     const pos = {lat: pt.lat, lng: pt.lng};
     bounds.extend(pos);
     const m = new google.maps.Marker({position: pos, map: mapObj, icon: endIcon(fill, letter),
@@ -617,15 +618,6 @@ async function drawMap(){
   if (same) { if (mapMarkers.length) mapMarkers[mapMarkers.length-1].setTitle('Start & End: ' + sAddr); }
   else addEnd(E.end, '#0a7a35', 'E', 'End: ' + (eAddr || 'route end'));
 
-  console.log('[SF] endpoint markers drawn:', endsDrawn, '| S.ends =', S.ends, '| start addr =', sAddr, '| end addr =', eAddr);
-  if (!endsDrawn){
-    // Visible, persistent note (a toast disappears before it can be read)
-    box.insertAdjacentElement('afterend', el('div',{class:'cnote',id:'endsdiag'},
-      el('div',{class:'cnote-h'},'Start/end markers not drawn'),
-      el('div',{}, 'Start: ' + (sAddr || '(none selected)')),
-      el('div',{}, 'End: ' + (eAddr || '(none selected)')),
-      el('div',{}, 'Coordinates returned: ' + JSON.stringify(S.ends || null))));
-  }
   mapObj.fitBounds(bounds, 40);
   if (pts.length===1) mapObj.setZoom(13);
   const miss = S.stops.length - pts.length;
