@@ -35,6 +35,10 @@
   .g{background:#e3f4ea;color:#166534}.a{background:#fff3d6;color:#8a5a00}.r{background:#fbe4e1;color:#9b2c1f}
   .stop{display:flex;gap:10px;align-items:flex-start}
   .num{width:54px;flex:none;text-align:center;font-weight:800;padding:10px 4px}
+  .ord{width:52px;flex:none;display:flex;flex-direction:column;align-items:center;gap:2px}
+  .ord .n{font-weight:800;font-size:18px;line-height:1}
+  .ord button.mv{width:44px;height:34px;padding:0;font-size:16px;line-height:1;background:#e8eeec;color:var(--green);border-radius:8px}
+  .ord button.mv:disabled{opacity:.3}
   .stop .body{flex:1;min-width:0}
   .stop .t{font-weight:700}.stop .m{font-size:13px;color:var(--mut)}
   .badge{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;margin-right:4px;background:#eef2f0}
@@ -184,7 +188,7 @@ $('#logoutBtn').addEventListener('click', () => {
 
 function viewLogin(){
   const err = el('div',{class:'err hidden'});
-  const phone = el('input',{type:'tel',autocomplete:'off',inputmode:'tel',placeholder:'6135551234'});
+  const phone = el('input',{type:'tel',autocomplete:'off',inputmode:'tel',placeholder:'613-555-1234'});
   const email = el('input',{type:'email',autocomplete:'off',placeholder:'you@example.com'});
   const btn = el('button',{onclick: async () => {
     err.classList.add('hidden'); btn.disabled=true; btn.textContent='Checking…';
@@ -426,19 +430,44 @@ async function saveRoute(){
   }catch(e){ toast(e.message); }
 }
 
+// Nearest neighbour in direction dir (-1 up, +1 down) that isn't delivered.
+// Delivered stops stay anchored where they are.
+function neighbourIdx(i, dir){
+  for (let j = i + dir; j >= 0 && j < S.stops.length; j += dir){
+    if (!S.stops[j].delivered) return j;
+  }
+  return -1;
+}
+function swapStops(i, j){ const t = S.stops[i]; S.stops[i] = S.stops[j]; S.stops[j] = t; }
+
+// Up/down control. onMove(i, j) performs the move and persists it.
+function orderControl(i, onMove){
+  const up = neighbourIdx(i, -1), down = neighbourIdx(i, 1);
+  const btn = (label, target, title) => el('button', {class:'mv', title: title, disabled: target < 0,
+    onclick: e => { e.stopPropagation(); if (target >= 0) onMove(i, target); }}, label);
+  return el('div', {class:'ord', onclick: e => e.stopPropagation()},
+    btn('▲', up, 'Move earlier'),
+    el('div', {class:'n'}, String(i + 1)),
+    btn('▼', down, 'Move later'));
+}
+
+// Rapid taps reorder locally, then save once the driver stops tapping.
+let reorderTimer = null;
+function queueReorderSave(){
+  clearTimeout(reorderTimer);
+  reorderTimer = setTimeout(() => {
+    routeOp({op:'reorder', orderIds: S.stops.map(x => x.id)}, 'Order saved — tap Recalculate ETAs to refresh times');
+  }, 900);
+}
+
 function moveStop(i, to){
   S.stops.splice(to,0,S.stops.splice(i,1)[0]);
   S.dirty=true; clearEtas();     // ETAs are stale after a reorder
   renderKeep();
 }
 function stopSetupCard(s,i){
-  const n = el('input',{class:'num',type:'number',inputmode:'numeric',min:1,max:S.stops.length,value:i+1});
-  n.addEventListener('change', () => {
-    const to = Math.min(Math.max(parseInt(n.value,10)||i+1,1),S.stops.length)-1;
-    if (to!==i) moveStop(i,to);
-  });
-  n.addEventListener('keydown', e => { if(e.key==='Enter') n.blur(); });
-  const card = el('div',{class:'card stop'+(s.delivered?' done':'')}, n,
+  const ord = orderControl(i, (from, to) => { swapStops(from, to); S.dirty = true; clearEtas(); renderKeep(); });
+  const card = el('div',{class:'card stop'+(s.delivered?' done':'')}, ord,
     el('div',{class:'body'},
       el('div',{class:'t'}, s.name+' · '+s.customer),
       orderDateEl(s),
@@ -565,19 +594,9 @@ function viewRoute(){
 
   S.stops.forEach((s,i) => {
     const open = () => { S.cur=i; S.mode='deliver'; render(); };
-    let numEl;
-    if (s.delivered) numEl = el('div',{class:'num',style:'padding:10px 0'}, '✓');
-    else {
-      numEl = el('input',{class:'num',type:'number',inputmode:'numeric',min:1,max:S.stops.length,value:i+1,
-        onclick:e=>e.stopPropagation()});
-      numEl.addEventListener('change', () => {
-        const to = Math.min(Math.max(parseInt(numEl.value,10)||i+1,1),S.stops.length)-1;
-        if (to===i) return;
-        const ids = S.stops.map(x=>x.id); ids.splice(to,0,ids.splice(i,1)[0]);
-        routeOp({op:'reorder', orderIds:ids}, 'Order updated — tap Recalculate ETAs to refresh times');
-      });
-      numEl.addEventListener('keydown', e => { if(e.key==='Enter') numEl.blur(); });
-    }
+    const numEl = s.delivered
+      ? el('div',{class:'num',style:'padding:10px 0'}, '✓')
+      : orderControl(i, (from, to) => { swapStops(from, to); clearEtas(); renderKeep(); queueReorderSave(); });
     const c = el('div',{class:'card stop'+(s.delivered?' done':''), style:'cursor:pointer', onclick:open}, numEl,
       el('div',{class:'body'},
         el('div',{class:'t'}, s.name+' · '+s.customer),
