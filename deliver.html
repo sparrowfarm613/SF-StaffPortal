@@ -13,7 +13,7 @@
   header{background:#fff;color:var(--green);padding:8px 16px;position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:10px;justify-content:space-between;border-bottom:3px solid var(--green)}
   header .brand{display:flex;align-items:center;gap:10px;min-width:0}
   header img.logo{height:48px;width:auto;display:block}
-  header .sub{font-size:13px;font-weight:600;color:var(--mut)}
+  header .sub{font-size:13px;font-weight:600;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   main{padding:14px;max-width:640px;margin:0 auto}
   .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
   label{display:block;font-size:12px;font-weight:600;color:var(--mut);margin:10px 0 4px}
@@ -23,11 +23,14 @@
   button{font-family:inherit;font-size:16px;font-weight:700;border:0;border-radius:10px;padding:14px 16px;cursor:pointer;background:var(--green);color:#fff;width:100%}
   button.sec{background:#e8eeec;color:var(--green)}
   button.warn{background:var(--amber);color:#3a2a00}
+  button.danger{background:#fbe4e1;color:#9b2c1f}
   button.link{background:none;color:var(--mut);font-weight:500;text-decoration:underline;padding:8px}
   button:disabled{opacity:.45;cursor:not-allowed}
   .row{display:flex;gap:8px}.row>*{flex:1}
+  .gap{height:10px}
   .hidden{display:none!important}
   .err{color:var(--red);font-size:14px;margin:8px 0}
+  .mut{color:var(--mut);font-size:14px}
   .finish{font-size:22px;font-weight:800;text-align:center;padding:12px;border-radius:10px;margin:10px 0}
   .g{background:#e3f4ea;color:#166534}.a{background:#fff3d6;color:#8a5a00}.r{background:#fbe4e1;color:#9b2c1f}
   .stop{display:flex;gap:10px;align-items:flex-start}
@@ -36,7 +39,13 @@
   .stop .t{font-weight:700}.stop .m{font-size:13px;color:var(--mut)}
   .badge{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;margin-right:4px;background:#eef2f0}
   .badge.d{background:#dff3e7;color:#166534}
+  .badge.p{background:#fff3d6;color:#8a5a00}
+  .badge.b{background:#e3ecff;color:#1a56db}
   .stop.done{opacity:.55}
+  .route{cursor:pointer}
+  .route .t{font-size:18px;font-weight:800}
+  .did{font-size:13px;color:var(--txt);margin-top:2px;word-break:break-all}
+  .odate{color:#1a56db;font-weight:600;font-size:13px}
   .big{font-size:22px;font-weight:800;margin:4px 0}
   .chk{display:flex;gap:10px;align-items:center;padding:12px 4px;border-bottom:1px solid var(--line);font-size:17px}
   .chk input{width:24px;height:24px;flex:none}
@@ -51,7 +60,7 @@
   .loadrow{display:flex;justify-content:space-between;gap:12px;padding:12px 4px;border-bottom:1px solid var(--line);font-size:17px}
   .loadrow .q{font-weight:800;font-size:20px;min-width:44px;text-align:right}
   .loadrow .sk{font-size:12px;color:var(--mut)}
-  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:99px;font-size:14px;z-index:99}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:99px;font-size:14px;z-index:99;max-width:90vw;text-align:center}
   .spin{display:inline-block;width:16px;height:16px;border:3px solid #fff5;border-top-color:#fff;border-radius:50%;animation:s .8s linear infinite;vertical-align:-3px;margin-right:6px}
   @keyframes s{to{transform:rotate(360deg)}}
 </style>
@@ -68,14 +77,22 @@
 // Not a secret: every action is protected by login/session tokens on the server.
 const API = 'https://script.google.com/macros/s/AKfycby1SeWCYfqrBC87LLp5iEtvcGSRb2aBk_k6F4bqLvrPzu_5JkZa-ZVigcQTAh-5xlaL/exec';
 // Public by design; it MUST be restricted in Google Cloud to https://clock.sparrowfarms.ca/* and the Maps JavaScript API only.
-const MAPS_KEY = 'AIzaSyBrv7XajAPI0ZOBQMJmE6CG-qRjZSJhJNU';
+const MAPS_KEY = 'PASTE_RESTRICTED_MAPS_KEY_HERE';
 
 // ───────── STATE ─────────
+// Routes live on the server. This is only a working copy of whatever route is open.
 const S = {
-  session: sessionStorage.getItem('sf_s') || '',   // cleared when tab closes
+  session: sessionStorage.getItem('sf_s') || '',   // cleared when the tab closes
   driver: sessionStorage.getItem('sf_n') || '',
-  stops: [],            // {id,name,customer,firstName,email,phone,address,items,checked:[],etaStart,etaEnd,notified,delivered,note,photo}
-  finish: null, cur: 0, locations: [], startAddr: '', endAddr: '', startTime: '', perStop: 7,
+  email: sessionStorage.getItem('sf_e') || '',
+  admin: sessionStorage.getItem('sf_adm') === '1',  // UI hint only; the server enforces permissions
+  mode: 'routes',            // routes | builder | load | route | deliver
+  routes: [], routesLoaded: false, routesError: '', loadingRoutes: false,
+  route: null,               // the open route (server copy)
+  stops: [], cur: 0, finish: null,
+  drivers: [], locations: [],
+  draft: null, dirty: false, // builder (admin) working copy
+  loadFrom: 'start',         // where the loading list was opened from: start | route | builder
   busy: false, poll: null
 };
 
@@ -90,14 +107,30 @@ function el(tag, attrs={}, ...kids){
   kids.flat().forEach(c => e.append(c instanceof Node ? c : document.createTextNode(c ?? '')));
   return e;   // all text goes through text nodes → no HTML injection
 }
-function toast(msg){ const t=el('div',{class:'toast'},msg); document.body.append(t); setTimeout(()=>t.remove(),2600); }
+function toast(msg){ const t=el('div',{class:'toast'},msg); document.body.append(t); setTimeout(()=>t.remove(),3000); }
 // Finish-time colour: green before 8 pm, amber until 9 pm, red after (local time)
 const FINISH_GREEN_BEFORE = 20, FINISH_AMBER_BEFORE = 21;
 function finishClass(iso){
   const d = new Date(iso), h = d.getHours() + d.getMinutes()/60;
   return h < FINISH_GREEN_BEFORE ? 'g' : h < FINISH_AMBER_BEFORE ? 'a' : 'r';
 }
+function fmtOrderDate(iso){
+  if (!iso) return '';
+  const d = new Date(iso); if (isNaN(d)) return '';
+  return d.toLocaleString('en-CA',{timeZone:'America/Toronto',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+}
+function orderDateEl(s){ return s.createdAt ? el('div',{class:'odate'},'Ordered '+fmtOrderDate(s.createdAt)) : ''; }
 function fmt(iso){ return iso ? new Date(iso).toLocaleTimeString('en-CA',{hour:'numeric',minute:'2-digit'}) : ''; }
+function fmtRouteDate(ymd){
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(ymd||''); if(!m) return ymd||'';
+  return new Date(+m[1],+m[2]-1,+m[3]).toLocaleDateString('en-CA',{weekday:'short',month:'short',day:'numeric'});
+}
+function toLocalInput(iso){
+  const d = iso ? new Date(iso) : new Date(); if (isNaN(d)) return '';
+  d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,16);
+}
+function todayLocal(){ return toLocalInput('').slice(0,10); }
+const STATUS = { DRAFT:['Draft',''], READY:['Ready','b'], IN_PROGRESS:['In progress','p'], COMPLETE:['Complete','d'] };
 
 // ───────── API ─────────
 async function get(params){
@@ -115,18 +148,21 @@ async function post(action, data){
 }
 function handle(j){
   if (!j.ok && j.error==='UNAUTHORIZED'){ logout(true); throw new Error('Session expired — please log in again'); }
+  if (!j.ok && j.error==='FORBIDDEN') throw new Error('You do not have permission to do that');
   if (!j.ok) throw new Error(j.error || 'Request failed');
   return j;
 }
 
 // ───────── AUTH ─────────
-function logout(expired){
-  sessionStorage.clear(); S.session=''; S.driver=''; S.startAddr=''; S.endAddr=''; S.locations=[]; clearInterval(S.poll);
-  render(); if (expired) toast('Session expired');
+function clearSession(){
+  sessionStorage.clear(); clearInterval(S.poll);
+  Object.assign(S,{session:'',driver:'',email:'',admin:false,mode:'routes',routes:[],routesLoaded:false,routesError:'',
+    route:null,stops:[],cur:0,finish:null,drivers:[],locations:[],draft:null,dirty:false});
 }
+function logout(expired){ clearSession(); render(); if (expired) toast('Session expired'); }
 $('#logoutBtn').addEventListener('click', () => {
-  if (S.stops.some(s=>!s.delivered) && !confirm('You have undelivered stops. Log out anyway? Route setup will be lost.')) return;
-  S.stops=[]; logout(false);
+  if (S.dirty && !confirm('You have unsaved route changes. Log out anyway?')) return;
+  logout(false);
 });
 
 function viewLogin(){
@@ -136,11 +172,12 @@ function viewLogin(){
   const btn = el('button',{onclick: async () => {
     err.classList.add('hidden'); btn.disabled=true; btn.textContent='Checking…';
     try{
-      const j = await get({action:'login', phone:phone.value, email:email.value});
-      S.session=j.session; S.driver=j.name;
+      const j = await post('login', {phone:phone.value, email:email.value});   // POST: never put credentials in a URL
+      S.session=j.session; S.driver=j.name; S.email=j.email; S.admin=!!j.admin;
       sessionStorage.setItem('sf_s', j.session); sessionStorage.setItem('sf_n', j.name);
+      sessionStorage.setItem('sf_e', j.email); sessionStorage.setItem('sf_adm', j.admin?'1':'0');
       phone.value=''; email.value='';       // don't leave credentials in the DOM
-      await loadLocations();
+      S.mode='routes'; S.routesLoaded=false;
       render();
     }catch(e){
       err.textContent = e.message==='RATE_LIMITED' ? 'Too many attempts. Try again in 15 minutes.' : 'Login failed. Check your details.';
@@ -149,134 +186,253 @@ function viewLogin(){
   }}, 'Log in');
   return el('div',{class:'card'},
     el('h2',{style:'margin:0 0 4px'},'Driver login'),
-    el('div',{class:'m',style:'color:#6b7a76;font-size:14px'},'Enter the phone and email you registered with.'),
-    el('label',{},'Phone'), phone, el('label',{},'Email'), email, err, el('div',{style:'height:12px'}), btn);
+    el('div',{class:'mut'},'Enter the phone and email you registered with.'),
+    el('label',{},'Phone'), phone, el('label',{},'Email'), email, err, el('div',{class:'gap'}), btn);
 }
 
-// ───────── SAVED LOCATIONS ─────────
-async function loadLocations(){
+// ───────── ROUTE HELPERS ─────────
+// Merge a server copy of the route into the working copy, keeping on-device extras (checked items, photo, notes).
+function applyRoute(j){
+  const prev = new Map(S.stops.map(s=>[s.id,s]));
+  S.route = j.route;
+  S.stops = j.stops.map(s => { const p = prev.get(s.id) || {};
+    return {...s, checked:p.checked||[], photo:p.photo||'', customerNote:p.customerNote||'', driverNote: s.driverNote || p.driverNote || ''}; });
+  S.finish = j.route.finishTime || null;
+}
+async function refreshRoute(){ applyRoute(await get({action:'getRoute', s:S.session, route:S.route.routeId})); }
+// Send a change to the server; the server replies with the fresh route, which replaces our copy.
+async function routeOp(payload, okMsg){
+  try{ applyRoute(await post('routeUpdate', {routeId:S.route.routeId, ...payload})); if (okMsg) toast(okMsg); }
+  catch(e){ toast(e.message); try{ await refreshRoute(); }catch(_){} }
+  renderKeep();
+}
+function backToRoutes(){ clearInterval(S.poll); S.mode='routes'; S.routesLoaded=false; S.route=null; S.stops=[]; render(); }
+
+// ───────── ROUTE PICKER (home) ─────────
+async function loadRoutes(){
+  S.loadingRoutes = true; S.routesError = '';
+  try{ S.routes = (await get({action:'listRoutes', s:S.session})).routes || []; }
+  catch(e){ S.routesError = e.message; }
+  S.routesLoaded = true; S.loadingRoutes = false;      // set even on failure so we never loop
+  if (S.session && S.mode==='routes') renderKeep();
+}
+function viewRoutes(){
+  const wrap = el('div');
+  if (!S.routesLoaded && !S.loadingRoutes) loadRoutes();
+  wrap.append(el('div',{class:'row',style:'margin-bottom:10px;align-items:center'},
+    el('h2',{style:'margin:0;flex:2'},'Routes'),
+    el('button',{class:'sec',style:'flex:1',onclick:()=>{S.routesLoaded=false;renderKeep();}},'↻ Refresh')));
+  if (S.admin) wrap.append(el('button',{style:'margin-bottom:12px',onclick:newRoute},'+ New route'));
+
+  if (S.loadingRoutes || !S.routesLoaded) wrap.append(el('div',{class:'card mut'},'Loading routes…'));
+  else if (S.routesError) wrap.append(el('div',{class:'card'}, el('div',{class:'err'},S.routesError),
+    el('button',{class:'sec',onclick:()=>{S.routesLoaded=false;renderKeep();}},'Try again')));
+  else if (!S.routes.length) wrap.append(el('div',{class:'card mut'},
+    S.admin ? 'No routes yet. Tap “+ New route” to build one.' : 'No routes have been assigned to you yet.'));
+
+  S.routes.forEach(r => {
+    const [label, cls] = STATUS[r.status] || [r.status,''];
+    const card = el('div',{class:'card route', onclick:()=>openRoute(r.routeId)},
+      el('div',{class:'t'}, r.name),
+      el('div',{class:'m mut'}, fmtRouteDate(r.date)+' · '+r.done+' of '+r.total+' delivered'),
+      el('div',{class:'did'}, 'Driver ID: '+(r.driverEmail || '(unassigned)')),
+      el('div',{style:'margin-top:6px'}, el('span',{class:'badge '+cls}, label)));
+    if (S.admin) card.append(el('button',{class:'sec',style:'margin-top:10px',onclick:e=>{e.stopPropagation();editRoute(r.routeId);}},'✏️ Edit route'));
+    wrap.append(card);
+  });
+
+  if (S.admin) wrap.append(el('button',{class:'link',onclick: async () => {
+    if (!confirm('Delete completed routes older than 30 days? This also removes the saved customer details on them.')) return;
+    try{ const j = await post('purgeOldRoutes',{}); toast('Removed '+j.purged+' old route(s)'); S.routesLoaded=false; renderKeep(); }catch(e){ toast(e.message); }
+  }},'🧹 Clear completed routes older than 30 days'));
+  return wrap;
+}
+async function openRoute(id){
   try{
-    const j = await get({action:'getLocations', s:S.session});
-    S.locations = j.locations || [];
-    // default start/end to the most-used saved location, only if not already chosen
-    if (S.locations.length){ if(!S.startAddr) S.startAddr = S.locations[0].address; if(!S.endAddr) S.endAddr = S.locations[0].address; }
-  }catch(e){ if (e.message && e.message.includes('expired')) throw e; S.locations = []; }
+    S.stops = []; applyRoute(await get({action:'getRoute', s:S.session, route:id}));
+    S.cur = 0;
+    if (S.route.status==='IN_PROGRESS' || S.route.status==='COMPLETE'){ S.mode='route'; }
+    else { S.loadFrom='start'; S.mode='load'; }
+    render();
+  }catch(e){ toast(e.message); S.routesLoaded=false; renderKeep(); }
+}
+async function startRoute(){
+  try{ applyRoute(await post('routeUpdate',{routeId:S.route.routeId, op:'start'})); S.mode='route'; render(); }
+  catch(e){ toast(e.message); }
+}
+
+// ───────── SAVED LOCATIONS (start/end addresses) ─────────
+async function loadLocations(){
+  try{ S.locations = (await get({action:'getLocations', s:S.session})).locations || []; }
+  catch(e){ if (e.message && e.message.includes('expired')) throw e; S.locations = []; }
 }
 const NEW_OPT = '__new__';
-// Dropdown of saved locations + "Enter a different address…". `key` is 'startAddr' or 'endAddr'.
+// Dropdown of saved locations + "Enter a different address…". `key` is 'startAddr' or 'endAddr' on the draft.
 function locPicker(key, label){
-  const known = S.locations.some(l => l.address === S[key]);
+  const D = S.draft;
+  const known = S.locations.some(l => l.address === D[key]);
   const sel = el('select',{class:'sel'});
-  S.locations.forEach(l => { const o = el('option',{value:l.address}, l.label===l.address ? l.address : l.label+' — '+l.address); sel.append(o); });
+  S.locations.forEach(l => sel.append(el('option',{value:l.address}, l.label===l.address ? l.address : l.label+' — '+l.address)));
   sel.append(el('option',{value:NEW_OPT},'Enter a different address…'));
   const box = el('input',{placeholder:'Street, city, province', maxlength:200});
-  // Saved address -> select it. Otherwise (typed address, or empty list) -> "Enter a different address…"
-  sel.value = known ? S[key] : NEW_OPT;
-  box.value = known ? '' : (S[key] || '');
+  sel.value = known ? D[key] : NEW_OPT;
+  box.value = known ? '' : (D[key] || '');
   box.classList.toggle('hidden', sel.value !== NEW_OPT);
   sel.addEventListener('change', () => {
-    if (sel.value === NEW_OPT){ box.classList.remove('hidden'); box.focus(); S[key] = box.value.trim(); }
-    else { box.classList.add('hidden'); S[key] = sel.value; }
-    S.finish = null;
+    if (sel.value === NEW_OPT){ box.classList.remove('hidden'); box.focus(); D[key] = box.value.trim(); }
+    else { box.classList.add('hidden'); D[key] = sel.value; }
+    S.dirty = true;
   });
-  box.addEventListener('input', () => { S[key] = box.value.trim(); S.finish = null; });
+  box.addEventListener('input', () => { D[key] = box.value.trim(); S.dirty = true; });
   return el('div',{}, el('label',{},label), sel, el('div',{style:'height:6px'}), box);
 }
 // Save any typed address that isn't already in the list (server verifies it first)
 async function persistNewLocations(){
   const seen = new Set();
   for (const key of ['startAddr','endAddr']){
-    const a = (S[key]||'').trim();
+    const a = (S.draft[key]||'').trim();
     if (!a || seen.has(a.toLowerCase()) || S.locations.some(l=>l.address.toLowerCase()===a.toLowerCase())) continue;
     seen.add(a.toLowerCase());
-    try{
-      const j = await post('saveLocation', {address:a});
-      if (j.saved) toast('Saved "'+a+'" to your locations');
-    }catch(e){ /* not saved (e.g. couldn't be located) — route still calculates */ }
+    try{ const j = await post('saveLocation', {address:a}); if (j.saved) toast('Saved "'+a+'" to your locations'); }
+    catch(e){ /* not saved (e.g. couldn't be located) — route still works */ }
   }
   await loadLocations();
 }
 
-// ───────── SCREEN 1: ROUTE SETUP ─────────
-function viewSetup(){
-  const now = new Date(); now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
-  if (!S.startTime) S.startTime = now.toISOString().slice(0,16);
-  const wrap = el('div');
-  if (!S.locations.length && !S.locLoading){ S.locLoading = true; loadLocations().finally(()=>{ S.locLoading=false; if(!S.mode) renderKeep(); }); }
+// ───────── ROUTE BUILDER (admin) ─────────
+async function ensureBuilderData(){
+  if (!S.drivers.length){ try{ S.drivers = (await get({action:'getDrivers', s:S.session})).drivers || []; }catch(e){ toast(e.message); } }
+  if (!S.locations.length) await loadLocations();
+}
+async function newRoute(){
+  if (!S.admin) return;
+  await ensureBuilderData();
+  const home = (S.locations[0]||{}).address || '';
+  S.route=null; S.stops=[]; S.finish=null; S.cur=0;
+  S.draft = {routeId:'', name:'', date:todayLocal(), driverEmail:'', startAddr:home, endAddr:home, startTime:toLocalInput(''), perStop:7};
+  S.dirty=false; S.mode='builder'; render();
+}
+async function editRoute(id){
+  if (!S.admin) return;
+  try{
+    await ensureBuilderData(); S.stops=[]; applyRoute(await get({action:'getRoute', s:S.session, route:id}));
+    const r = S.route;
+    S.draft = {routeId:r.routeId, name:r.name, date:r.date, driverEmail:r.driverEmail, startAddr:r.startAddr, endAddr:r.endAddr,
+      startTime:toLocalInput(r.departTime), perStop:r.perStop||7};
+    S.dirty=false; S.mode='builder'; render();
+  }catch(e){ toast(e.message); }
+}
+function toStop(o){ return {...o, checked:[], photo:'', customerNote:'', notified:false, delivered:false, driverNote:''}; }
+function clearEtas(){ S.finish=null; S.stops.forEach(x=>{ if(!x.delivered){ x.etaStart=''; x.etaEnd=''; } }); }
 
-  const time  = el('input',{type:'datetime-local', value:S.startTime, onchange:e=>S.startTime=e.target.value});
-  const per   = el('input',{type:'number',min:1,max:60,value:S.perStop, onchange:e=>S.perStop=Number(e.target.value)||7});
+function viewBuilder(){
+  const D = S.draft, wrap = el('div');
+  if (!D) { S.mode='routes'; return viewRoutes(); }
+  wrap.append(el('button',{class:'sec',style:'margin-bottom:10px',onclick:()=>{
+    if (S.dirty && !confirm('Leave without saving your changes?')) return; S.dirty=false; backToRoutes(); }},'← Routes'));
+
+  const name = el('input',{maxlength:80,placeholder:'e.g. Saturday East',value:D.name,oninput:e=>{D.name=e.target.value;S.dirty=true;}});
+  const date = el('input',{type:'date',value:D.date,onchange:e=>{D.date=e.target.value;S.dirty=true;}});
+  const drv = el('select',{class:'sel',onchange:e=>{D.driverEmail=e.target.value;S.dirty=true;}},
+    el('option',{value:''},'(unassigned)'),
+    S.drivers.map(d => el('option',{value:d.email}, d.name+' — '+d.email)));
+  drv.value = D.driverEmail;
+  const time = el('input',{type:'datetime-local',value:D.startTime,onchange:e=>{D.startTime=e.target.value;S.dirty=true;}});
+  const per  = el('input',{type:'number',min:1,max:60,value:D.perStop,onchange:e=>{D.perStop=Number(e.target.value)||7;S.dirty=true;}});
   const status = el('div',{class:'err hidden'});
 
   const loadBtn = el('button',{onclick: async () => {
     loadBtn.disabled=true; loadBtn.replaceChildren(el('span',{class:'spin'}),'Loading…'); status.classList.add('hidden');
     try{
       const j = await get({action:'getOrders', s:S.session});
-      S.stops = j.orders.map(o => ({
-        id:o.id, name:o.name, customer:o.customerName.trim(), firstName:o.firstName, email:o.email,
-        phone:o.phone, address:o.address, lat:o.lat, lng:o.lng, items:o.items, note:o.note,
-        checked:[], notified:false, delivered:false, customerNote:''
-      }));
-      S.finish=null; renderKeep();
+      const have = new Set(S.stops.map(s=>s.id));
+      const add = j.orders.filter(o=>!have.has(o.id)).map(toStop);
+      S.stops.push(...add);
+      if (add.length){ S.dirty=true; clearEtas(); toast('Added '+add.length+' order'+(add.length===1?'':'s')); }
+      else toast('No new orders to add');
+      renderKeep(); return;
     }catch(e){ status.textContent=e.message; status.classList.remove('hidden'); }
-    loadBtn.disabled=false; loadBtn.textContent='Load Orders';
-  }},'Load Orders');
+    loadBtn.disabled=false; loadBtn.textContent='Load orders';
+  }},'Load orders');
 
   wrap.append(el('div',{class:'card'},
-    el('h2',{style:'margin:0 0 6px'},'Route Setup'),
+    el('h2',{style:'margin:0 0 6px'}, D.routeId ? 'Edit route' : 'New route'),
+    el('label',{},'Route name'), name,
+    el('div',{class:'row'}, el('div',{},el('label',{},'Route date'),date), el('div',{},el('label',{},'Driver (Driver ID)'),drv)),
     locPicker('startAddr','Start address'), locPicker('endAddr','End address'),
     el('div',{class:'row'}, el('div',{},el('label',{},'Departure time'),time), el('div',{},el('label',{},'Min per stop'),per)),
-    el('div',{style:'height:12px'}), loadBtn, status));
+    el('div',{class:'gap'}), loadBtn, status));
 
   if (S.stops.length){
     const calc = el('button',{class:'sec',onclick: async () => {
       calc.disabled=true; calc.replaceChildren(el('span',{class:'spin',style:'border-top-color:#004c3f'}),'Calculating…');
       try{
-        if (!S.startAddr || !S.endAddr) throw new Error('Choose a start and end address first');
+        if (!D.startAddr || !D.endAddr) throw new Error('Choose a start and end address first');
         await persistNewLocations();
-        const j = await get({action:'calculateETAs', s:S.session, payload: JSON.stringify({
-          stops:S.stops.map(s=>({id:s.id,address:s.address})), startAddress:S.startAddr, endAddress:S.endAddr,
-          startTime:new Date(S.startTime).toISOString(), perStopMinutes:S.perStop})});
-        j.etas.forEach((e,i)=>{ S.stops[i].etaStart=e.etaStart; S.stops[i].etaEnd=e.etaEnd; });
-        S.finish=j.finishTime;
-        post('touchLocations',[S.startAddr,S.endAddr]).catch(()=>{});   // usage count; failure is harmless
-        renderKeep();
+        const und = S.stops.filter(s=>!s.delivered), dt = new Date(D.startTime);
+        const j = await post('calculateETAs', {stops:und.map(s=>({id:s.id,address:s.address})), startAddress:D.startAddr, endAddress:D.endAddr,
+          startTime: isNaN(dt) ? new Date().toISOString() : dt.toISOString(), perStopMinutes:D.perStop});
+        j.etas.forEach(e=>{ const s=S.stops.find(x=>x.id===e.id); if(s){ s.etaStart=e.etaStart; s.etaEnd=e.etaEnd; } });
+        S.finish=j.finishTime; S.dirty=true;
+        post('touchLocations',[D.startAddr,D.endAddr]).catch(()=>{});
+        renderKeep(); return;
       }catch(e){ toast(e.message); }
       calc.disabled=false; calc.textContent='Calculate ETAs';
     }},'Calculate ETAs');
-    wrap.append(calc, el('div',{style:'height:10px'}));
-
-    if (S.finish){
-      wrap.append(el('div',{class:'finish '+finishClass(S.finish)},'Est. finish: '+fmt(S.finish)));
-    }
+    wrap.append(calc, el('div',{class:'gap'}));
+    if (S.finish) wrap.append(el('div',{class:'finish '+finishClass(S.finish)},'Est. finish: '+fmt(S.finish)));
     wrap.append(el('div',{id:'map'}, el('div',{class:'mapmsg'},'Loading map…')));
-    wrap.append(el('button',{class:'sec',style:'margin-bottom:10px',onclick:()=>{S.mode='load';render();}},'📦 Loading list (totals by item)'));
+    wrap.append(el('button',{class:'sec',style:'margin-bottom:10px',onclick:()=>{S.loadFrom='builder';S.mode='load';render();}},'📦 Preview loading list'));
     S.stops.forEach((s,i) => wrap.append(stopSetupCard(s,i)));
-    wrap.append(el('button',{disabled:!S.finish, onclick:()=>{ S.mode='load'; S.fromStart=true; render(); }}, S.finish?'Continue to Loading':'Calculate ETAs to continue'));
+    wrap.append(el('button',{onclick:saveRoute}, D.routeId ? '💾 Save changes' : '💾 Save route'));
+    if (D.routeId) wrap.append(el('div',{class:'gap'}), el('button',{class:'danger',onclick: async () => {
+      if (!confirm('Delete this route? Orders not yet delivered go back to the unassigned list.')) return;
+      try{ await post('deleteRoute',{routeId:D.routeId}); S.dirty=false; toast('Route deleted'); backToRoutes(); }catch(e){ toast(e.message); }
+    }},'Delete route'));
     setTimeout(drawMap, 0);
   }
   return wrap;
 }
 
+async function saveRoute(){
+  const D = S.draft;
+  if (!D.name.trim()) return toast('Give the route a name');
+  if (!D.date) return toast('Choose a route date');
+  if (!S.stops.length) return toast('Add at least one stop');
+  try{
+    await persistNewLocations();
+    const dt = new Date(D.startTime);
+    await post('saveRoute', {routeId:D.routeId, name:D.name.trim(), date:D.date, driverEmail:D.driverEmail,
+      startAddr:D.startAddr, endAddr:D.endAddr, departTime: isNaN(dt)?'':dt.toISOString(), perStop:D.perStop,
+      finishTime: S.finish||'', stops:S.stops.map(s=>({orderId:s.id, etaStart:s.etaStart||'', etaEnd:s.etaEnd||''}))});
+    S.dirty=false; toast('Route saved'); backToRoutes();
+  }catch(e){ toast(e.message); }
+}
+
+function moveStop(i, to){
+  S.stops.splice(to,0,S.stops.splice(i,1)[0]);
+  S.dirty=true; clearEtas();     // ETAs are stale after a reorder
+  renderKeep();
+}
 function stopSetupCard(s,i){
   const n = el('input',{class:'num',type:'number',inputmode:'numeric',min:1,max:S.stops.length,value:i+1});
-  const move = () => {
-    let to = Math.min(Math.max(parseInt(n.value,10)||i+1,1),S.stops.length)-1;
-    if (to===i) return;
-    S.stops.splice(to,0,S.stops.splice(i,1)[0]);
-    S.finish=null; S.stops.forEach(x=>{x.etaStart=x.etaEnd=null}); renderKeep();   // ETAs are stale after reorder
-  };
-  n.addEventListener('change', move);
+  n.addEventListener('change', () => {
+    const to = Math.min(Math.max(parseInt(n.value,10)||i+1,1),S.stops.length)-1;
+    if (to!==i) moveStop(i,to);
+  });
   n.addEventListener('keydown', e => { if(e.key==='Enter') n.blur(); });
-  return el('div',{class:'card stop'}, n,
+  const card = el('div',{class:'card stop'+(s.delivered?' done':'')}, n,
     el('div',{class:'body'},
       el('div',{class:'t'}, s.name+' · '+s.customer),
+      orderDateEl(s),
       el('div',{class:'m'}, s.address||'(no address)'),
       el('div',{class:'m'}, s.items.reduce((a,b)=>a+b.qty,0)+' items'+(s.etaStart?' · ETA '+fmt(s.etaStart):'')),
-      el('ul',{class:'items'}, s.items.map(it => el('li',{}, it.qty+' × '+it.title+(it.variant?' — '+it.variant:''))))),
-    el('button',{class:'sec',style:'width:auto;padding:8px 10px;font-size:13px',onclick:()=>{
-      if(confirm('Remove '+s.name+' from this run?')){ S.stops.splice(i,1); S.finish=null; renderKeep(); }
-    }},'✕'));
+      el('ul',{class:'items'}, s.items.map(it => el('li',{}, it.qty+' × '+it.title+(it.variant?' — '+it.variant:'')))),
+      s.delivered ? el('span',{class:'badge d'},'✓ delivered') : ''));
+  if (!s.delivered) card.append(el('button',{class:'sec',style:'width:auto;padding:8px 10px;font-size:13px',onclick:()=>{
+    if(confirm('Remove '+s.name+' from this route?')){ S.stops.splice(i,1); S.dirty=true; clearEtas(); renderKeep(); }
+  }},'✕'));
+  return card;
 }
 
 // ───────── MAP ─────────
@@ -331,12 +487,12 @@ function loadTotals(){
 }
 function viewLoad(){
   const wrap = el('div');
-  const rows = loadTotals();
-  const units = rows.reduce((a,r)=>a+r.qty,0);
+  const rows = loadTotals(), units = rows.reduce((a,r)=>a+r.qty,0);
+  const title = S.loadFrom==='builder' ? ((S.draft && S.draft.name) || 'New route') : ((S.route && S.route.name) || '');
   wrap.append(el('div',{class:'card'},
     el('h2',{style:'margin:0'},'📦 Load the truck'),
-    el('div',{class:'mut',style:'color:#6b7a76;font-size:14px'},
-      S.stops.filter(s=>!s.delivered).length+' stops · '+rows.length+' item types · '+units+' units total')));
+    el('div',{class:'mut'}, title),
+    el('div',{class:'mut'}, S.stops.filter(s=>!s.delivered).length+' stops · '+rows.length+' item types · '+units+' units total')));
   const list = el('div',{class:'card'});
   if (!rows.length) list.append(el('div',{class:'mapmsg'},'Nothing to load.'));
   rows.forEach(r => list.append(el('div',{class:'loadrow'},
@@ -344,42 +500,40 @@ function viewLoad(){
       el('div',{class:'sk'}, (r.sku?'SKU '+r.sku:'No SKU')+' · '+r.stops+' order'+(r.stops===1?'':'s'))),
     el('div',{class:'q'}, '× '+r.qty))));
   wrap.append(list);
-  wrap.append(el('button',{class:'sec',style:'margin-bottom:10px',onclick:()=>{S.mode=null;render();}},'← Back to route setup (add/remove stops)'));
-  wrap.append(el('button',{disabled:!S.finish,onclick:()=>{S.mode='route';S.cur=0;render();}},'✓ Loaded — Start Route'));
+  if (S.loadFrom==='builder') wrap.append(el('button',{class:'sec',onclick:()=>{S.mode='builder';render();}},'← Back to route builder'));
+  else if (S.loadFrom==='route') wrap.append(el('button',{onclick:()=>{S.mode='route';render();}},'← Back to route'));
+  else wrap.append(el('button',{onclick:startRoute},'✓ Loaded — Start route'), el('div',{class:'gap'}),
+    el('button',{class:'sec',onclick:backToRoutes},'← Routes'));
   return wrap;
 }
 
-// ───────── SCREEN 2: ACTIVE ROUTE ─────────
+// ───────── ACTIVE ROUTE ─────────
 function viewRoute(){
-  const wrap = el('div');
+  const wrap = el('div'), R = S.route;
   const remaining = S.stops.filter(s=>!s.delivered);
-  let fin = S.finish;
-  if (fin){
-    wrap.append(el('div',{class:'finish '+finishClass(fin)}, remaining.length ? 'Est. finish: '+fmt(fin) : '🎉 All done!')); }
 
-  // Recalculate ETAs for undelivered stops, departing now from the driver's chosen departure/start point
+  wrap.append(el('button',{class:'sec',style:'margin-bottom:10px',onclick:backToRoutes},'← Routes'));
+  wrap.append(el('div',{class:'card'},
+    el('div',{style:'font-size:18px;font-weight:800'}, R.name),
+    el('div',{class:'mut'}, fmtRouteDate(R.date)+' · '+(S.stops.length-remaining.length)+' of '+S.stops.length+' delivered'),
+    el('div',{class:'did'}, 'Driver ID: '+(R.driverEmail || '(unassigned)'))));
+
+  if (S.finish && remaining.length) wrap.append(el('div',{class:'finish '+finishClass(S.finish)}, 'Est. finish: '+fmt(S.finish)));
+  else if (!remaining.length) wrap.append(el('div',{class:'finish g'},'🎉 All done!'));
+
   if (remaining.length){
     const rc = el('button',{class:'sec',style:'margin-bottom:10px',onclick: async () => {
       rc.disabled=true; rc.replaceChildren(el('span',{class:'spin',style:'border-top-color:#004c3f'}),'Recalculating…');
-      try{
-        // Start point: use the last delivered stop's address if any, otherwise the route start
-        const lastDone = [...S.stops].reverse().find(s=>s.delivered);
-        const from = lastDone ? lastDone.address : S.startAddr;
-        const j = await get({action:'calculateETAs', s:S.session, payload: JSON.stringify({
-          stops:remaining.map(s=>({id:s.id,address:s.address})), startAddress:from, endAddress:S.endAddr,
-          startTime:new Date().toISOString(), perStopMinutes:S.perStop})});
-        j.etas.forEach(e => { const s=S.stops.find(x=>x.id===e.id); if(s){ s.etaStart=e.etaStart; s.etaEnd=e.etaEnd; } });
-        S.finish = j.finishTime; toast('ETAs updated');
-      }catch(e){ toast(e.message); }
-      renderKeep();
+      await routeOp({op:'recalc'}, 'ETAs updated');      // the server works out ETAs from your saved route
     }}, '🔄 Recalculate ETAs from now');
     wrap.append(rc);
+    wrap.append(el('button',{class:'sec',style:'margin-bottom:10px',onclick:()=>{S.loadFrom='route';S.mode='load';render();}},'📦 Loading list'));
   }
 
   // Batch notify: next 3 hours of ETAs that haven't been notified
   const batch = () => {
     const cutoff = Date.now() + 3*3600*1000;
-    return S.stops.filter(s=>!s.delivered && !s.notified && s.email && s.etaStart && new Date(s.etaStart).getTime() <= cutoff);
+    return S.stops.filter(s=>!s.delivered && !s.notified && s.hasEmail && s.etaStart && new Date(s.etaStart).getTime() <= cutoff);
   };
   const b = batch();
   const nb = el('button',{class:'warn',disabled:!b.length, onclick: async () => {
@@ -390,16 +544,34 @@ function viewRoute(){
     try{ await notify(list); toast('Notified '+list.length+' customer(s)'); }catch(e){ toast(e.message); }
     renderKeep();
   }}, b.length ? `📧 Send Next Batch (${b.length})` : '📧 No one due for notification');
-  wrap.append(nb, el('div',{style:'height:10px'}));
+  wrap.append(nb, el('div',{class:'gap'}));
 
   S.stops.forEach((s,i) => {
-    const c = el('div',{class:'card stop'+(s.delivered?' done':''), style:'cursor:pointer', onclick:()=>{S.cur=i; S.mode='deliver'; render();}},
-      el('div',{class:'num',style:'padding:10px 0'}, String(i+1)),
+    const open = () => { S.cur=i; S.mode='deliver'; render(); };
+    let numEl;
+    if (s.delivered) numEl = el('div',{class:'num',style:'padding:10px 0'}, '✓');
+    else {
+      numEl = el('input',{class:'num',type:'number',inputmode:'numeric',min:1,max:S.stops.length,value:i+1,
+        onclick:e=>e.stopPropagation()});
+      numEl.addEventListener('change', () => {
+        const to = Math.min(Math.max(parseInt(numEl.value,10)||i+1,1),S.stops.length)-1;
+        if (to===i) return;
+        const ids = S.stops.map(x=>x.id); ids.splice(to,0,ids.splice(i,1)[0]);
+        routeOp({op:'reorder', orderIds:ids}, 'Order updated — tap Recalculate ETAs to refresh times');
+      });
+      numEl.addEventListener('keydown', e => { if(e.key==='Enter') numEl.blur(); });
+    }
+    const c = el('div',{class:'card stop'+(s.delivered?' done':''), style:'cursor:pointer', onclick:open}, numEl,
       el('div',{class:'body'},
         el('div',{class:'t'}, s.name+' · '+s.customer),
+        orderDateEl(s),
         el('div',{class:'m'}, s.address),
         el('div',{class:'m'}, s.etaStart ? fmt(s.etaStart)+' – '+fmt(s.etaEnd) : ''),
         el('div',{}, s.notified?el('span',{class:'badge'},'📧 notified'):'', s.delivered?el('span',{class:'badge d'},'✓ delivered'):'')));
+    if (!s.delivered) c.append(el('button',{class:'sec',style:'width:auto;padding:8px 10px;font-size:13px',onclick:e=>{
+      e.stopPropagation();
+      if (confirm('Remove '+s.name+' from this route? It goes back to the unassigned orders.')) routeOp({op:'remove', orderId:s.id}, 'Stop removed');
+    }},'✕'));
     wrap.append(c);
   });
 
@@ -408,28 +580,27 @@ function viewRoute(){
     const nav = () => {
       const u = new URL('https://www.google.com/maps/dir/');
       u.searchParams.set('api','1'); u.searchParams.set('origin','Current Location');
-      u.searchParams.set('destination', S.endAddr);
+      u.searchParams.set('destination', R.endAddr || addrs[addrs.length-1]);
       u.searchParams.set('waypoints', addrs.slice(0,9).join('|'));   // Maps URL limit is 9 waypoints
       window.open(u.toString(),'_blank','noopener');
     };
     const n = Math.min(addrs.length, 9);
     wrap.append(el('button',{class:'sec',onclick:nav}, '🗺️ Navigate next '+n+' stop'+(n===1?'':'s')));
-    if (addrs.length>9) wrap.append(el('div',{class:'m',style:'text-align:center;color:#6b7a76;font-size:13px;margin-top:6px'},
+    if (addrs.length>9) wrap.append(el('div',{class:'mut',style:'text-align:center;font-size:13px;margin-top:6px'},
       'Google Maps allows 9 stops per link. Tap again after delivering to load the next ones.'));
   }
   return wrap;
 }
 
+// The server looks up each customer's email, name, items and ETA from the saved route.
 async function notify(list){
-  const j = await post('sendOFDBatch', list.map(s=>({
-    orderId:s.id, orderName:s.name, customerEmail:s.email, customerName:s.customer,
-    items:s.items, etaStart:s.etaStart, etaEnd:s.etaEnd})));
+  const j = await post('sendOFDBatch', {routeId:S.route.routeId, orderIds:list.map(s=>s.id)});
   j.results.forEach(r => { if(r.ok){ const s=S.stops.find(x=>x.id===r.orderId); if(s){s.notified=true;} } });
   const failed = j.results.filter(r=>!r.ok).length;
   if (failed) toast(failed+' email(s) failed — try again');
 }
 
-// ───────── SCREEN 3: DELIVERY MODE ─────────
+// ───────── DELIVERY MODE ─────────
 function viewDeliver(){
   const s = S.stops[S.cur];
   const wrap = el('div');
@@ -442,9 +613,9 @@ function viewDeliver(){
 
   const card = el('div',{class:'card'});
   card.append(
-    el('div',{class:'m',style:'color:#6b7a76'},`Stop ${S.cur+1} of ${total}`),
-    el('div',{class:'big'}, s.name), el('div',{style:'font-size:18px;font-weight:600'}, s.customer),
-    s.etaStart ? el('div',{class:'m',style:'color:#6b7a76;margin:4px 0'},'ETA '+fmt(s.etaStart)+' – '+fmt(s.etaEnd)) : '');
+    el('div',{class:'mut'},`Stop ${S.cur+1} of ${total}`),
+    el('div',{class:'big'}, s.name), el('div',{style:'font-size:18px;font-weight:600'}, s.customer), orderDateEl(s),
+    s.etaStart ? el('div',{class:'mut',style:'margin:4px 0'},'ETA '+fmt(s.etaStart)+' – '+fmt(s.etaEnd)) : '');
 
   if (s.address){
     const u = new URL('https://www.google.com/maps/dir/'); u.searchParams.set('api','1'); u.searchParams.set('destination',s.address);
@@ -456,8 +627,7 @@ function viewDeliver(){
   }
   if (s.note) card.append(el('div',{class:'note'},'Order note: '+s.note));
 
-  // Notify this stop only
-  if (!s.delivered && !s.notified && s.email){
+  if (!s.delivered && !s.notified && s.hasEmail && s.etaStart){
     const nb = el('button',{class:'warn',style:'margin:8px 0',onclick: async () => {
       nb.disabled=true; nb.textContent='Sending…';
       try{ await notify([s]); toast('Customer notified'); }catch(e){ toast(e.message); }
@@ -474,7 +644,8 @@ function viewDeliver(){
   card.append(el('h3',{style:'margin:14px 0 4px'},'Items'));
   s.items.forEach((it,i) => {
     const cb = el('input',{type:'checkbox'}); cb.checked = !!s.checked[i];
-    const row = el('label',{class:'chk'+(cb.checked?' on':''),style:'margin:0;color:inherit;font-weight:400'}, cb, el('span',{}, it.qty+' × '+it.title));
+    const row = el('label',{class:'chk'+(cb.checked?' on':''),style:'margin:0;color:inherit;font-weight:400'}, cb,
+      el('span',{}, it.qty+' × '+it.title+(it.variant?' — '+it.variant:'')));
     cb.addEventListener('change',()=>{ s.checked[i]=cb.checked; row.classList.toggle('on',cb.checked); });
     card.append(row);
   });
@@ -508,7 +679,7 @@ function viewDeliver(){
   if (s.notified && !s.delivered){
     S.poll = setInterval(async () => {
       if (document.hidden) return;
-      try{ const j = await get({action:'getCustomerNote', s:S.session, order:s.name});
+      try{ const j = await get({action:'getCustomerNote', s:S.session, route:S.route.routeId, orderId:s.id});
         if (j.note && j.note!==s.customerNote){ s.customerNote=j.note; showNote(); if(navigator.vibrate) navigator.vibrate(200); toast('🔔 New customer note'); }
       }catch(_){}
     }, 30000);
@@ -520,13 +691,12 @@ async function deliver(s, btn, noPhoto){
   if (S.busy) return; S.busy = true;
   btn.disabled = true; btn.replaceChildren(el('span',{class:'spin'}),'Saving…');
   try{
-    const j = await post('fulfillOrder', {
-      orderId:s.id, orderName:s.name, customerEmail:s.email, customerName:s.customer, items:s.items,
-      photoBase64: noPhoto ? '' : s.photo, driverNote:s.driverNote||'', driverName:S.driver});
+    await post('fulfillOrder', {routeId:S.route.routeId, orderId:s.id,
+      photoBase64: noPhoto ? '' : s.photo, driverNote:s.driverNote||''});
     s.delivered = true; s.photo = '';           // free the memory
     btn.textContent = '✓ Delivered!';
     setTimeout(()=>{
-      const next = S.stops.findIndex((x,i)=>!x.delivered && i>S.cur) ;
+      const next = S.stops.findIndex((x,i)=>!x.delivered && i>S.cur);
       const any  = next>=0 ? next : S.stops.findIndex(x=>!x.delivered);
       if (any>=0) S.cur=any; else S.mode='route';
       S.busy=false; render();
@@ -556,17 +726,19 @@ function render(){
   clearInterval(S.poll);
   const app = $('#app'); app.replaceChildren();
   $('#logoutBtn').classList.toggle('hidden', !S.session);
-  $('#hdrSub').textContent = S.session ? ('Driver: '+S.driver) : 'Driver';
+  $('#hdrSub').textContent = S.session ? (S.driver + (S.admin ? ' · Admin' : '')) : 'Driver';
   if (!S.session) return app.append(viewLogin());
-  if (S.mode==='deliver' && S.stops[S.cur]) return app.append(viewDeliver());
-  if (S.mode==='load') return app.append(viewLoad());
-  if (S.mode==='route') return app.append(viewRoute());
-  app.append(viewSetup());
+  if (S.mode==='builder' && S.admin) return app.append(viewBuilder());
+  if (S.mode==='load' && (S.route || S.loadFrom==='builder')) return app.append(viewLoad());
+  if (S.route && S.mode==='deliver' && S.stops[S.cur]) return app.append(viewDeliver());
+  if (S.route && (S.mode==='route' || S.mode==='deliver')) return app.append(viewRoute());
+  S.mode = 'routes';
+  app.append(viewRoutes());
 }
 function renderKeep(){ const y=scrollY; render(); scrollTo(0,y); }
 
-// Warn before leaving mid-route (state is in memory only)
-addEventListener('beforeunload', e => { if (S.stops.some(s=>!s.delivered) && S.mode) { e.preventDefault(); e.returnValue=''; } });
+// Routes are saved on the server, so the only thing worth warning about is unsaved builder changes.
+addEventListener('beforeunload', e => { if (S.mode==='builder' && S.dirty) { e.preventDefault(); e.returnValue=''; } });
 render();
 </script>
 </body>
