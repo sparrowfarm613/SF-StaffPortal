@@ -575,28 +575,28 @@ async function drawMap(){
     mapMarkers.push(m);
   });
   // Bigger endpoint pins: black = start, green = end
-  // Teardrop drawn with curves only — Google's symbol parser doesn't handle SVG arc (A) commands,
-  // and an unparseable path renders as nothing at all.
-  const PIN_PATH = 'M 0,0 C -4,-11 -13,-15 -13,-24 C -13,-33 -7,-38 0,-38 C 7,-38 13,-33 13,-24 C 13,-15 4,-11 0,0 z';
-  const endPin = (color) => ({
-    path: PIN_PATH, fillColor: color, fillOpacity: 1, strokeColor: '#ffffff', strokeWeight: 2.5,
-    scale: 1.25, labelOrigin: new google.maps.Point(0, -25)
-  });
-  const endPinFallback = (color) => ({
-    path: google.maps.SymbolPath.CIRCLE, fillColor: color, fillOpacity: 1,
-    strokeColor: '#ffffff', strokeWeight: 3, scale: 17
-  });
-  const addEnd = (pt, color, letter, title) => {
+  // Endpoint pins are real SVG images (data URI), not Google symbol paths:
+  // the symbol-path parser silently renders nothing if it dislikes the path.
+  const endIcon = (fill, letter) => {
+    const svg =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="46" height="60" viewBox="0 0 46 60">' +
+        '<path d="M23 58 C20 44 4 38 4 23 A19 19 0 1 1 42 23 C42 38 26 44 23 58 Z" ' +
+          'fill="' + fill + '" stroke="#ffffff" stroke-width="3"/>' +
+        '<text x="23" y="30" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" ' +
+          'font-size="19" font-weight="bold" fill="#ffffff">' + letter + '</text>' +
+      '</svg>';
+    return {
+      url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
+      scaledSize: new google.maps.Size(46, 60),
+      anchor: new google.maps.Point(23, 58)
+    };
+  };
+  const addEnd = (pt, fill, letter, title) => {
     if (!pt || typeof pt.lat !== 'number' || typeof pt.lng !== 'number') return;
     const pos = {lat: pt.lat, lng: pt.lng};
     bounds.extend(pos);
-    const label = {text: letter, color: '#fff', fontWeight: '800', fontSize: '15px'};
-    let m;
-    try{
-      m = new google.maps.Marker({position: pos, map: mapObj, icon: endPin(color), zIndex: 999, label, title});
-    }catch(_){
-      m = new google.maps.Marker({position: pos, map: mapObj, icon: endPinFallback(color), zIndex: 999, label, title});
-    }
+    const m = new google.maps.Marker({position: pos, map: mapObj, icon: endIcon(fill, letter),
+      zIndex: 1000, title: title});
     const iw = new google.maps.InfoWindow({content: (() => { const d = document.createElement('div'); d.textContent = title; return d; })()});
     m.addListener('click', () => iw.open({map: mapObj, anchor: m}));
     mapMarkers.push(m);
