@@ -19,6 +19,7 @@
   label{display:block;font-size:12px;font-weight:600;color:var(--mut);margin:10px 0 4px}
   input,textarea{width:100%;padding:12px;border:1px solid #c9d1ce;border-radius:8px;font-size:16px;font-family:inherit}
   textarea{min-height:80px;resize:vertical}
+  select.sel{width:100%;padding:12px;border:1px solid #c9d1ce;border-radius:8px;font-size:16px;font-family:inherit;background:#fff}
   button{font-family:inherit;font-size:16px;font-weight:700;border:0;border-radius:10px;padding:14px 16px;cursor:pointer;background:var(--green);color:#fff;width:100%}
   button.sec{background:#e8eeec;color:var(--green)}
   button.warn{background:var(--amber);color:#3a2a00}
@@ -66,16 +67,15 @@
 // ───────── CONFIG ─────────
 // Not a secret: every action is protected by login/session tokens on the server.
 const API = 'https://script.google.com/macros/s/AKfycby1SeWCYfqrBC87LLp5iEtvcGSRb2aBk_k6F4bqLvrPzu_5JkZa-ZVigcQTAh-5xlaL/exec';
-const FARM = "2029 O'Toole Road, Cumberland, ON K4C 1N4";
 // Public by design; it MUST be restricted in Google Cloud to https://clock.sparrowfarms.ca/* and the Maps JavaScript API only.
-const MAPS_KEY = 'PASTE_RESTRICTED_MAPS_KEY_HERE';
+const MAPS_KEY = 'AIzaSyBrv7XajAPI0ZOBQMJmE6CG-qRjZSJhJNU';
 
 // ───────── STATE ─────────
 const S = {
   session: sessionStorage.getItem('sf_s') || '',   // cleared when tab closes
   driver: sessionStorage.getItem('sf_n') || '',
   stops: [],            // {id,name,customer,firstName,email,phone,address,items,checked:[],etaStart,etaEnd,notified,delivered,note,photo}
-  finish: null, cur: 0, startAddr: FARM, endAddr: FARM, startTime: '', perStop: 7,
+  finish: null, cur: 0, locations: [], startAddr: '', endAddr: '', startTime: '', perStop: 7,
   busy: false, poll: null
 };
 
@@ -121,7 +121,7 @@ function handle(j){
 
 // ───────── AUTH ─────────
 function logout(expired){
-  sessionStorage.clear(); S.session=''; S.driver=''; clearInterval(S.poll);
+  sessionStorage.clear(); S.session=''; S.driver=''; S.startAddr=''; S.endAddr=''; S.locations=[]; clearInterval(S.poll);
   render(); if (expired) toast('Session expired');
 }
 $('#logoutBtn').addEventListener('click', () => {
@@ -140,6 +140,7 @@ function viewLogin(){
       S.session=j.session; S.driver=j.name;
       sessionStorage.setItem('sf_s', j.session); sessionStorage.setItem('sf_n', j.name);
       phone.value=''; email.value='';       // don't leave credentials in the DOM
+      await loadLocations();
       render();
     }catch(e){
       err.textContent = e.message==='RATE_LIMITED' ? 'Too many attempts. Try again in 15 minutes.' : 'Login failed. Check your details.';
@@ -152,14 +153,57 @@ function viewLogin(){
     el('label',{},'Phone'), phone, el('label',{},'Email'), email, err, el('div',{style:'height:12px'}), btn);
 }
 
+// ───────── SAVED LOCATIONS ─────────
+async function loadLocations(){
+  try{
+    const j = await get({action:'getLocations', s:S.session});
+    S.locations = j.locations || [];
+    // default start/end to the most-used saved location, only if not already chosen
+    if (S.locations.length){ if(!S.startAddr) S.startAddr = S.locations[0].address; if(!S.endAddr) S.endAddr = S.locations[0].address; }
+  }catch(e){ if (e.message && e.message.includes('expired')) throw e; S.locations = []; }
+}
+const NEW_OPT = '__new__';
+// Dropdown of saved locations + "Enter a different address…". `key` is 'startAddr' or 'endAddr'.
+function locPicker(key, label){
+  const known = S.locations.some(l => l.address === S[key]);
+  const sel = el('select',{class:'sel'});
+  S.locations.forEach(l => { const o = el('option',{value:l.address}, l.label===l.address ? l.address : l.label+' — '+l.address); sel.append(o); });
+  sel.append(el('option',{value:NEW_OPT},'Enter a different address…'));
+  const box = el('input',{placeholder:'Street, city, province', maxlength:200});
+  // Saved address -> select it. Otherwise (typed address, or empty list) -> "Enter a different address…"
+  sel.value = known ? S[key] : NEW_OPT;
+  box.value = known ? '' : (S[key] || '');
+  box.classList.toggle('hidden', sel.value !== NEW_OPT);
+  sel.addEventListener('change', () => {
+    if (sel.value === NEW_OPT){ box.classList.remove('hidden'); box.focus(); S[key] = box.value.trim(); }
+    else { box.classList.add('hidden'); S[key] = sel.value; }
+    S.finish = null;
+  });
+  box.addEventListener('input', () => { S[key] = box.value.trim(); S.finish = null; });
+  return el('div',{}, el('label',{},label), sel, el('div',{style:'height:6px'}), box);
+}
+// Save any typed address that isn't already in the list (server verifies it first)
+async function persistNewLocations(){
+  const seen = new Set();
+  for (const key of ['startAddr','endAddr']){
+    const a = (S[key]||'').trim();
+    if (!a || seen.has(a.toLowerCase()) || S.locations.some(l=>l.address.toLowerCase()===a.toLowerCase())) continue;
+    seen.add(a.toLowerCase());
+    try{
+      const j = await post('saveLocation', {address:a});
+      if (j.saved) toast('Saved "'+a+'" to your locations');
+    }catch(e){ /* not saved (e.g. couldn't be located) — route still calculates */ }
+  }
+  await loadLocations();
+}
+
 // ───────── SCREEN 1: ROUTE SETUP ─────────
 function viewSetup(){
   const now = new Date(); now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
   if (!S.startTime) S.startTime = now.toISOString().slice(0,16);
   const wrap = el('div');
+  if (!S.locations.length && !S.locLoading){ S.locLoading = true; loadLocations().finally(()=>{ S.locLoading=false; if(!S.mode) renderKeep(); }); }
 
-  const start = el('input',{value:S.startAddr, onchange:e=>S.startAddr=e.target.value});
-  const end   = el('input',{value:S.endAddr,   onchange:e=>S.endAddr=e.target.value});
   const time  = el('input',{type:'datetime-local', value:S.startTime, onchange:e=>S.startTime=e.target.value});
   const per   = el('input',{type:'number',min:1,max:60,value:S.perStop, onchange:e=>S.perStop=Number(e.target.value)||7});
   const status = el('div',{class:'err hidden'});
@@ -180,7 +224,7 @@ function viewSetup(){
 
   wrap.append(el('div',{class:'card'},
     el('h2',{style:'margin:0 0 6px'},'Route Setup'),
-    el('label',{},'Start address'), start, el('label',{},'End address'), end,
+    locPicker('startAddr','Start address'), locPicker('endAddr','End address'),
     el('div',{class:'row'}, el('div',{},el('label',{},'Departure time'),time), el('div',{},el('label',{},'Min per stop'),per)),
     el('div',{style:'height:12px'}), loadBtn, status));
 
@@ -188,11 +232,15 @@ function viewSetup(){
     const calc = el('button',{class:'sec',onclick: async () => {
       calc.disabled=true; calc.replaceChildren(el('span',{class:'spin',style:'border-top-color:#004c3f'}),'Calculating…');
       try{
+        if (!S.startAddr || !S.endAddr) throw new Error('Choose a start and end address first');
+        await persistNewLocations();
         const j = await get({action:'calculateETAs', s:S.session, payload: JSON.stringify({
           stops:S.stops.map(s=>({id:s.id,address:s.address})), startAddress:S.startAddr, endAddress:S.endAddr,
           startTime:new Date(S.startTime).toISOString(), perStopMinutes:S.perStop})});
         j.etas.forEach((e,i)=>{ S.stops[i].etaStart=e.etaStart; S.stops[i].etaEnd=e.etaEnd; });
-        S.finish=j.finishTime; renderKeep();
+        S.finish=j.finishTime;
+        post('touchLocations',[S.startAddr,S.endAddr]).catch(()=>{});   // usage count; failure is harmless
+        renderKeep();
       }catch(e){ toast(e.message); }
       calc.disabled=false; calc.textContent='Calculate ETAs';
     }},'Calculate ETAs');
