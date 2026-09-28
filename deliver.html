@@ -14,6 +14,7 @@
   header .brand{display:flex;align-items:center;gap:10px;min-width:0}
   header img.logo{height:48px;width:auto;display:block}
   header .sub{font-size:13px;font-weight:600;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  header .build{font-size:10px;color:#9aa8a4;font-weight:500;letter-spacing:.2px;white-space:nowrap}
   main{padding:14px;max-width:640px;margin:0 auto}
   .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
   label{display:block;font-size:12px;font-weight:600;color:var(--mut);margin:10px 0 4px}
@@ -80,7 +81,7 @@
 </head>
 <body>
 <header>
-  <div class="brand"><img src="https://sparrowfarms.ca/cdn/shop/files/Transparent_-_Web_Sparrow_Farms_Logo_1500_x_1500_px.png?v=1737389483&width=375" class="logo" alt="Sparrow Farms"><div class="sub" id="hdrSub">Driver</div></div>
+  <div class="brand"><img src="https://sparrowfarms.ca/cdn/shop/files/Transparent_-_Web_Sparrow_Farms_Logo_1500_x_1500_px.png?v=1737389483&width=375" class="logo" alt="Sparrow Farms"><div><div class="sub" id="hdrSub">Driver</div><div class="build" id="hdrBuild"></div></div></div>
   <button id="logoutBtn" class="sec hidden" style="width:auto;padding:8px 12px;font-size:13px">Log out</button>
 </header>
 <main id="app"></main>
@@ -93,6 +94,8 @@
 // Not a secret: every action is protected by login/session tokens on the server.
 const API = 'https://script.google.com/macros/s/AKfycby1SeWCYfqrBC87LLp5iEtvcGSRb2aBk_k6F4bqLvrPzu_5JkZa-ZVigcQTAh-5xlaL/exec';
 // Public by design; it MUST be restricted in Google Cloud to https://clock.sparrowfarms.ca/* and the Maps JavaScript API only.
+// Build stamp — set when this file is generated, so you can tell which version a phone is running.
+const BUILD = '2026-09-28 10:45';
 const MAPS_KEY = 'AIzaSyBrv7XajAPI0ZOBQMJmE6CG-qRjZSJhJNU';
 
 // ───────── STATE ─────────
@@ -923,6 +926,7 @@ function render(){
   clearInterval(S.poll);
   const app = $('#app'); app.replaceChildren();
   $('#logoutBtn').classList.toggle('hidden', !S.session);
+  $('#hdrBuild').textContent = 'build ' + BUILD;
   $('#hdrSub').textContent = S.session ? (S.driver + (S.admin ? ' · Admin' : '')) : 'Driver';
   if (!S.session) return app.append(viewLogin());
   if (S.mode==='builder' && S.admin) return app.append(viewBuilder());
