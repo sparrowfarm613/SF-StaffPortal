@@ -188,7 +188,7 @@ $('#logoutBtn').addEventListener('click', () => {
 
 function viewLogin(){
   const err = el('div',{class:'err hidden'});
-  const phone = el('input',{type:'tel',autocomplete:'off',inputmode:'tel',placeholder:'613-555-1234'});
+  const phone = el('input',{type:'tel',autocomplete:'off',inputmode:'tel',placeholder:'6135551234'});
   const email = el('input',{type:'email',autocomplete:'off',placeholder:'you@example.com'});
   const btn = el('button',{onclick: async () => {
     err.classList.add('hidden'); btn.disabled=true; btn.textContent='Checking…';
