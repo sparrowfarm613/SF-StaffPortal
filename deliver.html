@@ -131,7 +131,7 @@ function el(tag, attrs={}, ...kids){
   kids.flat().forEach(c => e.append(c instanceof Node ? c : document.createTextNode(c ?? '')));
   return e;   // all text goes through text nodes → no HTML injection
 }
-function toast(msg){ const t=el('div',{class:'toast'},msg); document.body.append(t); setTimeout(()=>t.remove(),3000); }
+function toast(msg, ms){ const t=el('div',{class:'toast'},msg); document.body.append(t); setTimeout(()=>t.remove(),ms||3000); }
 // Finish-time colour: green before 8 pm, amber until 9 pm, red after (local time)
 const FINISH_GREEN_BEFORE = 20, FINISH_AMBER_BEFORE = 21;
 function finishClass(iso){
@@ -291,7 +291,16 @@ function applyRoute(j){
 async function refreshRoute(){ applyRoute(await get({action:'getRoute', s:S.session, route:S.route.routeId})); }
 // Send a change to the server; the server replies with the fresh route, which replaces our copy.
 async function routeOp(payload, okMsg){
-  try{ applyRoute(await post('routeUpdate', {routeId:S.route.routeId, ...payload})); if (okMsg) toast(okMsg); }
+  try{
+    const j = await post('routeUpdate', {routeId:S.route.routeId, ...payload});
+    applyRoute(j);
+    const fs = j.fulfillSync;                     // present after "Mark route as completed" and "Retry Shopify sync"
+    if (fs && fs.failed && fs.failed.length){
+      toast('⚠️ '+fs.failed.length+' delivered order'+(fs.failed.length===1?'':'s')+' still not marked fulfilled in Shopify: '+fs.failed.map(f=>f.name).join(', '), 8000);
+    } else {
+      if (okMsg) toast(okMsg + (fs && fs.synced ? ' · Shopify updated' : ''));
+    }
+  }
   catch(e){ toast(e.message); try{ await refreshRoute(); }catch(_){} }
   renderKeep();
 }
@@ -788,6 +797,18 @@ function viewRoute(){
     el('div',{class:'mut'}, fmtRouteDate(R.date)+' · '+(S.stops.length-remaining.length)+' of '+S.stops.length+' delivered'),
     el('div',{class:'did'}, 'Driver ID: '+(R.driverEmail || '(unassigned)'))));
 
+  // Delivered orders that Shopify does not show as fulfilled yet (retried automatically on completion; this retries now).
+  const unsynced = S.stops.filter(s => s.delivered && s.fulfillStatus !== 'FULFILLED');
+  if (unsynced.length){
+    wrap.append(el('div',{class:'note'},
+      '⚠️ '+unsynced.length+' delivered order'+(unsynced.length===1?' is':'s are')+' not marked fulfilled in Shopify yet: '+unsynced.map(s=>s.name).join(', ')+'.'));
+    const rb = el('button',{class:'warn',style:'margin-bottom:10px',onclick: async () => {
+      rb.disabled = true; rb.textContent = 'Syncing with Shopify…';
+      await routeOp({op:'syncFulfillment'}, 'Shopify updated');
+    }},'🔄 Retry Shopify sync');
+    wrap.append(rb);
+  }
+
   if (isComplete){
     wrap.append(el('div',{class:'finish g'},'✅ Route completed'+(R.completedAt ? ' at '+fmt(R.completedAt) : '')));
     if (R.startedAt && R.completedAt) wrap.append(el('div',{class:'mut',style:'text-align:center;margin-bottom:10px'},'Route time: '+durText(R.startedAt,R.completedAt)));
@@ -1011,9 +1032,13 @@ async function deliver(s, btn, noPhoto){
   if (S.busy) return; S.busy = true;
   btn.disabled = true; btn.replaceChildren(el('span',{class:'spin'}),'Saving…');
   try{
-    await post('fulfillOrder', {routeId:S.route.routeId, orderId:s.id,
+    const res = await post('fulfillOrder', {routeId:S.route.routeId, orderId:s.id,
       photoBase64: noPhoto ? '' : s.photo, driverNote:s.driverNote||''});
     s.delivered = true; s.photo = '';           // free the memory
+    // The delivery is saved either way. If Shopify could not be updated, say so (it is retried when the route is completed).
+    const shopifyOk = !res.fulfill || res.fulfill.ok;
+    s.fulfillStatus = shopifyOk ? 'FULFILLED' : 'FAILED';
+    if (!shopifyOk) toast('⚠️ Delivered, but Shopify was not updated. It will retry when you complete the route.', 7000);
     btn.textContent = '✓ Delivered!';
     setTimeout(()=>{
       const next = S.stops.findIndex((x,i)=>!x.delivered && i>S.cur);
