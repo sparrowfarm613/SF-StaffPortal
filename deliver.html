@@ -100,7 +100,7 @@
 const API = 'https://script.google.com/macros/s/AKfycby1SeWCYfqrBC87LLp5iEtvcGSRb2aBk_k6F4bqLvrPzu_5JkZa-ZVigcQTAh-5xlaL/exec';
 // Public by design; it MUST be restricted in Google Cloud to https://clock.sparrowfarms.ca/* and the Maps JavaScript API only.
 // Build stamp — set when this file is generated, so you can tell which version a phone is running.
-const BUILD = '2026-09-28 11:17';
+const BUILD = '2026-10-25 14:00';
 const MAPS_KEY = 'AIzaSyBrv7XajAPI0ZOBQMJmE6CG-qRjZSJhJNU';
 
 // ───────── STATE ─────────
@@ -169,6 +169,7 @@ function orderDateEl(s){
   return wrap;
 }
 function fmt(iso){ return iso ? new Date(iso).toLocaleTimeString('en-CA',{hour:'numeric',minute:'2-digit'}) : ''; }
+function durText(a,b){ const m=Math.round((new Date(b)-new Date(a))/60000); if(!(m>=0)) return ''; const h=Math.floor(m/60); return (h?h+' h ':'')+(m%60)+' min'; }
 function fmtRouteDate(ymd){
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(ymd||''); if(!m) return ymd||'';
   return new Date(+m[1],+m[2]-1,+m[3]).toLocaleDateString('en-CA',{weekday:'short',month:'short',day:'numeric'});
@@ -344,9 +345,49 @@ async function openRoute(id){
     render();
   }catch(e){ toast(e.message); S.routesLoaded=false; renderKeep(); }
 }
+// ETAs are "stale" when any remaining stop has none, or the route was started/reordered since they were last calculated.
+// While stale: navigation is locked and nobody can be notified (the times would be wrong).
+function etasStale(){
+  const R = S.route; if (!R || R.status === 'COMPLETE') return false;
+  const rem = S.stops.filter(s => !s.delivered); if (!rem.length) return false;
+  return rem.some(s => !s.etaStart) || !!(R.startedAt && !(R.etasAt && R.etasAt >= R.startedAt));
+}
+// Customers due a notification: next 3 hours of ETAs, not already notified.
+function dueBatch(){
+  if (etasStale()) return [];
+  const cutoff = Date.now() + 3*3600*1000;
+  return S.stops.filter(s=>!s.delivered && !s.notified && s.hasEmail && s.etaStart && new Date(s.etaStart).getTime() <= cutoff);
+}
+function batchMsg(list, lead){
+  const nums = list.map(s=>S.stops.indexOf(s)+1);
+  return `${lead||''}Notify ${list.length} customer(s)?\nStops ${Math.min(...nums)}–${Math.max(...nums)}, ETA ${fmt(list[0].etaStart)}–${fmt(list[list.length-1].etaStart)}`;
+}
+
+// Best-effort GPS fix for the "route started" email to the office. Declined, slow or unavailable never blocks the route.
+function getPosition(){
+  return new Promise(res => {
+    if (!navigator.geolocation) return res(null);
+    navigator.geolocation.getCurrentPosition(
+      p => res({lat:p.coords.latitude, lng:p.coords.longitude, acc:p.coords.accuracy}),
+      () => res(null), {enableHighAccuracy:true, timeout:8000, maximumAge:60000});
+  });
+}
 async function startRoute(){
-  try{ applyRoute(await post('routeUpdate',{routeId:S.route.routeId, op:'start'})); S.mode='route'; render(); }
-  catch(e){ toast(e.message); }
+  try{
+    const pos = S.route && S.route.startedAt ? null : await getPosition();   // only the first start needs a location
+    // The server also calculates fresh ETAs (as of right now) on the first start, so this can take a few seconds
+    applyRoute(await post('routeUpdate',{routeId:S.route.routeId, op:'start', ...(pos||{})}, {label:'Starting route and calculating ETAs…'}));
+    S.mode='route'; render();
+    // Nobody has been told yet: offer the first batch straight away (still needs the driver's OK)
+    const list = dueBatch();
+    if (list.length){
+      await new Promise(r => setTimeout(r, 150));          // let the route screen paint first
+      if (confirm(batchMsg(list, 'ETAs are calculated. '))){
+        try{ await notify(list); toast('Notified '+list.length+' customer(s)'); }catch(e){ toast(e.message); }
+        renderKeep();
+      }
+    }
+  }catch(e){ toast(e.message); }
 }
 
 // ───────── SAVED LOCATIONS (start/end addresses) ─────────
@@ -575,6 +616,7 @@ function stopSetupCard(s,i){
       el('div',{class:'t'}, s.name+' · '+s.customer),
       orderDateEl(s),
       el('div',{class:'m'}, s.address||'(no address)'),
+      s.unit ? el('div',{class:'m',style:'font-weight:600'},'🚪 '+s.unit) : '',
       el('div',{class:'m'}, s.items.reduce((a,b)=>a+b.qty,0)+' items'+(s.etaStart?' · ETA '+fmt(s.etaStart):'')),
       custNoteEl(s),
       el('ul',{class:'items'}, s.items.map(it => el('li',{}, it.qty+' × '+it.title+(it.variant?' — '+it.variant:'')))),
@@ -706,8 +748,13 @@ function viewLoad(){
   wrap.append(list);
   if (S.loadFrom==='builder') wrap.append(el('button',{class:'sec',onclick:()=>{S.mode='builder';render();}},'← Back to route builder'));
   else if (S.loadFrom==='route') wrap.append(el('button',{onclick:()=>{S.mode='route';render();}},'← Back to route'));
-  else wrap.append(el('button',{onclick:startRoute},'✓ Loaded — Start route'), el('div',{class:'gap'}),
-    el('button',{class:'sec',onclick:backToRoutes},'← Routes'));
+  else {
+    const L = S.route || {};
+    if (L.loadStartedAt) wrap.append(el('div',{class:'mut',style:'margin:8px 0;text-align:center'},'Loading started at '+fmt(L.loadStartedAt)));
+    else wrap.append(el('button',{class:'warn',style:'margin-bottom:10px',onclick:()=>routeOp({op:'loading'},'Loading timer started')},'▶ Start loading'));
+    wrap.append(el('button',{onclick:startRoute},'✓ Loaded — Start route'), el('div',{class:'gap'}),
+      el('button',{class:'sec',onclick:backToRoutes},'← Routes'));
+  }
   return wrap;
 }
 
@@ -715,6 +762,25 @@ function viewLoad(){
 function viewRoute(){
   const wrap = el('div'), R = S.route;
   const remaining = S.stops.filter(s=>!s.delivered);
+  const isComplete = R.status === 'COMPLETE';
+  const endNavBtn = () => el('button',{class:'sec',style:'margin-bottom:10px',onclick:()=>{
+    const u = new URL('https://www.google.com/maps/dir/'); u.searchParams.set('api','1');
+    u.searchParams.set('origin','Current Location'); u.searchParams.set('destination',R.endAddr);
+    window.open(u.toString(),'_blank','noopener');
+  }},'🏠 Navigate to end location');
+  // The route only ends when the driver taps this, so the drive back to the farm / end location is counted.
+  const completeBtn = (early) => {
+    const b = el('button',{class:early?'sec':'',style:early?'margin-top:12px':'margin-bottom:10px',onclick: async () => {
+      const left = S.stops.filter(x=>!x.delivered).length;
+      const msg = left
+        ? left+' stop'+(left===1?' is':'s are')+' not delivered yet. Mark the route as completed anyway?'
+        : 'Mark this route as completed? Do this once you are back at '+(R.endAddr || 'the end location')+'.';
+      if (!confirm(msg)) return;
+      b.disabled = true; b.textContent = 'Completing…';
+      await routeOp({op:'complete'}, 'Route completed');
+    }},'🏁 Mark route as completed');
+    return b;
+  };
 
   wrap.append(el('button',{class:'sec',style:'margin-bottom:10px',onclick:backToRoutes},'← Routes'));
   wrap.append(el('div',{class:'card'},
@@ -722,11 +788,21 @@ function viewRoute(){
     el('div',{class:'mut'}, fmtRouteDate(R.date)+' · '+(S.stops.length-remaining.length)+' of '+S.stops.length+' delivered'),
     el('div',{class:'did'}, 'Driver ID: '+(R.driverEmail || '(unassigned)'))));
 
-  if (S.finish && remaining.length) wrap.append(el('div',{class:'finish '+finishClass(S.finish)}, 'Est. finish: '+fmt(S.finish)));
-  else if (!remaining.length) wrap.append(el('div',{class:'finish g'},'🎉 All done!'));
+  if (isComplete){
+    wrap.append(el('div',{class:'finish g'},'✅ Route completed'+(R.completedAt ? ' at '+fmt(R.completedAt) : '')));
+    if (R.startedAt && R.completedAt) wrap.append(el('div',{class:'mut',style:'text-align:center;margin-bottom:10px'},'Route time: '+durText(R.startedAt,R.completedAt)));
+  } else if (!remaining.length){
+    wrap.append(el('div',{class:'finish g'},'🎉 All stops delivered'),
+      el('div',{class:'mut',style:'text-align:center;margin-bottom:10px'},'Drive to '+(R.endAddr || 'the end location')+', then tap “Mark route as completed”.'));
+    if (R.endAddr) wrap.append(endNavBtn());
+    wrap.append(completeBtn(false));
+  } else if (S.finish) wrap.append(el('div',{class:'finish '+finishClass(S.finish)}, 'Est. finish: '+fmt(S.finish)));
 
-  if (remaining.length){
-    const rc = el('button',{class:'sec',style:'margin-bottom:10px',onclick: async () => {
+  const stale = etasStale();
+  if (stale && remaining.length && !isComplete) wrap.append(el('div',{class:'note',style:'margin-bottom:10px'},
+    '⏱️ The arrival times are out of date. Tap “Recalculate ETAs” to unlock navigation and customer notifications.'));
+  if (remaining.length && !isComplete){
+    const rc = el('button',{class:stale?'warn':'sec',style:'margin-bottom:10px',onclick: async () => {
       rc.disabled=true; rc.replaceChildren(el('span',{class:'spin',style:'border-top-color:#004c3f'}),'Recalculating…');
       await routeOp({op:'recalc'}, 'ETAs updated');      // the server works out ETAs from your saved route
     }}, '🔄 Recalculate ETAs from now');
@@ -744,21 +820,16 @@ function viewRoute(){
     wrap.append(el('button',{class:'sec',style:'margin-bottom:10px',onclick:()=>{S.loadFrom='route';S.mode='load';render();}},'📦 Loading list'));
   }
 
-  // Batch notify: next 3 hours of ETAs that haven't been notified
-  const batch = () => {
-    const cutoff = Date.now() + 3*3600*1000;
-    return S.stops.filter(s=>!s.delivered && !s.notified && s.hasEmail && s.etaStart && new Date(s.etaStart).getTime() <= cutoff);
-  };
-  const b = batch();
+  // Batch notify: next 3 hours of ETAs that haven't been notified (never from stale ETAs)
+  const b = dueBatch();
   const nb = el('button',{class:'warn',disabled:!b.length, onclick: async () => {
-    const list = batch(); if(!list.length) return;
-    const nums = list.map(s=>S.stops.indexOf(s)+1);
-    if(!confirm(`Notify ${list.length} customer(s)?\nStops ${Math.min(...nums)}–${Math.max(...nums)}, ETA ${fmt(list[0].etaStart)}–${fmt(list[list.length-1].etaStart)}`)) return;
+    const list = dueBatch(); if(!list.length) return;
+    if(!confirm(batchMsg(list))) return;
     nb.disabled=true; nb.replaceChildren(el('span',{class:'spin'}),'Sending…');
     try{ await notify(list); toast('Notified '+list.length+' customer(s)'); }catch(e){ toast(e.message); }
     renderKeep();
-  }}, b.length ? `📧 Send Next Batch (${b.length})` : '📧 No one due for notification');
-  wrap.append(nb, el('div',{class:'gap'}));
+  }}, b.length ? `📧 Send Next Batch (${b.length})` : (stale ? '📧 Recalculate ETAs first' : '📧 No one due for notification'));
+  if (!isComplete) wrap.append(nb, el('div',{class:'gap'}));
 
   S.stops.forEach((s,i) => {
     const open = () => { S.cur=i; S.mode='deliver'; render(); };
@@ -770,6 +841,7 @@ function viewRoute(){
         el('div',{class:'t'}, s.name+' · '+s.customer),
         orderDateEl(s),
         el('div',{class:'m'}, s.address),
+        s.unit ? el('div',{class:'m',style:'font-weight:600'},'🚪 '+s.unit) : '',
         el('div',{class:'m'}, s.etaStart ? fmt(s.etaStart)+' – '+fmt(s.etaEnd) : ''),
         custNoteEl(s),
         el('div',{}, s.notified?el('span',{class:'badge'},'📧 notified'):'', s.delivered?el('span',{class:'badge d'},'✓ delivered'):'')));
@@ -781,19 +853,30 @@ function viewRoute(){
   });
 
   const addrs = remaining.map(s=>s.address).filter(Boolean);
-  if (addrs.length){
+  if (!isComplete && addrs.length){
+    // One Google Maps link takes 9 waypoints + a destination = 10 stops.
+    const lastLeg = addrs.length <= 9;
     const nav = () => {
       const u = new URL('https://www.google.com/maps/dir/');
       u.searchParams.set('api','1'); u.searchParams.set('origin','Current Location');
-      u.searchParams.set('destination', R.endAddr || addrs[addrs.length-1]);
-      u.searchParams.set('waypoints', addrs.slice(0,9).join('|'));   // Maps URL limit is 9 waypoints
+      if (lastLeg){
+        // Everything that's left, finishing at the route's end location (or at the last stop if none is set)
+        u.searchParams.set('destination', R.endAddr || addrs[addrs.length-1]);
+        const via = R.endAddr ? addrs : addrs.slice(0,-1);
+        if (via.length) u.searchParams.set('waypoints', via.join('|'));
+      } else {
+        u.searchParams.set('destination', addrs[9]);
+        u.searchParams.set('waypoints', addrs.slice(0,9).join('|'));
+      }
       window.open(u.toString(),'_blank','noopener');
     };
-    const n = Math.min(addrs.length, 9);
-    wrap.append(el('button',{class:'sec',onclick:nav}, '🗺️ Navigate next '+n+' stop'+(n===1?'':'s')));
-    if (addrs.length>9) wrap.append(el('div',{class:'mut',style:'text-align:center;font-size:13px;margin-top:6px'},
-      'Google Maps allows 9 stops per link. Tap again after delivering to load the next ones.'));
+    const n = lastLeg ? addrs.length : 10;
+    wrap.append(el('button',{class:'sec',disabled:stale,onclick:nav}, (stale?'🔒 ':'🗺️ ')+'Navigate next '+n+' stop'+(n===1?'':'s')+(lastLeg && R.endAddr ? ' + end location' : '')));
+    if (stale) wrap.append(el('div',{class:'mut',style:'text-align:center;font-size:13px;margin-top:6px'},'Recalculate ETAs first to unlock navigation.'));
+    if (!lastLeg) wrap.append(el('div',{class:'mut',style:'text-align:center;font-size:13px;margin-top:6px'},
+      'Google Maps allows 10 stops per link. Tap again after delivering to load the next ones.'));
   }
+  if (!isComplete && remaining.length) wrap.append(completeBtn(true));
   return wrap;
 }
 
@@ -822,9 +905,27 @@ function viewDeliver(){
     el('div',{class:'big'}, s.name), el('div',{style:'font-size:18px;font-weight:600'}, s.customer), orderDateEl(s),
     s.etaStart ? el('div',{class:'mut',style:'margin:4px 0'},'ETA '+fmt(s.etaStart)+' – '+fmt(s.etaEnd)) : '');
 
+  const stale = !s.delivered && etasStale();
   if (s.address){
     const u = new URL('https://www.google.com/maps/dir/'); u.searchParams.set('api','1'); u.searchParams.set('destination',s.address);
-    card.append(el('div',{style:'margin:8px 0'}, el('a',{class:'tap',href:u.toString(),target:'_blank',rel:'noopener'},'📍 '+s.address)));
+    card.append(stale
+      ? el('div',{style:'margin:8px 0'}, el('div',{class:'tap',style:'opacity:.55'},'🔒 '+s.address))
+      : el('div',{style:'margin:8px 0'}, el('a',{class:'tap',href:u.toString(),target:'_blank',rel:'noopener'},'📍 '+s.address)));
+  }
+  if (stale) card.append(el('button',{class:'warn',style:'margin:6px 0',onclick:()=>routeOp({op:'recalc'},'ETAs updated')},
+    '🔄 Recalculate ETAs to unlock navigation'));
+  if (s.unit) card.append(el('div',{style:'margin:4px 0;font-weight:600'},'🚪 '+s.unit));
+  if (!s.delivered){
+    // Arrival is REQUIRED before a stop can be marked delivered: arrival + delivery time = time at the stop (office route summary)
+    if (s.arrivedAt) card.append(el('div',{class:'mut',style:'margin:6px 0'},'📍 Arrived at '+fmt(s.arrivedAt)));
+    else card.append(
+      el('button',{class:'warn',style:'margin:6px 0',onclick:()=>routeOp({op:'arrived', orderId:s.id})},"📍 I've arrived"),
+      el('button',{class:'link',onclick: () => {
+        const v = prompt('About how many minutes ago did you arrive? (1–180)'); if (v === null) return;
+        const m = Math.round(Number(v));
+        if (!(m >= 1 && m <= 180)) return toast('Enter a number of minutes between 1 and 180');
+        routeOp({op:'arrived', orderId:s.id, minutesAgo:m}, 'Arrival recorded');
+      }},'Forgot to tap? I arrived earlier…'));
   }
   if (s.phone){
     const digits = s.phone.replace(/[^\d+]/g,'');
@@ -832,7 +933,7 @@ function viewDeliver(){
   }
   card.append(custNoteEl(s));   // checkout note + custom fields, before the item list
 
-  if (!s.delivered && !s.notified && s.hasEmail && s.etaStart){
+  if (!s.delivered && !s.notified && s.hasEmail && s.etaStart && !stale){
     const nb = el('button',{class:'warn',style:'margin:8px 0',onclick: async () => {
       nb.disabled=true; nb.textContent='Sending…';
       try{ await notify([s]); toast('Customer notified'); }catch(e){ toast(e.message); }
@@ -862,21 +963,34 @@ function viewDeliver(){
   // Photo
   const prev = el('div');
   const draw = () => { prev.replaceChildren(); if(s.photo) prev.append(el('img',{class:'prev',src:s.photo,alt:'Delivery photo'}), el('button',{class:'sec',onclick:()=>{s.photo='';draw();upd();}},'Retake / remove')); };
+  // Two inputs, one handler: "capture" opens the camera; without it the phone offers its photo library
   const cam = el('input',{type:'file',accept:'image/*',capture:'environment',class:'hidden'});
-  cam.addEventListener('change', async () => {
-    const f = cam.files[0]; if(!f) return;
-    if (!f.type.startsWith('image/')) return toast('Please choose an image');
-    s.photo = await resize(f); cam.value=''; draw(); upd();
-  });
-  card.append(el('label',{},'Proof of delivery'), el('button',{class:'sec',onclick:()=>cam.click()},'📷 Take photo'), cam, prev);
+  const gal = el('input',{type:'file',accept:'image/*',class:'hidden'});
+  const onPick = async (inp) => {
+    const f = inp.files && inp.files[0]; if(!f) return;
+    if (!f.type.startsWith('image/')) { inp.value=''; return toast('Please choose an image'); }
+    try{ s.photo = await resize(f); }
+    catch(e){ toast("Couldn't process that photo — try again or pick a different one"); }
+    finally{ inp.value=''; }
+    draw(); upd();
+  };
+  cam.addEventListener('change', () => onPick(cam));
+  gal.addEventListener('change', () => onPick(gal));
+  card.append(el('label',{},'Proof of delivery'),
+    el('div',{class:'row'},
+      el('button',{class:'sec',onclick:()=>cam.click()},'📷 Take photo'),
+      el('button',{class:'sec',onclick:()=>gal.click()},'🖼️ Upload from phone')),
+    cam, gal, prev);
   draw();
 
   const done = el('button',{style:'margin-top:12px',onclick:()=>deliver(s,done,false)},'Mark as Delivered');
   const skip = el('button',{class:'link',onclick:()=>{ if(confirm('Mark delivered without a photo?')) deliver(s,done,true); }},'Skip photo & mark delivered');
-  const upd = () => { done.disabled = s.delivered || !s.photo; skip.classList.toggle('hidden', s.delivered || !!s.photo); };
+  const upd = () => { done.disabled = s.delivered || !s.photo || !s.arrivedAt; skip.classList.toggle('hidden', s.delivered || !!s.photo || !s.arrivedAt); };
   upd();
   if (s.delivered){ done.textContent='✓ Delivered'; done.disabled=true; }
   card.append(done, skip);
+  if (!s.delivered && !s.arrivedAt) card.append(el('div',{class:'mut',style:'text-align:center;margin-top:6px'},
+    'Tap “I’ve arrived” above before marking this delivered.'));
   wrap.append(card);
 
   // Poll for customer notes while this screen is open (tracking page → driver)
@@ -893,6 +1007,7 @@ function viewDeliver(){
 }
 
 async function deliver(s, btn, noPhoto){
+  if (!s.arrivedAt) return toast('Tap “I’ve arrived” first');
   if (S.busy) return; S.busy = true;
   btn.disabled = true; btn.replaceChildren(el('span',{class:'spin'}),'Saving…');
   try{
@@ -911,15 +1026,33 @@ async function deliver(s, btn, noPhoto){
   }
 }
 
-// Resize to max 1200px, JPEG 0.78 — keeps upload small on rural connections
-function resize(file){
+// Resize to max 1200px, JPEG 0.78 — keeps upload small on rural connections.
+// Memory matters here: a 12–50 MP photo decoded at full size needs 50–200 MB, which is what makes
+// some phones drop the tab ("not enough memory"). So we ask the browser to decode it already
+// scaled down, and fall back to the old full-size decode only if that isn't supported.
+const MAX_PX = 1200;
+function encode(src, w, h){
+  const r = Math.min(1, MAX_PX/Math.max(w,h));
+  const c = document.createElement('canvas'); c.width = Math.round(w*r); c.height = Math.round(h*r);
+  try{
+    c.getContext('2d').drawImage(src, 0, 0, c.width, c.height);
+    return c.toDataURL('image/jpeg', 0.78);
+  } finally { c.width = c.height = 0; }       // release the canvas buffer right away
+}
+async function resize(file){
+  if (window.createImageBitmap){
+    try{
+      // Width-only resize keeps the aspect ratio; the browser decodes at this size, never full-size
+      const bmp = await createImageBitmap(file, {resizeWidth: MAX_PX, resizeQuality: 'medium'});
+      try{ return encode(bmp, bmp.width, bmp.height); } finally { bmp.close && bmp.close(); }
+    }catch(_){ /* fall through to the legacy path */ }
+  }
   return new Promise((res, rej) => {
     const img = new Image(), url = URL.createObjectURL(file);
     img.onload = () => {
-      const r = Math.min(1, 1200/Math.max(img.width,img.height));
-      const c = document.createElement('canvas'); c.width=Math.round(img.width*r); c.height=Math.round(img.height*r);
-      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
-      URL.revokeObjectURL(url); res(c.toDataURL('image/jpeg',0.78));
+      try{ res(encode(img, img.naturalWidth || img.width, img.naturalHeight || img.height)); }
+      catch(e){ rej(e); }
+      finally{ URL.revokeObjectURL(url); img.src = ''; }
     };
     img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('Bad image')); };
     img.src = url;
