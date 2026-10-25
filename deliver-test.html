@@ -100,7 +100,7 @@
 const API = 'https://script.google.com/macros/s/AKfycby1SeWCYfqrBC87LLp5iEtvcGSRb2aBk_k6F4bqLvrPzu_5JkZa-ZVigcQTAh-5xlaL/exec';
 // Public by design; it MUST be restricted in Google Cloud to https://clock.sparrowfarms.ca/* and the Maps JavaScript API only.
 // Build stamp — set when this file is generated, so you can tell which version a phone is running.
-const BUILD = '2026-10-25 13:00';
+const BUILD = '2026-10-25 14:00';
 const MAPS_KEY = 'AIzaSyBrv7XajAPI0ZOBQMJmE6CG-qRjZSJhJNU';
 
 // ───────── STATE ─────────
@@ -916,9 +916,16 @@ function viewDeliver(){
     '🔄 Recalculate ETAs to unlock navigation'));
   if (s.unit) card.append(el('div',{style:'margin:4px 0;font-weight:600'},'🚪 '+s.unit));
   if (!s.delivered){
-    // Arrival time + delivery time = time at the stop (used in the office route summary)
+    // Arrival is REQUIRED before a stop can be marked delivered: arrival + delivery time = time at the stop (office route summary)
     if (s.arrivedAt) card.append(el('div',{class:'mut',style:'margin:6px 0'},'📍 Arrived at '+fmt(s.arrivedAt)));
-    else card.append(el('button',{class:'sec',style:'margin:6px 0',onclick:()=>routeOp({op:'arrived', orderId:s.id})},"📍 I've arrived"));
+    else card.append(
+      el('button',{class:'warn',style:'margin:6px 0',onclick:()=>routeOp({op:'arrived', orderId:s.id})},"📍 I've arrived"),
+      el('button',{class:'link',onclick: () => {
+        const v = prompt('About how many minutes ago did you arrive? (1–180)'); if (v === null) return;
+        const m = Math.round(Number(v));
+        if (!(m >= 1 && m <= 180)) return toast('Enter a number of minutes between 1 and 180');
+        routeOp({op:'arrived', orderId:s.id, minutesAgo:m}, 'Arrival recorded');
+      }},'Forgot to tap? I arrived earlier…'));
   }
   if (s.phone){
     const digits = s.phone.replace(/[^\d+]/g,'');
@@ -978,10 +985,12 @@ function viewDeliver(){
 
   const done = el('button',{style:'margin-top:12px',onclick:()=>deliver(s,done,false)},'Mark as Delivered');
   const skip = el('button',{class:'link',onclick:()=>{ if(confirm('Mark delivered without a photo?')) deliver(s,done,true); }},'Skip photo & mark delivered');
-  const upd = () => { done.disabled = s.delivered || !s.photo; skip.classList.toggle('hidden', s.delivered || !!s.photo); };
+  const upd = () => { done.disabled = s.delivered || !s.photo || !s.arrivedAt; skip.classList.toggle('hidden', s.delivered || !!s.photo || !s.arrivedAt); };
   upd();
   if (s.delivered){ done.textContent='✓ Delivered'; done.disabled=true; }
   card.append(done, skip);
+  if (!s.delivered && !s.arrivedAt) card.append(el('div',{class:'mut',style:'text-align:center;margin-top:6px'},
+    'Tap “I’ve arrived” above before marking this delivered.'));
   wrap.append(card);
 
   // Poll for customer notes while this screen is open (tracking page → driver)
@@ -998,6 +1007,7 @@ function viewDeliver(){
 }
 
 async function deliver(s, btn, noPhoto){
+  if (!s.arrivedAt) return toast('Tap “I’ve arrived” first');
   if (S.busy) return; S.busy = true;
   btn.disabled = true; btn.replaceChildren(el('span',{class:'spin'}),'Saving…');
   try{
