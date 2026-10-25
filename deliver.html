@@ -100,7 +100,7 @@
 const API = 'https://script.google.com/macros/s/AKfycby1SeWCYfqrBC87LLp5iEtvcGSRb2aBk_k6F4bqLvrPzu_5JkZa-ZVigcQTAh-5xlaL/exec';
 // Public by design; it MUST be restricted in Google Cloud to https://clock.sparrowfarms.ca/* and the Maps JavaScript API only.
 // Build stamp — set when this file is generated, so you can tell which version a phone is running.
-const BUILD = '2026-09-28 11:17';
+const BUILD = '2026-10-25 10:30';
 const MAPS_KEY = 'AIzaSyBrv7XajAPI0ZOBQMJmE6CG-qRjZSJhJNU';
 
 // ───────── STATE ─────────
@@ -862,13 +862,24 @@ function viewDeliver(){
   // Photo
   const prev = el('div');
   const draw = () => { prev.replaceChildren(); if(s.photo) prev.append(el('img',{class:'prev',src:s.photo,alt:'Delivery photo'}), el('button',{class:'sec',onclick:()=>{s.photo='';draw();upd();}},'Retake / remove')); };
+  // Two inputs, one handler: "capture" opens the camera; without it the phone offers its photo library
   const cam = el('input',{type:'file',accept:'image/*',capture:'environment',class:'hidden'});
-  cam.addEventListener('change', async () => {
-    const f = cam.files[0]; if(!f) return;
-    if (!f.type.startsWith('image/')) return toast('Please choose an image');
-    s.photo = await resize(f); cam.value=''; draw(); upd();
-  });
-  card.append(el('label',{},'Proof of delivery'), el('button',{class:'sec',onclick:()=>cam.click()},'📷 Take photo'), cam, prev);
+  const gal = el('input',{type:'file',accept:'image/*',class:'hidden'});
+  const onPick = async (inp) => {
+    const f = inp.files && inp.files[0]; if(!f) return;
+    if (!f.type.startsWith('image/')) { inp.value=''; return toast('Please choose an image'); }
+    try{ s.photo = await resize(f); }
+    catch(e){ toast("Couldn't process that photo — try again or pick a different one"); }
+    finally{ inp.value=''; }
+    draw(); upd();
+  };
+  cam.addEventListener('change', () => onPick(cam));
+  gal.addEventListener('change', () => onPick(gal));
+  card.append(el('label',{},'Proof of delivery'),
+    el('div',{class:'row'},
+      el('button',{class:'sec',onclick:()=>cam.click()},'📷 Take photo'),
+      el('button',{class:'sec',onclick:()=>gal.click()},'🖼️ Upload from phone')),
+    cam, gal, prev);
   draw();
 
   const done = el('button',{style:'margin-top:12px',onclick:()=>deliver(s,done,false)},'Mark as Delivered');
@@ -911,15 +922,33 @@ async function deliver(s, btn, noPhoto){
   }
 }
 
-// Resize to max 1200px, JPEG 0.78 — keeps upload small on rural connections
-function resize(file){
+// Resize to max 1200px, JPEG 0.78 — keeps upload small on rural connections.
+// Memory matters here: a 12–50 MP photo decoded at full size needs 50–200 MB, which is what makes
+// some phones drop the tab ("not enough memory"). So we ask the browser to decode it already
+// scaled down, and fall back to the old full-size decode only if that isn't supported.
+const MAX_PX = 1200;
+function encode(src, w, h){
+  const r = Math.min(1, MAX_PX/Math.max(w,h));
+  const c = document.createElement('canvas'); c.width = Math.round(w*r); c.height = Math.round(h*r);
+  try{
+    c.getContext('2d').drawImage(src, 0, 0, c.width, c.height);
+    return c.toDataURL('image/jpeg', 0.78);
+  } finally { c.width = c.height = 0; }       // release the canvas buffer right away
+}
+async function resize(file){
+  if (window.createImageBitmap){
+    try{
+      // Width-only resize keeps the aspect ratio; the browser decodes at this size, never full-size
+      const bmp = await createImageBitmap(file, {resizeWidth: MAX_PX, resizeQuality: 'medium'});
+      try{ return encode(bmp, bmp.width, bmp.height); } finally { bmp.close && bmp.close(); }
+    }catch(_){ /* fall through to the legacy path */ }
+  }
   return new Promise((res, rej) => {
     const img = new Image(), url = URL.createObjectURL(file);
     img.onload = () => {
-      const r = Math.min(1, 1200/Math.max(img.width,img.height));
-      const c = document.createElement('canvas'); c.width=Math.round(img.width*r); c.height=Math.round(img.height*r);
-      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
-      URL.revokeObjectURL(url); res(c.toDataURL('image/jpeg',0.78));
+      try{ res(encode(img, img.naturalWidth || img.width, img.naturalHeight || img.height)); }
+      catch(e){ rej(e); }
+      finally{ URL.revokeObjectURL(url); img.src = ''; }
     };
     img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('Bad image')); };
     img.src = url;
