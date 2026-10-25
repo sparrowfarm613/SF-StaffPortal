@@ -100,7 +100,7 @@
 const API = 'https://script.google.com/macros/s/AKfycby1SeWCYfqrBC87LLp5iEtvcGSRb2aBk_k6F4bqLvrPzu_5JkZa-ZVigcQTAh-5xlaL/exec';
 // Public by design; it MUST be restricted in Google Cloud to https://clock.sparrowfarms.ca/* and the Maps JavaScript API only.
 // Build stamp — set when this file is generated, so you can tell which version a phone is running.
-const BUILD = '2026-10-25 12:00';
+const BUILD = '2026-10-25 13:00';
 const MAPS_KEY = 'AIzaSyBrv7XajAPI0ZOBQMJmE6CG-qRjZSJhJNU';
 
 // ───────── STATE ─────────
@@ -345,6 +345,24 @@ async function openRoute(id){
     render();
   }catch(e){ toast(e.message); S.routesLoaded=false; renderKeep(); }
 }
+// ETAs are "stale" when any remaining stop has none, or the route was started/reordered since they were last calculated.
+// While stale: navigation is locked and nobody can be notified (the times would be wrong).
+function etasStale(){
+  const R = S.route; if (!R || R.status === 'COMPLETE') return false;
+  const rem = S.stops.filter(s => !s.delivered); if (!rem.length) return false;
+  return rem.some(s => !s.etaStart) || !!(R.startedAt && !(R.etasAt && R.etasAt >= R.startedAt));
+}
+// Customers due a notification: next 3 hours of ETAs, not already notified.
+function dueBatch(){
+  if (etasStale()) return [];
+  const cutoff = Date.now() + 3*3600*1000;
+  return S.stops.filter(s=>!s.delivered && !s.notified && s.hasEmail && s.etaStart && new Date(s.etaStart).getTime() <= cutoff);
+}
+function batchMsg(list, lead){
+  const nums = list.map(s=>S.stops.indexOf(s)+1);
+  return `${lead||''}Notify ${list.length} customer(s)?\nStops ${Math.min(...nums)}–${Math.max(...nums)}, ETA ${fmt(list[0].etaStart)}–${fmt(list[list.length-1].etaStart)}`;
+}
+
 // Best-effort GPS fix for the "route started" email to the office. Declined, slow or unavailable never blocks the route.
 function getPosition(){
   return new Promise(res => {
@@ -357,8 +375,18 @@ function getPosition(){
 async function startRoute(){
   try{
     const pos = S.route && S.route.startedAt ? null : await getPosition();   // only the first start needs a location
-    applyRoute(await post('routeUpdate',{routeId:S.route.routeId, op:'start', ...(pos||{})}));
+    // The server also calculates fresh ETAs (as of right now) on the first start, so this can take a few seconds
+    applyRoute(await post('routeUpdate',{routeId:S.route.routeId, op:'start', ...(pos||{})}, {label:'Starting route and calculating ETAs…'}));
     S.mode='route'; render();
+    // Nobody has been told yet: offer the first batch straight away (still needs the driver's OK)
+    const list = dueBatch();
+    if (list.length){
+      await new Promise(r => setTimeout(r, 150));          // let the route screen paint first
+      if (confirm(batchMsg(list, 'ETAs are calculated. '))){
+        try{ await notify(list); toast('Notified '+list.length+' customer(s)'); }catch(e){ toast(e.message); }
+        renderKeep();
+      }
+    }
   }catch(e){ toast(e.message); }
 }
 
@@ -770,8 +798,11 @@ function viewRoute(){
     wrap.append(completeBtn(false));
   } else if (S.finish) wrap.append(el('div',{class:'finish '+finishClass(S.finish)}, 'Est. finish: '+fmt(S.finish)));
 
+  const stale = etasStale();
+  if (stale && remaining.length && !isComplete) wrap.append(el('div',{class:'note',style:'margin-bottom:10px'},
+    '⏱️ The arrival times are out of date. Tap “Recalculate ETAs” to unlock navigation and customer notifications.'));
   if (remaining.length && !isComplete){
-    const rc = el('button',{class:'sec',style:'margin-bottom:10px',onclick: async () => {
+    const rc = el('button',{class:stale?'warn':'sec',style:'margin-bottom:10px',onclick: async () => {
       rc.disabled=true; rc.replaceChildren(el('span',{class:'spin',style:'border-top-color:#004c3f'}),'Recalculating…');
       await routeOp({op:'recalc'}, 'ETAs updated');      // the server works out ETAs from your saved route
     }}, '🔄 Recalculate ETAs from now');
@@ -789,20 +820,15 @@ function viewRoute(){
     wrap.append(el('button',{class:'sec',style:'margin-bottom:10px',onclick:()=>{S.loadFrom='route';S.mode='load';render();}},'📦 Loading list'));
   }
 
-  // Batch notify: next 3 hours of ETAs that haven't been notified
-  const batch = () => {
-    const cutoff = Date.now() + 3*3600*1000;
-    return S.stops.filter(s=>!s.delivered && !s.notified && s.hasEmail && s.etaStart && new Date(s.etaStart).getTime() <= cutoff);
-  };
-  const b = batch();
+  // Batch notify: next 3 hours of ETAs that haven't been notified (never from stale ETAs)
+  const b = dueBatch();
   const nb = el('button',{class:'warn',disabled:!b.length, onclick: async () => {
-    const list = batch(); if(!list.length) return;
-    const nums = list.map(s=>S.stops.indexOf(s)+1);
-    if(!confirm(`Notify ${list.length} customer(s)?\nStops ${Math.min(...nums)}–${Math.max(...nums)}, ETA ${fmt(list[0].etaStart)}–${fmt(list[list.length-1].etaStart)}`)) return;
+    const list = dueBatch(); if(!list.length) return;
+    if(!confirm(batchMsg(list))) return;
     nb.disabled=true; nb.replaceChildren(el('span',{class:'spin'}),'Sending…');
     try{ await notify(list); toast('Notified '+list.length+' customer(s)'); }catch(e){ toast(e.message); }
     renderKeep();
-  }}, b.length ? `📧 Send Next Batch (${b.length})` : '📧 No one due for notification');
+  }}, b.length ? `📧 Send Next Batch (${b.length})` : (stale ? '📧 Recalculate ETAs first' : '📧 No one due for notification'));
   if (!isComplete) wrap.append(nb, el('div',{class:'gap'}));
 
   S.stops.forEach((s,i) => {
@@ -845,7 +871,8 @@ function viewRoute(){
       window.open(u.toString(),'_blank','noopener');
     };
     const n = lastLeg ? addrs.length : 10;
-    wrap.append(el('button',{class:'sec',onclick:nav}, '🗺️ Navigate next '+n+' stop'+(n===1?'':'s')+(lastLeg && R.endAddr ? ' + end location' : '')));
+    wrap.append(el('button',{class:'sec',disabled:stale,onclick:nav}, (stale?'🔒 ':'🗺️ ')+'Navigate next '+n+' stop'+(n===1?'':'s')+(lastLeg && R.endAddr ? ' + end location' : '')));
+    if (stale) wrap.append(el('div',{class:'mut',style:'text-align:center;font-size:13px;margin-top:6px'},'Recalculate ETAs first to unlock navigation.'));
     if (!lastLeg) wrap.append(el('div',{class:'mut',style:'text-align:center;font-size:13px;margin-top:6px'},
       'Google Maps allows 10 stops per link. Tap again after delivering to load the next ones.'));
   }
@@ -878,10 +905,15 @@ function viewDeliver(){
     el('div',{class:'big'}, s.name), el('div',{style:'font-size:18px;font-weight:600'}, s.customer), orderDateEl(s),
     s.etaStart ? el('div',{class:'mut',style:'margin:4px 0'},'ETA '+fmt(s.etaStart)+' – '+fmt(s.etaEnd)) : '');
 
+  const stale = !s.delivered && etasStale();
   if (s.address){
     const u = new URL('https://www.google.com/maps/dir/'); u.searchParams.set('api','1'); u.searchParams.set('destination',s.address);
-    card.append(el('div',{style:'margin:8px 0'}, el('a',{class:'tap',href:u.toString(),target:'_blank',rel:'noopener'},'📍 '+s.address)));
+    card.append(stale
+      ? el('div',{style:'margin:8px 0'}, el('div',{class:'tap',style:'opacity:.55'},'🔒 '+s.address))
+      : el('div',{style:'margin:8px 0'}, el('a',{class:'tap',href:u.toString(),target:'_blank',rel:'noopener'},'📍 '+s.address)));
   }
+  if (stale) card.append(el('button',{class:'warn',style:'margin:6px 0',onclick:()=>routeOp({op:'recalc'},'ETAs updated')},
+    '🔄 Recalculate ETAs to unlock navigation'));
   if (s.unit) card.append(el('div',{style:'margin:4px 0;font-weight:600'},'🚪 '+s.unit));
   if (!s.delivered){
     // Arrival time + delivery time = time at the stop (used in the office route summary)
@@ -894,7 +926,7 @@ function viewDeliver(){
   }
   card.append(custNoteEl(s));   // checkout note + custom fields, before the item list
 
-  if (!s.delivered && !s.notified && s.hasEmail && s.etaStart){
+  if (!s.delivered && !s.notified && s.hasEmail && s.etaStart && !stale){
     const nb = el('button',{class:'warn',style:'margin:8px 0',onclick: async () => {
       nb.disabled=true; nb.textContent='Sending…';
       try{ await notify([s]); toast('Customer notified'); }catch(e){ toast(e.message); }
